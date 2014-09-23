@@ -40,17 +40,17 @@ PROJECT_CXXFLAGS := -Wall -Wextra -m64 -std=c++11
 PROJECT_LDFLAGS := -lpthread $(call bin_officiallib,opencl)
 
 # ------------------------------------------------------------ release parameters
-ifeq ($(filter-out release_%,$(config)),)
+ifeq ($(filter-out release-%,$(config)),)
     PROJECT_CXXFLAGS += -O3 -Werror -mmmx -mavx
 endif
 
 # ------------------------------------------------------------ nightly parameters
-ifeq ($(config),nightly)
+ifeq ($(filter-out nightly-%,$(config)),)
     PROJECT_CXXFLAGS += -g
 endif
 
 # ------------------------------------------------------------ debug parameters
-ifeq ($(config),debug)
+ifeq ($(filter-out debug-%,$(config)),)
     PROJECT_CXXFLAGS += -g -DYOTTA_DEBUG
 endif
 
