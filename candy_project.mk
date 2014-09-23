@@ -33,11 +33,21 @@ ifeq ($(filter-out release-clang%,$(config)),)
     override CC:=clang
 endif
 
-override LD:=$(CC)
+override CXX:=$(CC)
+
+ifeq ($(CXX),clang)
+	override CXX:=$(CXX)++
+endif
+
+ifeq ($(filter-out gcc%,$(CXX)),)
+	override CXX:=$(subst gcc,g++,$(CXX))
+endif
+
+override LD:=$(CXX)
 
 # ------------------------------------------------------------ default parameters
 PROJECT_CXXFLAGS := -Wall -Wextra -m64 -std=c++11
-PROJECT_LDFLAGS := -lpthread $(call bin_officiallib,opencl)
+PROJECT_LDFLAGS := -std=c++11 -lpthread $(call bin_officiallib,opencl)
 
 # ------------------------------------------------------------ release parameters
 ifeq ($(filter-out release-%,$(config)),)
@@ -94,4 +104,4 @@ EXEC_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499rMain
 # ------------------------------------------------------------ compilation/link configuration
 $(EXEC_TARGET): $(EXEC_OBJECT_BINARIES) $(LIB_BINARIES_TARGET)
 $(EXEC_TARGET): CXXFLAGS += $(PROJECT_CXXFLAGS)
-$(EXEC_TARGET): LDFLAGS += $(PROJECT_LDFLAGS) $(EXEC_OBJECT_BINARIES) $(LIB_BINARIES_TARGET)
+$(EXEC_TARGET): LDFLAGS += $(PROJECT_LDFLAGS) $(EXEC_OBJECT_BINARIES) $(LIB_OBJECT_BINARIES)
