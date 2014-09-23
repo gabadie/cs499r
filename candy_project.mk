@@ -36,22 +36,22 @@ endif
 override LD:=$(CC)
 
 # ------------------------------------------------------------ default parameters
-PROJECT_CFLAGS := -Wall -Wextra -m64 -std=gnu99
+PROJECT_CXXFLAGS := -Wall -Wextra -m64 -std=c++11
 PROJECT_LDFLAGS := -lpthread $(call bin_officiallib,opencl)
 
 # ------------------------------------------------------------ release parameters
 ifeq ($(filter-out release_%,$(config)),)
-    PROJECT_CFLAGS += -O3 -Werror -mmmx -mavx
+    PROJECT_CXXFLAGS += -O3 -Werror -mmmx -mavx
 endif
 
 # ------------------------------------------------------------ nightly parameters
 ifeq ($(config),nightly)
-    PROJECT_CFLAGS += -g
+    PROJECT_CXXFLAGS += -g
 endif
 
 # ------------------------------------------------------------ debug parameters
 ifeq ($(config),debug)
-    PROJECT_CFLAGS += -g -DYOTTA_DEBUG
+    PROJECT_CXXFLAGS += -g -DYOTTA_DEBUG
 endif
 
 
@@ -78,7 +78,7 @@ LIB_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499r.flis
 
 # ------------------------------------------------------------ compilation/link configuration
 $(LIB_BINARIES_TARGET): $(LIB_OBJECT_BINARIES)
-$(LIB_BINARIES_TARGET): CFLAGS += $(PROJECT_CFLAGS)
+$(LIB_BINARIES_TARGET): CXXFLAGS += $(PROJECT_CXXFLAGS)
 $(LIB_BINARIES_TARGET): ARFLAGS += $(LIB_OBJECT_BINARIES)
 
 
@@ -92,5 +92,5 @@ EXEC_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499rMain
 
 # ------------------------------------------------------------ compilation/link configuration
 $(EXEC_TARGET): $(EXEC_OBJECT_BINARIES) $(LIB_BINARIES_TARGET)
-$(EXEC_TARGET): CFLAGS += $(PROJECT_CFLAGS)
+$(EXEC_TARGET): CXXFLAGS += $(PROJECT_CXXFLAGS)
 $(EXEC_TARGET): LDFLAGS += $(PROJECT_LDFLAGS) $(EXEC_OBJECT_BINARIES) $(LIB_BINARIES_TARGET)
