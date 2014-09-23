@@ -1,0 +1,3 @@
+[submodule "candy_makefile"]
+	path = candy_makefile
+	url = git@github.com:gabadie/makefile.git
