@@ -35,12 +35,14 @@ namespace CS499R
         // the main computing queue
         cl_command_queue mCmdQueue;
 
+#if 0
         // the ray tracing program
         struct
         {
             cl_program program;
             cl_kernel kernel;
         } mProgram;
+#endif
 
     };
 

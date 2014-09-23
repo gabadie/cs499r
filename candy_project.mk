@@ -86,6 +86,7 @@ $(LIB_BINARIES_TARGET): ARFLAGS += $(LIB_OBJECT_BINARIES)
 
 EXEC_PRODUCT := $(call product_create,BINEXEC,cs499r)
 EXEC_TARGET := $(call product_target,$(EXEC_PRODUCT))
+EXEC_TEST := $(call test_product,$(EXEC_PRODUCT))
 $(call product_public,$(EXEC_PRODUCT))
 
 EXEC_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499rMain.flist))
