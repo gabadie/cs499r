@@ -37,7 +37,7 @@ override LD:=$(CC)
 
 # ------------------------------------------------------------ default parameters
 PROJECT_CFLAGS := -Wall -Wextra -m64 -std=gnu99
-PROJECT_LDFLAGS := -lpthread
+PROJECT_LDFLAGS := -lpthread $(call bin_officiallib,opencl)
 
 # ------------------------------------------------------------ release parameters
 ifeq ($(filter-out release_%,$(config)),)
