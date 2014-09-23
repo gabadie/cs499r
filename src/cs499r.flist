@@ -1,0 +1,7 @@
+
+#
+# CS499R project is a library, then linked with different executable. This file
+# lists the library's source files
+#
+
+cs499rDummy.cpp
