@@ -29,6 +29,9 @@ namespace CS499R
 
     private:
         // --------------------------------------------------------------------- MEMBERS
+        // the GPU's device id
+        cl_device_id mDeviceId;
+
         // the GPU's context
         cl_context mContext;
 

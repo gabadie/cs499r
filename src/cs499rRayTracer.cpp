@@ -10,6 +10,7 @@ namespace CS499R
     {
         cl_int error = 0;
 
+        mDeviceId = device;
         mContext = clCreateContext(0, 1, &device, 0, 0, &error);
 
         CS499R_ASSERT(error == 0);

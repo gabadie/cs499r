@@ -1,4 +1,5 @@
 
+#include <string.h>
 #include "cs499rRayTracer.hpp"
 #include "cs499rCommonStruct.hpp"
 
@@ -127,9 +128,24 @@ namespace CS499R
 
             CS499R_ASSERT(error == 0);
 
-            clBuildProgram(mProgram, 0, NULL, NULL, NULL, &error);
+            error |= clBuildProgram(mProgram, 0, NULL, NULL, NULL, NULL);
 
-            CS499R_ASSERT(error == 0);
+            if (error)
+            {
+                size_t bufferSize;
+                clGetProgramBuildInfo(mProgram, mDeviceId, CL_PROGRAM_BUILD_LOG, 0, nullptr, &bufferSize);
+
+                char * buffer = new char [bufferSize + 1];
+                memset(buffer, 0, bufferSize + 1);
+
+                clGetProgramBuildInfo(mProgram, mDeviceId, CL_PROGRAM_BUILD_LOG, bufferSize + 1, buffer, &bufferSize);
+
+                fprintf(stderr, "%s\n", buffer);
+
+                delete [] buffer;
+
+                CS499R_CRASH();
+            }
         }
 
         {
