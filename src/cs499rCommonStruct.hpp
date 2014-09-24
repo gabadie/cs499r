@@ -36,7 +36,7 @@ namespace CS499R
         typedef struct triangle_s
         {
             float3 vertex[3];
-            float3 difuseColor;
+            float3 diffuseColor;
             float3 emitColor;
         } triangle_t;
 

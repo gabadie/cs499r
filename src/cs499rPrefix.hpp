@@ -14,4 +14,16 @@
 #include "cs499rUtils.hpp"
 
 
+// ----------------------------------------------------------------------------- CS499R's classes
+
+namespace CS499R
+{
+
+    class Image;
+    class RayTracer;
+    class Scene;
+    class SceneBuffer;
+
+}
+
 #endif // _H_CS499R_PREFIX

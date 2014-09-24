@@ -45,12 +45,15 @@ namespace CS499R
         } mKernel;
 
 
-        // --------------------------------------------------------------------- MEMBERS
+        // --------------------------------------------------------------------- METHODES
         /*
          * Build programs and its kernels
          */
         void buildProgram();
 
+
+        // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class SceneBuffer;
 
     };
 

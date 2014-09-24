@@ -2,12 +2,23 @@
 #ifndef _H_CS499R_UTILS
 #define _H_CS499R_UTILS
 
+#include <stdio.h>
+
+
 /*
  * Crashes the program in the state of the art
  */
+#define __CS499R_CRASH() \
+    { \
+        fflush(stdout); \
+        fflush(stderr); \
+        * ((volatile int *) 0) = 0; \
+    }
+
 #define CS499R_CRASH() \
     { \
-        * ((volatile int *) 0) = 0; \
+        fprintf(stderr, "CRASH(%s:%i) IN `%s`\n", __FILE__, __LINE__, __func__); \
+        __CS499R_CRASH(); \
     }
 
 /*
@@ -16,7 +27,8 @@
 #define CS499R_ASSERT(condition) \
     if (!(condition)) \
     { \
-        CS499R_CRASH(); \
+        fprintf(stderr, "ASSERT(%s:%i) IN `%s`: %s\n", __FILE__, __LINE__, __func__, #condition); \
+        __CS499R_CRASH(); \
     }
 
 /*

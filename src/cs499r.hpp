@@ -6,6 +6,7 @@
 #include "cs499rImage.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rScene.hpp"
+#include "cs499rSceneBuffer.hpp"
 
 
 #endif // _H_CS499R
