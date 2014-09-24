@@ -66,6 +66,10 @@ namespace CS499R
         // the render target's gpu memory space
         cl_mem mGpuBuffer;
 
+
+        // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class SceneBuffer;
+
     };
 
 }

@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "cs499rImage.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rRenderTarget.hpp"

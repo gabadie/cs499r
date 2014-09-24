@@ -68,12 +68,26 @@ main()
         CS499R_ASSERT(error == 0);
     }
 
+    size_t const imageWidth = 32;
+    size_t const imageHeight = 32;
+
     CS499R::RayTracer rayTracer(device);
     CS499R::Scene scene;
+    CS499R::Camera camera;
+    CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
 
     buildDummyScene(scene);
 
-    CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
+    {
+        CS499R::RenderTarget target(&rayTracer, imageWidth, imageHeight);
+        CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
+
+        sceneBuffer.render(&target, &camera);
+
+        target.download(&image);
+    }
+
+    image.saveToFile("render.gitignore.png");
 
     return 0;
 }

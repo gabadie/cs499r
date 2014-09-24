@@ -106,6 +106,23 @@ namespace
             cx->rayInterNormal = normal;
         }
 
+        void
+        intersect_scene(
+            sample_context_t * sampleCx,
+            __global common_shot_context_t const * shotCx,
+            __global common_triangle_t const * triangles
+        )
+        {
+            sampleCx->rayInterColorMultiply = (float3)(0.0f);
+            sampleCx->rayInterColorAdd = (float3)(0.0f);
+            sampleCx->rayInterDistance = INFINITY;
+
+            for (uint i = 0; i < shotCx->triangleCount; i++)
+            {
+                intersect_triangles(sampleCx, triangles + i);
+            }
+        }
+
     );
 
     char const * const kKernelDispatchKernel = CS499R_CODE(
@@ -113,11 +130,32 @@ namespace
          * This trace the ray throught the scene
          */
         __kernel void
-        dispatch_main(__global float * input, __global float * output)
+        dispatch_main(
+            __global common_shot_context_t const * shotCx,
+            __global common_triangle_t const * triangles,
+            __global float * renderTarget
+        )
         {
-            int i = get_global_id(0);
+            uint2 texelCoord = (uint2)(get_global_id(0), get_global_id(1));
 
-            output[i] = input[i] * input[i];
+            uint texelId = texelCoord.x + texelCoord.y * shotCx->renderWidth;
+
+            if (texelCoord.x >= shotCx->renderWidth || texelCoord.y >= shotCx->renderHeight)
+            {
+                return;
+            }
+
+            float2 shotAreaCoord;
+            shotAreaCoord.x = ((float)texelCoord.x) / (((float)shotCx->renderWidth) - 1.0f);
+            shotAreaCoord.y = ((float)texelCoord.y) / (((float)shotCx->renderHeight) - 1.0f);
+
+            sample_context_t sampleCx;
+
+            intersect_scene(&sampleCx, shotCx, triangles);
+
+            renderTarget[texelId * 3 + 0] = 1.0;
+            renderTarget[texelId * 3 + 1] = 0.0;
+            renderTarget[texelId * 3 + 2] = 0.0;
         }
     );
 

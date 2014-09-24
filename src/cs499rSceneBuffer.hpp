@@ -14,6 +14,15 @@ namespace CS499R
     class SceneBuffer
     {
     public:
+        // --------------------------------------------------------------------- METHODES
+
+        /*
+         * Renders the scene into the given render target with a given camera
+         */
+        void
+        render(RenderTarget * target, Camera const * camera) const;
+
+
         // --------------------------------------------------------------------- IDLE
 
         SceneBuffer(Scene const * scene, RayTracer const * rayTracer);
@@ -36,7 +45,7 @@ namespace CS499R
         } mBuffer;
 
 
-        // --------------------------------------------------------------------- METHOD
+        // --------------------------------------------------------------------- METHODES
 
         /*
          * Creates GPU side buffers
