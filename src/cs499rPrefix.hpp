@@ -12,6 +12,7 @@
 
 #include "cs499rMath.hpp"
 #include "cs499rUtils.hpp"
+#include "cs499rCLUtils.hpp"
 
 
 // ----------------------------------------------------------------------------- CS499R's classes
