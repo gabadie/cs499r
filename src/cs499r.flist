@@ -4,6 +4,7 @@
 # lists the library's source files
 #
 
+cs499rCamera.cpp
 cs499rImage.cpp
 cs499rImagePNG.cpp
 cs499rRayTracer.cpp
