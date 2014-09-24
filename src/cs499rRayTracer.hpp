@@ -53,6 +53,7 @@ namespace CS499R
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class RenderTarget;
         friend class SceneBuffer;
 
     };

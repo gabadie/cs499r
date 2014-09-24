@@ -9,5 +9,6 @@ cs499rImage.cpp
 cs499rImagePNG.cpp
 cs499rRayTracer.cpp
 cs499rRayTracerProgram.cpp
+cs499rRenderTarget.cpp
 cs499rScene.cpp
 cs499rSceneBuffer.cpp
