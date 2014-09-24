@@ -19,6 +19,7 @@
 namespace CS499R
 {
 
+    class Camera;
     class Image;
     class RayTracer;
     class Scene;

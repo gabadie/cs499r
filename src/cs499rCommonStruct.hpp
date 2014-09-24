@@ -40,6 +40,25 @@ namespace CS499R
             float3 emitColor;
         } triangle_t;
 
+        typedef struct common_camera_s
+        {
+            float3 shotPosition;
+            float3 shotBasisU;
+            float3 shotBasisV;
+            float3 focusPosition;
+            float3 focusBasisU;
+            float3 focusBasisV;
+        } common_camera_t;
+
+        typedef struct common_shot_context_s
+        {
+            // the shot's camera informations
+            common_camera_t camera;
+
+            // the number of triangles in the scene
+            unsigned int triangleCount;
+        } common_shot_context_t;
+
     )
 
 }

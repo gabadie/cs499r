@@ -2,7 +2,7 @@
 #ifndef _H_CS499R_CAMERA
 #define _H_CS499R_CAMERA
 
-#include "cs499rPrefix.hpp"
+#include "cs499rCommonStruct.hpp"
 
 
 namespace CS499R
@@ -16,6 +16,12 @@ namespace CS499R
     public:
         // --------------------------------------------------------------------- METHODES
 
+        /*
+         * Exports the camera parametrics into a shot ready camera
+         */
+        void
+        exportToShotCamera(common_camera_t * outGpuCamera, float aspectRatio) const;
+
 
         // --------------------------------------------------------------------- IDLE
 
@@ -24,10 +30,10 @@ namespace CS499R
 
         // --------------------------------------------------------------------- MEMBERS
 
-        // the camera position
-        float3 mPosition;
+        // the camera's shot position
+        float3 mShotPosition;
 
-        // the focus position
+        // the camera's focus position
         float3 mFocusPosition;
 
         // the field of view
@@ -77,7 +83,7 @@ namespace CS499R
          *
          *
          * Glossary:
-         *      Point P is the camera's shot area center (mPosition)
+         *      Point P is the camera's shot area center (mShotPosition)
          *      Point F is the camera's focus position (mFocusPosition)
          *      Point O is the matematical frustum cone's apex
          *      Angle MOP is the field of view of the camera (mViewField)
