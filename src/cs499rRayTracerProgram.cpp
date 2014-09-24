@@ -5,7 +5,7 @@
 namespace
 {
 
-    char const * kKernelDispatchKernel = CS499R_CODE(
+    char const * const kKernelDispatchKernel = CS499R_CODE(
         /*
          * This trace the ray throught the scene
          */
@@ -28,12 +28,16 @@ namespace CS499R
         cl_int error = 0;
 
         char const * programCode[] = {
-            kCodeStructTriangle,
+            kCodeStructs,
             kKernelDispatchKernel
         };
 
         { // initialize program
-            mProgram = clCreateProgramWithSource(mContext, CS499R_ARRAY_SIZE(programCode), programCode, NULL, &error);
+            mProgram = clCreateProgramWithSource(
+                mContext,
+                CS499R_ARRAY_SIZE(programCode), programCode,
+                NULL, &error
+            );
 
             CS499R_ASSERT(error == 0);
 
