@@ -8,17 +8,17 @@ namespace CS499R
     void
     Camera::exportToShotCamera(common_camera_t * outGpuCamera, float aspectRatio) const
     {
-        float3 direction = mFocusPosition - mShotPosition;
-        float directionLength = length(direction);
-        float3 directionNormalized = direction * (1.0f / directionLength);
-        float3 u = normalize(cross(directionNormalized, float3(0.0f, 0.0f, 1.0f)));
-        float3 v = cross(u, directionNormalized);
+        float32x3_t direction = mFocusPosition - mShotPosition;
+        float32_t directionLength = length(direction);
+        float32x3_t directionNormalized = direction * (1.0f / directionLength);
+        float32x3_t u = normalize(cross(directionNormalized, float32x3_t(0.0f, 0.0f, 1.0f)));
+        float32x3_t v = cross(u, directionNormalized);
 
-        float alpha = atanf(1.0f / aspectRatio);
-        float cosAlpha = cos(alpha);
-        float sinAlpha = sin(alpha);
+        float32_t alpha = atanf(1.0f / aspectRatio);
+        float32_t cosAlpha = cos(alpha);
+        float32_t sinAlpha = sin(alpha);
 
-        float focusDiagonalLength = mShotDiagonalLength + sin(mViewField) * directionLength;
+        float32_t focusDiagonalLength = mShotDiagonalLength + sin(mViewField) * directionLength;
 
         outGpuCamera->shotPosition = mShotPosition;
         outGpuCamera->shotBasisU = u * (cosAlpha * mShotDiagonalLength);
@@ -30,8 +30,8 @@ namespace CS499R
 
     Camera::Camera()
     {
-        mShotPosition = float3 { -1.0f, -1.0f, -1.0f };
-        mFocusPosition = float3 { 0.0f, 0.0f, 0.0f };
+        mShotPosition = float32x3_t(-1.0f, -1.0f, -1.0f);
+        mFocusPosition = float32x3_t(0.0f, 0.0f, 0.0f);
         mViewField = kPI * 0.33f;
         mShotDiagonalLength = 0.02;
     }

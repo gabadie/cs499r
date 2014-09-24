@@ -21,7 +21,7 @@ namespace CS499R
          * Adds a triangle into the scene
          */
         void
-        addTriangle(float3 v0, float3 v1, float3 v2, float3 diffuse, float3 emit)
+        addTriangle(float32x3_t v0, float32x3_t v1, float32x3_t v2, float32x3_t diffuse, float32x3_t emit)
         {
             size_t i = mTriangles.size();
 
@@ -44,7 +44,7 @@ namespace CS499R
         // --------------------------------------------------------------------- MEMBERS
 
         // all scene's triangles
-        std::vector<triangle_t> mTriangles;
+        std::vector<common_triangle_t> mTriangles;
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS

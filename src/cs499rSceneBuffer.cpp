@@ -32,7 +32,7 @@ namespace CS499R
             mBuffer.triangles = clCreateBuffer(
                 context,
                 CL_MEM_READ_ONLY,
-                sizeof(triangle_t) * mScene->mTriangles.size(),
+                sizeof(common_triangle_t) * mScene->mTriangles.size(),
                 NULL,
                 &error
             );
@@ -44,7 +44,7 @@ namespace CS499R
                 cmdQueue,
                 mBuffer.triangles,
                 CL_FALSE, 0,
-                sizeof(triangle_t) * mScene->mTriangles.size(),
+                sizeof(common_triangle_t) * mScene->mTriangles.size(),
                 &mScene->mTriangles[0],
                 0, NULL, NULL
             );

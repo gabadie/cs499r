@@ -330,9 +330,18 @@ namespace CS499R
 }
 
 // ----------------------------------------------------------------------------- OPENCL COMPATIBILITY
-typedef CS499R::vec2<float> float2;
-typedef CS499R::vec3<float> float3;
-typedef CS499R::vec4<float> float4;
+typedef CS499R::vec2<int32_t> int32x2_t;
+typedef CS499R::vec3<int32_t> int32x3_t;
+typedef CS499R::vec4<int32_t> int32x4_t;
+
+typedef CS499R::vec2<uint32_t> uint32x2_t;
+typedef CS499R::vec3<uint32_t> uint32x3_t;
+typedef CS499R::vec4<uint32_t> uint32x4_t;
+
+typedef float float32_t;
+typedef CS499R::vec2<float32_t> float32x2_t;
+typedef CS499R::vec3<float32_t> float32x3_t;
+typedef CS499R::vec4<float32_t> float32x4_t;
 
 
 #endif // _H_CS499R_MATH

@@ -31,10 +31,10 @@ namespace CS499R
         // --------------------------------------------------------------------- MEMBERS
 
         // the camera's shot position
-        float3 mShotPosition;
+        float32x3_t mShotPosition;
 
         // the camera's focus position
-        float3 mFocusPosition;
+        float32x3_t mFocusPosition;
 
         // the field of view
         float mViewField;

@@ -7,6 +7,25 @@
 namespace
 {
 
+    char const * const kCodeLibTypedef = CS499R_CODE(
+
+        typedef int int32_t;
+        typedef int2 int32x2_t;
+        typedef int3 int32x3_t;
+        typedef int4 int32x4_t;
+
+        typedef uint uint32_t;
+        typedef uint2 uint32x2_t;
+        typedef uint3 uint32x3_t;
+        typedef uint4 uint32x4_t;
+
+        typedef float float32_t;
+        typedef float2 float32x2_t;
+        typedef float3 float32x3_t;
+        typedef float4 float32x4_t;
+
+    );
+
     char const * const kCodeLibConsts = CS499R_CODE(
 
         __constant float kEPSILONE = 0.00001f;
@@ -15,32 +34,32 @@ namespace
 
     char const * const kCodeLibStructs = CS499R_CODE(
 
-        typedef __private struct private_context_s
+        typedef __private struct sample_context_s
         {
             // ray's origin in the mesh space
-            float3 rayOrigin;
+            float32x3_t rayOrigin;
 
             // normalized ray's direction in the mesh space
-            float3 rayDirection;
+            float32x3_t rayDirection;
 
             // ray's minimal distance found for depth test
-            float rayInterDistance;
+            float32_t rayInterDistance;
 
             // ray's computed colors
-            float3 rayInterColorMultiply;
-            float3 rayInterColorAdd;
+            float32x3_t rayInterColorMultiply;
+            float32x3_t rayInterColorAdd;
 
             // the ray's unnormalized intersection normal
-            float3 rayInterNormal;
+            float32x3_t rayInterNormal;
 
-        } private_context_t;
+        } sample_context_t;
 
     );
 
     char const * const kCodeLibEssentials = CS499R_CODE(
 
         void
-        intersect_triangles(private_context_t * cx, __global triangle_t const * triangle)
+        intersect_triangles(sample_context_t * cx, __global common_triangle_t const * triangle)
         {
             float3 AB = triangle->vertex[1] - triangle->vertex[0];
             float3 AC = triangle->vertex[2] - triangle->vertex[0];
@@ -112,6 +131,7 @@ namespace CS499R
         cl_int error = 0;
 
         char const * programCode[] = {
+            kCodeLibTypedef,
             kCodeLibConsts,
             kCodeStructs,
             kCodeLibStructs,

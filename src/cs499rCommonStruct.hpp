@@ -17,46 +17,50 @@ namespace CS499R
 
         typedef struct mat4_s
         {
-            float4 c[4];
+            float32x4_t c[4];
         } mat4_t;
 
         typedef struct mesh_s
         {
-            unsigned int firstPrime; // first triangle ID
-            unsigned int primeCount; // triangles count
+            uint32_t firstPrime; // first triangle ID
+            uint32_t primeCount; // triangles count
         } mesh_t;
 
         typedef struct mesh_instance_s
         {
             mat4_t meshToSpace;
             mat4_t spaceToMesh;
-            unsigned int meshId;
+            uint32_t meshId;
         } mesh_instance_t;
 
-        typedef struct triangle_s
+        typedef struct common_triangle_s
         {
-            float3 vertex[3];
-            float3 diffuseColor;
-            float3 emitColor;
-        } triangle_t;
+            __attribute__((aligned(16))) float32x3_t vertex[3];
+            __attribute__((aligned(16))) float32x3_t diffuseColor;
+            __attribute__((aligned(16))) float32x3_t emitColor;
+        } common_triangle_t;
 
         typedef struct common_camera_s
         {
-            float3 shotPosition;
-            float3 shotBasisU;
-            float3 shotBasisV;
-            float3 focusPosition;
-            float3 focusBasisU;
-            float3 focusBasisV;
+            __attribute__((aligned(16))) float32x3_t shotPosition;
+            __attribute__((aligned(16))) float32x3_t shotBasisU;
+            __attribute__((aligned(16))) float32x3_t shotBasisV;
+            __attribute__((aligned(16))) float32x3_t focusPosition;
+            __attribute__((aligned(16))) float32x3_t focusBasisU;
+            __attribute__((aligned(16))) float32x3_t focusBasisV;
         } common_camera_t;
 
         typedef struct common_shot_context_s
         {
             // the shot's camera informations
-            common_camera_t camera;
+            __attribute__((aligned(16))) common_camera_t camera;
 
             // the number of triangles in the scene
-            unsigned int triangleCount;
+            __attribute__((aligned(16))) unsigned int triangleCount;
+
+            // render dimensions
+            __attribute__((aligned(16))) unsigned int renderWidth;
+            __attribute__((aligned(16))) unsigned int renderHeight;
         } common_shot_context_t;
 
     )
