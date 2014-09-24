@@ -35,14 +35,22 @@ namespace CS499R
         // the main computing queue
         cl_command_queue mCmdQueue;
 
-#if 0
         // the ray tracing program
+        cl_program mProgram;
+
+        // the ray tracing kernels
         struct
         {
-            cl_program program;
-            cl_kernel kernel;
-        } mProgram;
-#endif
+            cl_kernel dispatch;
+        } mKernel;
+
+
+        // --------------------------------------------------------------------- MEMBERS
+        /*
+         * Build programs and its kernels
+         */
+        void buildProgram();
+
 
     };
 
