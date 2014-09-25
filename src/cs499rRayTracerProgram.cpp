@@ -28,7 +28,8 @@ namespace
 
     char const * const kCodeLibConsts = CS499R_CODE(
 
-        __constant float kEPSILONE = 0.00001f;
+        __constant float32_t kEPSILONE = 0.00001f;
+        __constant float32_t kPi = 3.14159265359f;
 
     );
 
@@ -52,11 +53,45 @@ namespace
             // the ray's unnormalized intersection normal
             float32x3_t rayInterNormal;
 
+            // the sample's random seed
+            uint32_t randomSeed;
+
         } sample_context_t;
+
+        float32_t
+        random(sample_context_t * sampleCx)
+        {
+            uint32_t seed = sampleCx->randomSeed;
+
+            seed++;
+
+            sampleCx->randomSeed = seed;
+
+            float32_t s = sin((float32_t)seed * 12.9898f) * 43758.5453f;
+
+            return s - floor(s);
+        }
 
     );
 
     char const * const kCodeLibEssentials = CS499R_CODE(
+
+        void
+        generate_basis(float32x3_t n, float32x3_t * u, float32x3_t * v)
+        {
+            if (fabs(n.x) > fabs(n.y))
+            {
+                float32_t invLen = 1.0 / (n.x * n.x + n.z * n.z);
+                *u = invLen * (float32x3_t)(-n.z, 0.0f, n.x);
+            }
+            else
+            {
+                float32_t invLen = 1.0 / (n.y * n.y + n.z * n.z);
+                *u = invLen * (float32x3_t)(0.0f, -n.z, n.y);
+            }
+
+            *v = cross(n, *u);
+        }
 
         void
         intersect_triangles(sample_context_t * sampleCx, __global common_triangle_t const * triangle)
@@ -135,7 +170,7 @@ namespace
             sampleCx->rayInterDistance = rayInterDistance;
             sampleCx->rayInterColorMultiply = triangle->diffuseColor;
             sampleCx->rayInterColorAdd = triangle->emitColor;
-            sampleCx->rayInterNormal = normal;
+            sampleCx->rayInterNormal = normalize(normal);
         }
 
         void
@@ -183,26 +218,66 @@ namespace
 
             sample_context_t sampleCx;
 
-            { // set up first ray
-                float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
-                    shotCx->camera.focusBasisU * areaCoord.x +
-                    shotCx->camera.focusBasisV * areaCoord.y;
-
-                sampleCx.rayOrigin = shotCx->camera.shotPosition +
-                    shotCx->camera.shotBasisU * areaCoord.x +
-                    shotCx->camera.shotBasisV * areaCoord.y;
-
-                sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
+            { // set up random seed
+                sampleCx.randomSeed = texelId * 12381;
             }
 
-            intersect_scene(&sampleCx, shotCx, triangles);
+            float32x3_t pixelColor = 0.0f;
+
+            uint32_t sampleCount = 4;
+
+            for (uint32_t sampleId = 0; sampleId < sampleCount; sampleId++)
+            {
+                { // set up first ray
+                    float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
+                        shotCx->camera.focusBasisU * areaCoord.x +
+                        shotCx->camera.focusBasisV * areaCoord.y;
+
+                    sampleCx.rayOrigin = shotCx->camera.shotPosition +
+                        shotCx->camera.shotBasisU * areaCoord.x +
+                        shotCx->camera.shotBasisV * areaCoord.y;
+
+                    sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
+                }
+
+                intersect_scene(&sampleCx, shotCx, triangles);
+
+                float32x3_t sampleColor = sampleCx.rayInterColorAdd;
+                float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
+
+                for (uint32_t i = 0; i < 10; i++)
+                {
+                    float32x3_t u;
+                    float32x3_t v;
+
+                    generate_basis(sampleCx.rayInterNormal, &u, &v);
+
+                    float32_t r1 = 2.0f * kPi * random(&sampleCx);
+                    float32_t r2 = random(&sampleCx);
+                    float32_t r2s = sqrt(r2);
+
+                    sampleCx.rayOrigin += sampleCx.rayDirection * sampleCx.rayInterDistance;
+                    sampleCx.rayDirection = normalize(
+                        u * (cos(r1) * r2s) +
+                        v * (sin(r1) * r2s) +
+                        sampleCx.rayInterNormal * sqrt(1.0f - r2)
+                    );
+
+                    intersect_scene(&sampleCx, shotCx, triangles);
+
+                    sampleColor += sampleCx.rayInterColorAdd * sampleColorMultiply;
+                    sampleColorMultiply *= sampleCx.rayInterColorMultiply;
+                }
+
+                pixelColor += sampleColor;
+            }
+
+            pixelColor *= 1.0f / (float32_t) sampleCount;
 
             {
-                float32x3_t sampleColor = sampleCx.rayInterColorMultiply;
-
-                renderTarget[texelId * 3 + 0] = sampleColor.x;
-                renderTarget[texelId * 3 + 1] = sampleColor.y;
-                renderTarget[texelId * 3 + 2] = sampleColor.z;
+                renderTarget[texelId * 3 + 0] = pixelColor.x;
+                renderTarget[texelId * 3 + 1] = pixelColor.y;
+                renderTarget[texelId * 3 + 2] = pixelColor.z;
             }
         }
     );

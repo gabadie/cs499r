@@ -6,7 +6,7 @@ buildDummyScene(CS499R::Scene & scene)
 {
     float const radius = 20.0f;
     float const height = 10.0f;
-    float const lightSize = 1.0f;
+    float const lightSize = 9.0f;
 
     float32x3_t v000 { -radius, -radius, 0.0f };
     float32x3_t v100 { +radius, -radius, 0.0f };
@@ -31,12 +31,12 @@ buildDummyScene(CS499R::Scene & scene)
     scene.addTriangle(v101, v111, v110, blue, black);
 
     // Y-
-    scene.addTriangle(v000, v100, v001, white, black);
-    scene.addTriangle(v001, v100, v101, white, black);
+    scene.addTriangle(v000, v001, v100, white, black);
+    scene.addTriangle(v001, v101, v100, white, black);
 
     // Y+
-    scene.addTriangle(v010, v011, v110, white, black);
-    scene.addTriangle(v011, v111, v110, white, black);
+    scene.addTriangle(v010, v110, v011, white, black);
+    scene.addTriangle(v011, v110, v111, white, black);
 
     // Z-
     scene.addTriangle(v000, v100, v010, white, black);
@@ -48,8 +48,8 @@ buildDummyScene(CS499R::Scene & scene)
 
     // light
     float32x3_t vl0 { radius - lightSize, radius, height };
-    float32x3_t vl1 { radius, radius - lightSize, height };
-    float32x3_t vl2 { radius, radius, height - lightSize };
+    float32x3_t vl1 { radius, radius, height - lightSize };
+    float32x3_t vl2 { radius, radius - lightSize, height };
     float32x3_t light { 10.0f, 10.0f, 10.0f };
 
     scene.addTriangle(vl0, vl1, vl2, black, light);
@@ -78,6 +78,7 @@ main()
 
     { // sets up the camera
         camera.mShotPosition = float32x3_t(-10.0f, -15.0f, 9.0f);
+        camera.mShotPosition = float32x3_t(-10.0f, -10.0f, 2.0f);
         camera.mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
         camera.mShotDiagonalLength = 0.02f;
     }
