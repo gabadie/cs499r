@@ -4,6 +4,7 @@
 
 #include "cs499rPrefix.hpp"
 
+#include "cs499rBenchmark.hpp"
 #include "cs499rCamera.hpp"
 #include "cs499rImage.hpp"
 #include "cs499rRayTracer.hpp"
