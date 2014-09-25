@@ -6,6 +6,12 @@
 
 
 /*
+ * gdb//lldb break point
+ */
+#define CS499R_BREAK_POINT() \
+    __builtin_trap()
+
+/*
  * Crashes the program in the state of the art
  */
 #define __CS499R_CRASH() \
