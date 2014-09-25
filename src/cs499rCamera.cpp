@@ -15,8 +15,8 @@ namespace CS499R
         float32x3_t v = cross(u, directionNormalized);
 
         float32_t alpha = atanf(1.0f / aspectRatio);
-        float32_t cosAlpha = cos(alpha);
-        float32_t sinAlpha = sin(alpha);
+        float32_t cosAlpha = cos(alpha) * 0.5f;
+        float32_t sinAlpha = sin(alpha) * 0.5f;
 
         float32_t focusDiagonalLength = mShotDiagonalLength + sin(mViewField) * directionLength;
 

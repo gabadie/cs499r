@@ -35,7 +35,9 @@ namespace CS499R
 
         typedef struct common_triangle_s
         {
-            __attribute__((aligned(16))) float32x3_t vertex[3];
+            __attribute__((aligned(16))) float32x3_t v0;
+            __attribute__((aligned(16))) float32x3_t v1;
+            __attribute__((aligned(16))) float32x3_t v2;
             __attribute__((aligned(16))) float32x3_t diffuseColor;
             __attribute__((aligned(16))) float32x3_t emitColor;
         } common_triangle_t;
@@ -56,11 +58,11 @@ namespace CS499R
             __attribute__((aligned(16))) common_camera_t camera;
 
             // the number of triangles in the scene
-            __attribute__((aligned(16))) unsigned int triangleCount;
+            __attribute__((aligned(16))) uint32_t triangleCount;
 
             // render dimensions
-            __attribute__((aligned(16))) unsigned int renderWidth;
-            __attribute__((aligned(16))) unsigned int renderHeight;
+            __attribute__((aligned(16))) uint32_t renderWidth;
+            __attribute__((aligned(16))) uint32_t renderHeight;
         } common_shot_context_t;
 
     )

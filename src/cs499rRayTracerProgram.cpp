@@ -59,51 +59,83 @@ namespace
     char const * const kCodeLibEssentials = CS499R_CODE(
 
         void
-        intersect_triangles(sample_context_t * cx, __global common_triangle_t const * triangle)
+        intersect_triangles(sample_context_t * sampleCx, __global common_triangle_t const * triangle)
         {
-            float3 AB = triangle->vertex[1] - triangle->vertex[0];
-            float3 AC = triangle->vertex[2] - triangle->vertex[0];
-            float3 normal = cross(AB, AC);
+            float32x3_t AB = triangle->v1 - triangle->v0;
+            float32x3_t AC = triangle->v2 - triangle->v0;
+            float32x3_t normal = cross(AB, AC);
 
-            float originFromPlan = dot(cx->rayOrigin - triangle->vertex[0], normal);
-            float normalDotRay = dot(cx->rayDirection, normal);
-            float rayDistance = - originFromPlan / normalDotRay;
+            /*
+             *      (triangle)
+             *          |
+             *    \     |
+             *      \   |
+             *        \ |             (normal)
+             *          I--------------->
+             *          | \
+             *          |   \
+             *          |     \
+             *          |       \
+             *          |         \
+             *          A           \   (ray)
+             *          |  \          \
+             *          |     \         \
+             *          |        \        \
+             *          |           \       \       ->
+             *          |              \      \ __  d
+             *          |                 \    |\
+             *          |                    \    \
+             *          |                       \   \
+             *          |                          \  \
+             *          |                             \ \
+             *          |                                \\
+             *          H  -  -  -  -  -  -  -  -  -  -  -  O
+             *          |
+             *          |
+             *
+             *
+             * Glossary:
+             *      Point `O` is the origin of the ray (sampleCx->rayOrigin)
+             *      Vector `d` is direction of the ray (sampleCx->rayDirection)
+             *      Point `A` is the first vertex of the current triangle (triangle->v0)
+             *      Point `I` is the ray intersection with the triangle
+             *      Distance `OI` is the intersection distance (rayInterDistance)
+             *
+             *
+             *
+             *
+             */
 
-            if (isless(rayDistance, kEPSILONE) || isgreaterequal(rayDistance, cx->rayInterDistance))
+            float32_t OH = dot(sampleCx->rayOrigin - triangle->v0, normal);
+            float32_t normalDotRay = dot(sampleCx->rayDirection, normal);
+            float32_t rayInterDistance = - OH / normalDotRay;
+
+            if (isless(rayInterDistance, kEPSILONE) || isgreaterequal(rayInterDistance, sampleCx->rayInterDistance))
             {
                 // cull this triangle
                 return;
             }
 
-            float3 intersection = cx->rayOrigin + cx->rayDirection * rayDistance;
-            float basis_dot = dot(AB, AC);
-            float inv_squared_length_AB = 1.0 / dot(AB, AB);
-            float inv_squared_length_AC = 1.0 / dot(AC, AC);
-            float uh2 = basis_dot * inv_squared_length_AB;
-            float vh1 = basis_dot * inv_squared_length_AC;
-            float inv_det = 1.0 / (1.0 - uh2 * vh1);
-            float h1 = dot(intersection, AB) * inv_squared_length_AB;
-            float h2 = dot(intersection, AC) * inv_squared_length_AC;
-            float u = (h1 - h2 * uh2) * inv_det;
+            float32x3_t rayIntersectionVector = sampleCx->rayOrigin + sampleCx->rayDirection * rayInterDistance - triangle->v0;
+            float32_t basis_dot = dot(AB, AC);
+            float32x2_t invSquareLenght = 1.0f / (float32x2_t)(dot(AB, AB), dot(AC, AC));
+            float32x2_t invSquareLenghtBasisDot = basis_dot * invSquareLenght;
+            float32x2_t h = (float32x2_t)(dot(rayIntersectionVector, AB), dot(rayIntersectionVector, AC)) * invSquareLenght;
+            float32_t invDet = 1.0f / (1.0f - invSquareLenghtBasisDot.x * invSquareLenghtBasisDot.y);
+            float32x2_t coord = invDet * (h - h.yx * invSquareLenghtBasisDot);
 
-            if(u < 0.0)
+            if ((coord.x < 0.0f) || (coord.y < 0.0f) || ((coord.x + coord.y) > 1.0f))
             {
-                return;
-            }
-
-            float v = (h2 - vh1 * h1) * inv_det;
-
-            if((v < 0.0) || ((u + v) > 1.0))
-            {
+                // the intersection would be outside the triangle
                 return;
             }
 
             // there is an intersection, so we update the context
 
-            cx->rayInterDistance = rayDistance;
-            cx->rayInterColorMultiply = triangle->diffuseColor;
-            cx->rayInterColorAdd = triangle->emitColor;
-            cx->rayInterNormal = normal;
+            sampleCx->rayInterDistance = rayInterDistance;
+            sampleCx->rayInterColorMultiply = triangle->diffuseColor;
+            sampleCx->rayInterColorAdd = triangle->emitColor;
+            sampleCx->rayInterNormal = normal;
         }
 
         void
@@ -133,29 +165,45 @@ namespace
         dispatch_main(
             __global common_shot_context_t const * shotCx,
             __global common_triangle_t const * triangles,
-            __global float * renderTarget
+            __global float32_t * renderTarget
         )
         {
-            uint2 texelCoord = (uint2)(get_global_id(0), get_global_id(1));
+            uint32x2_t texelCoord = (uint32x2_t)(get_global_id(0), get_global_id(1));
 
-            uint texelId = texelCoord.x + texelCoord.y * shotCx->renderWidth;
+            uint32_t texelId = texelCoord.x + texelCoord.y * shotCx->renderWidth;
 
             if (texelCoord.x >= shotCx->renderWidth || texelCoord.y >= shotCx->renderHeight)
             {
                 return;
             }
 
-            float2 shotAreaCoord;
-            shotAreaCoord.x = ((float)texelCoord.x) / (((float)shotCx->renderWidth) - 1.0f);
-            shotAreaCoord.y = ((float)texelCoord.y) / (((float)shotCx->renderHeight) - 1.0f);
+            float32x2_t areaCoord;
+            areaCoord.x = (((float)texelCoord.x) / (((float)shotCx->renderWidth) - 1.0f)) * 2.0f - 1.0f;
+            areaCoord.y = (((float)texelCoord.y) / (((float)shotCx->renderHeight) - 1.0f)) * 2.0f - 1.0f;
 
             sample_context_t sampleCx;
 
+            { // set up first ray
+                float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
+                    shotCx->camera.focusBasisU * areaCoord.x +
+                    shotCx->camera.focusBasisV * areaCoord.y;
+
+                sampleCx.rayOrigin = shotCx->camera.shotPosition +
+                    shotCx->camera.shotBasisU * areaCoord.x +
+                    shotCx->camera.shotBasisV * areaCoord.y;
+
+                sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
+            }
+
             intersect_scene(&sampleCx, shotCx, triangles);
 
-            renderTarget[texelId * 3 + 0] = 1.0;
-            renderTarget[texelId * 3 + 1] = 0.0;
-            renderTarget[texelId * 3 + 2] = 0.0;
+            {
+                float32x3_t sampleColor = sampleCx.rayInterColorMultiply;
+
+                renderTarget[texelId * 3 + 0] = sampleColor.x;
+                renderTarget[texelId * 3 + 1] = sampleColor.y;
+                renderTarget[texelId * 3 + 2] = sampleColor.z;
+            }
         }
     );
 

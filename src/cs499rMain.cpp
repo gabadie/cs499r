@@ -4,20 +4,21 @@
 void
 buildDummyScene(CS499R::Scene & scene)
 {
-    float const radius = 10.0f;
+    float const radius = 20.0f;
+    float const height = 10.0f;
     float const lightSize = 1.0f;
 
     float32x3_t v000 { -radius, -radius, 0.0f };
     float32x3_t v100 { +radius, -radius, 0.0f };
     float32x3_t v010 { -radius, +radius, 0.0f };
     float32x3_t v110 { +radius, +radius, 0.0f };
-    float32x3_t v001 { -radius, -radius, +radius };
-    float32x3_t v101 { +radius, -radius, +radius };
-    float32x3_t v011 { -radius, +radius, +radius };
-    float32x3_t v111 { +radius, +radius, +radius };
+    float32x3_t v001 { -radius, -radius, height };
+    float32x3_t v101 { +radius, -radius, height };
+    float32x3_t v011 { -radius, +radius, height };
+    float32x3_t v111 { +radius, +radius, height };
 
     float32x3_t red { 0.75f, 0.25f, 0.25f };
-    float32x3_t blue { 0.75f, 0.25f, 0.25f };
+    float32x3_t blue { 0.25f, 0.25f, 0.75f };
     float32x3_t white { 0.75f, 0.75f, 0.75f };
     float32x3_t black { 0.0f, 0.0f, 0.0f };
 
@@ -46,9 +47,9 @@ buildDummyScene(CS499R::Scene & scene)
     scene.addTriangle(v011, v111, v101, white, black);
 
     // light
-    float32x3_t vl0 { radius - lightSize, radius, radius };
-    float32x3_t vl1 { radius, radius - lightSize, radius };
-    float32x3_t vl2 { radius, radius, radius - lightSize };
+    float32x3_t vl0 { radius - lightSize, radius, height };
+    float32x3_t vl1 { radius, radius - lightSize, height };
+    float32x3_t vl2 { radius, radius, height - lightSize };
     float32x3_t light { 10.0f, 10.0f, 10.0f };
 
     scene.addTriangle(vl0, vl1, vl2, black, light);
@@ -68,12 +69,19 @@ main()
         CS499R_ASSERT(error == 0);
     }
 
-    size_t const imageWidth = 32;
-    size_t const imageHeight = 32;
+    size_t const imageWidth = 512;
+    size_t const imageHeight = 512;
 
     CS499R::RayTracer rayTracer(device);
     CS499R::Scene scene;
     CS499R::Camera camera;
+
+    { // sets up the camera
+        camera.mShotPosition = float32x3_t(-10.0f, -15.0f, 9.0f);
+        camera.mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
+        camera.mShotDiagonalLength = 0.02f;
+    }
+
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
 
     buildDummyScene(scene);

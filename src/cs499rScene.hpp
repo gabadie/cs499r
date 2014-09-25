@@ -26,9 +26,9 @@ namespace CS499R
             size_t i = mTriangles.size();
 
             mTriangles.resize(i + 1);
-            mTriangles[i].vertex[0] = v0;
-            mTriangles[i].vertex[1] = v1;
-            mTriangles[i].vertex[2] = v2;
+            mTriangles[i].v0 = v0;
+            mTriangles[i].v1 = v1;
+            mTriangles[i].v2 = v2;
             mTriangles[i].diffuseColor = diffuse;
             mTriangles[i].emitColor = emit;
         }

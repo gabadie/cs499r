@@ -1,5 +1,4 @@
 
-#include <iostream>
 #include <string.h>
 #include "cs499rCamera.hpp"
 #include "cs499rRayTracer.hpp"
