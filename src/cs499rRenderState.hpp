@@ -32,7 +32,7 @@ namespace CS499R
          * Shots the scene from the camera into the render target
          */
         void
-        shotScene(SceneBuffer const * sceneBuffer, Camera const * camera);
+        shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling = nullptr);
 
 
         // --------------------------------------------------------------------- IDLE

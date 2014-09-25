@@ -8,6 +8,7 @@
 #include "cs499rCamera.hpp"
 #include "cs499rImage.hpp"
 #include "cs499rRayTracer.hpp"
+#include "cs499rRenderProfiling.hpp"
 #include "cs499rRenderState.hpp"
 #include "cs499rRenderTarget.hpp"
 #include "cs499rScene.hpp"

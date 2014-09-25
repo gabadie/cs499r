@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "cs499r.hpp"
 
 void
@@ -73,6 +74,7 @@ main()
     size_t const imageHeight = 512;
 
     CS499R::RayTracer rayTracer(device);
+    CS499R::RenderState renderState;
     CS499R::Scene scene;
     CS499R::Camera camera;
 
@@ -84,21 +86,33 @@ main()
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
+    CS499R::RenderProfiling renderProfiling;
 
     buildDummyScene(scene);
 
     {
-        CS499R::RenderTarget target(&rayTracer, imageWidth, imageHeight);
+        CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);
         CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
-        CS499R::RenderState renderState;
 
-        renderState.mRenderTarget = &target;
-        renderState.shotScene(&sceneBuffer, &camera);
+        renderState.mRenderTarget = &renderTarget;
+        renderState.shotScene(&sceneBuffer, &camera, &renderProfiling);
 
-        target.download(&image);
+        renderTarget.download(&image);
     }
 
     image.saveToFile("render.gitignore.png");
+
+    std::cout << "Input:" << std::endl;
+    std::cout << "    Render width :          " << imageWidth << " px" << std::endl;
+    std::cout << "    Render height :         " << imageHeight << " px" << std::endl;
+    std::cout << "    Sub-pixels :            " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
+    std::cout << "    Sample per sub-pixels : " << renderState.mSamplesPerSubdivisions << std::endl;
+
+    std::cout << "Output:" << std::endl;
+    std::cout << "    Rays shot :             " << renderProfiling.mRays << std::endl;
+    std::cout << "    CPU duration :          " << renderProfiling.mCPUDuration << " us" << std::endl;
+    std::cout << "    CPU duration per rays : " <<
+        double(renderProfiling.mCPUDuration) / double(renderProfiling.mRays) << " us" << std::endl;
 
     return 0;
 }

@@ -1,6 +1,8 @@
 
+#include "cs499rBenchmark.hpp"
 #include "cs499rCamera.hpp"
 #include "cs499rRayTracer.hpp"
+#include "cs499rRenderProfiling.hpp"
 #include "cs499rRenderState.hpp"
 #include "cs499rRenderTarget.hpp"
 #include "cs499rScene.hpp"
@@ -11,7 +13,7 @@ namespace CS499R
 {
 
     void
-    RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera)
+    RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
     {
         CS499R_ASSERT(sceneBuffer != nullptr);
         CS499R_ASSERT(camera != nullptr);
@@ -19,6 +21,9 @@ namespace CS499R
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
         auto rayTracer = sceneBuffer->mRayTracer;
+
+        timestamp_t kernelStart;
+        timestamp_t kernelEnd;
 
         cl_int error = 0;
         cl_context context = rayTracer->mContext;
@@ -90,6 +95,12 @@ namespace CS499R
 
             CS499R_ASSERT(groupThreads <= maxWorkGroupSize);
 
+            if (outProfiling)
+            {
+                clFinish(cmdQueue);
+                kernelStart = timestamp();
+            }
+
             for (tileCoord.x = 0; tileCoord.x < tileCount.x; tileCoord.x++)
             {
                 for (tileCoord.y = 0; tileCoord.y < tileCount.y; tileCoord.y++)
@@ -109,6 +120,19 @@ namespace CS499R
                     CS499R_ASSERT_NO_CL_ERROR(error);
                 }
             }
+
+            if (outProfiling)
+            {
+                clFinish(cmdQueue);
+                kernelEnd = timestamp();
+            }
+        }
+
+        if (outProfiling)
+        {
+            outProfiling->mCPUDuration = kernelEnd - kernelStart;
+            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() *
+                mPixelBorderSubdivisions * mPixelBorderSubdivisions * mSamplesPerSubdivisions;
         }
 
         error = clReleaseMemObject(shotContextBuffer);

@@ -20,6 +20,8 @@
 namespace CS499R
 {
 
+    struct RenderProfiling;
+
     class Camera;
     class Image;
     class RayTracer;
