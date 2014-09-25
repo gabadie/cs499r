@@ -57,12 +57,16 @@ namespace CS499R
             // the shot's camera informations
             __attribute__((aligned(16))) common_camera_t camera;
 
+            // render dimensions
+            //      x is the image's width in pixels
+            //      y is the image's height in pixels
+            //      z is the image's subdivisions per pixels border
+            //      w is the image's samples computed per threads
+            __attribute__((aligned(16))) uint32x4_t render;
+
             // the number of triangles in the scene
             __attribute__((aligned(16))) uint32_t triangleCount;
 
-            // render dimensions
-            __attribute__((aligned(16))) uint32_t renderWidth;
-            __attribute__((aligned(16))) uint32_t renderHeight;
         } common_shot_context_t;
 
     )

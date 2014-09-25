@@ -31,6 +31,9 @@ namespace
         __constant float32_t kEPSILONE = 0.00001f;
         __constant float32_t kPi = 3.14159265359f;
 
+        __constant float32_t kRecursionCount = 4;
+        __constant float32_t kRandomPerRecursion = 2;
+
     );
 
     char const * const kCodeLibStructs = CS499R_CODE(
@@ -203,58 +206,64 @@ namespace
             __global float32_t * renderTarget
         )
         {
-            uint32x2_t texelCoord = (uint32x2_t)(get_global_id(0), get_global_id(1));
+            uint32x2_t const pixelCoord = ((uint32x2_t)(get_global_id(0) / shotCx->render.z, get_global_id(1) / shotCx->render.z));
 
-            uint32_t texelId = texelCoord.x + texelCoord.y * shotCx->renderWidth;
-
-            if (texelCoord.x >= shotCx->renderWidth || texelCoord.y >= shotCx->renderHeight)
+            if (pixelCoord.x >= shotCx->render.x || pixelCoord.y >= shotCx->render.y)
             {
                 return;
             }
 
+            uint32x2_t const subpixelCoord = (get_local_id(0), get_local_id(1));
+
+            uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.x;
+            uint32_t const subpixelId = subpixelCoord.x + subpixelCoord.y * shotCx->render.z;
+
+            float32x2_t const sampleCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
+                    (1.0f + 2.0f * (float32x2_t)(subpixelCoord.x, subpixelCoord.y)) *
+                    (0.5f / (float32_t) shotCx->render.z);
+
             float32x2_t areaCoord;
-            areaCoord.x = (((float)texelCoord.x) / (((float)shotCx->renderWidth) - 1.0f)) * 2.0f - 1.0f;
-            areaCoord.y = (((float)texelCoord.y) / (((float)shotCx->renderHeight) - 1.0f)) * 2.0f - 1.0f;
+            areaCoord.x = sampleCoord.x / ((float32_t)shotCx->render.x);
+            areaCoord.y = sampleCoord.y / ((float32_t)shotCx->render.y);
+            areaCoord = areaCoord * 2.0f - 1.0f;
 
             sample_context_t sampleCx;
 
             { // set up random seed
-                sampleCx.randomSeed = texelId * 12381;
+                sampleCx.randomSeed = (
+                        (pixelId * shotCx->render.z * shotCx->render.z + subpixelId) *
+                        get_local_size(2) + get_local_id(2)
+                    ) * kRecursionCount * kRandomPerRecursion;
             }
 
-            float32x3_t pixelColor = 0.0f;
+            { // set up first ray
+                float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
+                    shotCx->camera.focusBasisU * areaCoord.x +
+                    shotCx->camera.focusBasisV * areaCoord.y;
 
-            uint32_t sampleCount = 32;
+                sampleCx.rayOrigin = shotCx->camera.shotPosition +
+                    shotCx->camera.shotBasisU * areaCoord.x +
+                    shotCx->camera.shotBasisV * areaCoord.y;
 
-            for (uint32_t sampleId = 0; sampleId < sampleCount; sampleId++)
+                sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
+            }
+
+            intersect_scene(&sampleCx, shotCx, triangles);
+
+            float32x3_t sampleColor = sampleCx.rayInterColorAdd;
+            float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
+
+            for (uint32_t i = 0; i < kRecursionCount; i++)
             {
-                { // set up first ray
-                    float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
-                        shotCx->camera.focusBasisU * areaCoord.x +
-                        shotCx->camera.focusBasisV * areaCoord.y;
-
-                    sampleCx.rayOrigin = shotCx->camera.shotPosition +
-                        shotCx->camera.shotBasisU * areaCoord.x +
-                        shotCx->camera.shotBasisV * areaCoord.y;
-
-                    sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
-                }
-
-                intersect_scene(&sampleCx, shotCx, triangles);
-
-                float32x3_t sampleColor = sampleCx.rayInterColorAdd;
-                float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
-
-                for (uint32_t i = 0; i < 10; i++)
-                {
+                { // generate a new difuse ray
                     float32x3_t u;
                     float32x3_t v;
 
                     generate_basis(sampleCx.rayInterNormal, &u, &v);
 
-                    float32_t r1 = 2.0f * kPi * random(&sampleCx);
-                    float32_t r2 = random(&sampleCx);
-                    float32_t r2s = sqrt(r2);
+                    float32_t const r1 = 2.0f * kPi * random(&sampleCx);
+                    float32_t const r2 = random(&sampleCx);
+                    float32_t const r2s = sqrt(r2);
 
                     sampleCx.rayOrigin += sampleCx.rayDirection * sampleCx.rayInterDistance;
                     sampleCx.rayDirection = normalize(
@@ -262,22 +271,35 @@ namespace
                         v * (sin(r1) * r2s) +
                         sampleCx.rayInterNormal * sqrt(1.0f - r2)
                     );
-
-                    intersect_scene(&sampleCx, shotCx, triangles);
-
-                    sampleColor += sampleCx.rayInterColorAdd * sampleColorMultiply;
-                    sampleColorMultiply *= sampleCx.rayInterColorMultiply;
                 }
 
-                pixelColor += sampleColor;
+                intersect_scene(&sampleCx, shotCx, triangles);
+
+                sampleColor += sampleCx.rayInterColorAdd * sampleColorMultiply;
+                sampleColorMultiply *= sampleCx.rayInterColorMultiply;
             }
 
-            pixelColor *= 1.0f / (float32_t) sampleCount;
+            __local float32x3_t sampleColors[1024];
+            uint32_t const sampleId = subpixelId * get_local_size(2) + get_local_id(2);
 
+            sampleColors[sampleId] = sampleColor;
+
+            if ((get_local_id(0) + get_local_id(1) + get_local_id(2)) == 0)
             {
-                renderTarget[texelId * 3 + 0] = pixelColor.x;
-                renderTarget[texelId * 3 + 1] = pixelColor.y;
-                renderTarget[texelId * 3 + 2] = pixelColor.z;
+                float32x3_t pixelColor = 0.0f;
+
+                uint32_t const sampleCount = shotCx->render.z * shotCx->render.z * get_local_size(2);
+
+                for (uint32_t i = 0; i < sampleCount; i++)
+                {
+                    pixelColor += sampleColors[i];
+                }
+
+                pixelColor *= (1.0f / (float32_t) sampleCount);
+
+                renderTarget[pixelId * 3 + 0] = pixelColor.x;
+                renderTarget[pixelId * 3 + 1] = pixelColor.y;
+                renderTarget[pixelId * 3 + 2] = pixelColor.z;
             }
         }
     );

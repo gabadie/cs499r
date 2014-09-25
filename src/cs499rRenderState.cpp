@@ -31,9 +31,12 @@ namespace CS499R
         { // init shot context
             camera->exportToShotCamera(&shotContext.camera, aspectRatio);
 
+            shotContext.render.x = mRenderTarget->width();
+            shotContext.render.y = mRenderTarget->height();
+            shotContext.render.z = mPixelBorderSubdivisions;
+            shotContext.render.w = 1;
+
             shotContext.triangleCount = sceneBuffer->mScene->mTriangles.size();
-            shotContext.renderWidth = mRenderTarget->width();
-            shotContext.renderHeight = mRenderTarget->height();
         }
 
         cl_mem shotContextBuffer = clCreateBuffer(context,
@@ -54,40 +57,52 @@ namespace CS499R
         }
 
         { // launch kernel
-            size_t const kWarpSize = 32;
-            size_t const kRegionSize = kWarpSize;
-            size_t const kGroupSize = 1;
-            size_t const kInvocationDims = 2;
+            size_t const kInvocationDims = 3;
+            size_t const kThreadsPerTilesTarget = 2048;
 
-            size_t groupSize[kInvocationDims] = {
-                kGroupSize,
-                kGroupSize,
+            size_t const groupSize[kInvocationDims] = {
+                mPixelBorderSubdivisions,
+                mPixelBorderSubdivisions,
+                mSamplesPerSubdivisions,
             };
 
-            size2_t regionCount(
-                ((mRenderTarget->width() + kRegionSize - 1) / kRegionSize),
-                ((mRenderTarget->height() + kRegionSize - 1) / kRegionSize)
+            size_t maxWorkGroupSize = 0;
+            clGetDeviceInfo(rayTracer->mDeviceId, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(maxWorkGroupSize), &maxWorkGroupSize, NULL);
+
+            size2_t const globalSize(
+                mRenderTarget->width() * mPixelBorderSubdivisions,
+                mRenderTarget->height() * mPixelBorderSubdivisions
             );
 
-            size2_t regionPos;
+            size_t const groupThreads = groupSize[0] * groupSize[1] * groupSize[2];
+            size_t const groupPerTileBorder = (size_t) ceil(sqrt(
+                float32_t(kThreadsPerTilesTarget) / float32_t(groupThreads)
+            ));
 
-            for (regionPos.x = 0; regionPos.x < regionCount.x; regionPos.x++)
+            size_t const tileSize[kInvocationDims] = {
+                groupSize[0] * groupPerTileBorder,
+                groupSize[1] * groupPerTileBorder,
+                groupSize[2]
+            };
+
+            size2_t const tileCount = (globalSize + (tileSize[0] - 1)) / tileSize[0];
+            size2_t tileCoord;
+
+            CS499R_ASSERT(groupThreads <= maxWorkGroupSize);
+
+            for (tileCoord.x = 0; tileCoord.x < tileCount.x; tileCoord.x++)
             {
-                for (regionPos.y = 0; regionPos.y < regionCount.y; regionPos.y++)
+                for (tileCoord.y = 0; tileCoord.y < tileCount.y; tileCoord.y++)
                 {
-                    size_t globalOffset[kInvocationDims] = {
-                        kRegionSize * regionPos.x,
-                        kRegionSize * regionPos.y,
-                    };
-
-                    size_t globalSize[kInvocationDims] = {
-                        kRegionSize,
-                        kRegionSize,
+                    size_t tileOffset[kInvocationDims] = {
+                        tileSize[0] * tileCoord.x,
+                        tileSize[1] * tileCoord.y,
+                        0
                     };
 
                     error = clEnqueueNDRangeKernel(
                         cmdQueue, kernel,
-                        kInvocationDims, globalOffset, globalSize, groupSize,
+                        kInvocationDims, tileOffset, tileSize, groupSize,
                         0, NULL, NULL
                     );
 
@@ -96,7 +111,7 @@ namespace CS499R
             }
         }
 
-        error |= clReleaseMemObject(shotContextBuffer);
+        error = clReleaseMemObject(shotContextBuffer);
 
         CS499R_ASSERT_NO_CL_ERROR(error);
     }
@@ -104,7 +119,7 @@ namespace CS499R
     RenderState::RenderState()
     {
         mPixelBorderSubdivisions = 4;
-        mSamplesPerSubdivisions = 16;
+        mSamplesPerSubdivisions = 32;
         mRenderTarget = nullptr;
     }
 
