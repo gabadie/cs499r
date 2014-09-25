@@ -18,7 +18,7 @@ namespace CS499R
 #define CS499R_ASSERT_NO_CL_ERROR(error) \
     if (error != CL_SUCCESS) \
     { \
-        fprintf(stderr, "OPENCL ERROR(%s:%i) IN `%s`: %s\n", __FILE__, __LINE__, __func__, findClError(error)); \
+        fprintf(stderr, "OPENCL ERROR(%s:%i) IN `%s`: %s\n", __FILE__, __LINE__, __func__, CS499R::findClError(error)); \
         __CS499R_CRASH(); \
     }
 

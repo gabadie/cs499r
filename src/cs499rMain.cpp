@@ -2,6 +2,8 @@
 #include <iostream>
 #include "cs499r.hpp"
 
+
+static
 void
 buildDummyScene(CS499R::Scene & scene)
 {
@@ -56,18 +58,73 @@ buildDummyScene(CS499R::Scene & scene)
     scene.addTriangle(vl0, vl1, vl2, black, light);
 }
 
+static
 int
-main()
+chooseDevice(char const * selectedDeviceName, cl_device_id * deviceId)
 {
-    cl_platform_id platform;
-    cl_device_id device;
     cl_int error = 0;
+    cl_bool deviceFound = CL_FALSE;
+    cl_uint deviceCount = 0;
+    cl_platform_id platform;
+    cl_device_id deviceIds[16];
 
+    error = clGetPlatformIDs(1, &platform, 0);
+    CS499R_ASSERT_NO_CL_ERROR(error);
+
+    error = clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, CS499R_ARRAY_SIZE(deviceIds), deviceIds, &deviceCount);
+    CS499R_ASSERT_NO_CL_ERROR(error);
+    CS499R_ASSERT(deviceCount > 0);
+
+    std::cout << "Available devices:" << std::endl;
+
+    for (cl_uint i = 0; i < deviceCount; i++)
     {
-        error |= clGetPlatformIDs(1, &platform, 0);
-        error |= clGetDeviceIDs(platform, CL_DEVICE_TYPE_GPU, 1, &device, 0);
+        char deviceName[512];
 
-        CS499R_ASSERT(error == 0);
+        error = clGetDeviceInfo(deviceIds[i], CL_DEVICE_NAME, sizeof(deviceName), deviceName, 0);
+
+        CS499R_ASSERT_NO_CL_ERROR(error);
+
+        if (selectedDeviceName && strcmp(deviceName, selectedDeviceName) == 0)
+        {
+            *deviceId = deviceIds[i];
+            deviceFound = CL_TRUE;
+
+            std::cout << "->  ";
+        }
+        else
+        {
+            std::cout << "    ";
+        }
+
+        std::cout << deviceName << std::endl;
+    }
+
+    if (selectedDeviceName == nullptr)
+    {
+        std::cout << "Please choose a device" << std::endl;
+        return 1;
+    }
+
+    if (!deviceFound)
+    {
+        std::cout << "Unknown device `" << selectedDeviceName << "`" << std::endl;
+        return 1;
+    }
+
+    std::cout << std::endl;
+
+    return 0;
+}
+
+int
+main(int argc, char const * const * argv)
+{
+    cl_device_id device;
+
+    if (chooseDevice(argc == 2 ? argv[1] : nullptr, &device))
+    {
+        return 1;
     }
 
     size_t const imageWidth = 512;
@@ -103,16 +160,18 @@ main()
     image.saveToFile("render.gitignore.png");
 
     std::cout << "Input:" << std::endl;
-    std::cout << "    Render width :          " << imageWidth << " px" << std::endl;
-    std::cout << "    Render height :         " << imageHeight << " px" << std::endl;
-    std::cout << "    Sub-pixels :            " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
-    std::cout << "    Sample per sub-pixels : " << renderState.mSamplesPerSubdivisions << std::endl;
+    std::cout << "    Render width:          " << imageWidth << " px" << std::endl;
+    std::cout << "    Render height:         " << imageHeight << " px" << std::endl;
+    std::cout << "    Sub-pixels:            " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
+    std::cout << "    Sample per sub-pixels: " << renderState.mSamplesPerSubdivisions << std::endl;
+    std::cout << std::endl;
 
     std::cout << "Output:" << std::endl;
-    std::cout << "    Rays shot :             " << renderProfiling.mRays << std::endl;
-    std::cout << "    CPU duration :          " << renderProfiling.mCPUDuration << " us" << std::endl;
-    std::cout << "    CPU duration per rays : " <<
+    std::cout << "    Rays shot:             " << renderProfiling.mRays << std::endl;
+    std::cout << "    CPU duration:          " << renderProfiling.mCPUDuration << " us" << std::endl;
+    std::cout << "    CPU duration per rays: " <<
         double(renderProfiling.mCPUDuration) / double(renderProfiling.mRays) << " us" << std::endl;
+    std::cout << std::endl;
 
     return 0;
 }
