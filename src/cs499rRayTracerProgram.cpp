@@ -224,7 +224,7 @@ namespace
 
             float32x3_t pixelColor = 0.0f;
 
-            uint32_t sampleCount = 4;
+            uint32_t sampleCount = 32;
 
             for (uint32_t sampleId = 0; sampleId < sampleCount; sampleId++)
             {

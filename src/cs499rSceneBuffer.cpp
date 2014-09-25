@@ -46,21 +46,46 @@ namespace CS499R
         }
 
         { // launch kernel
-            size_t const kRegionSize = 1;
+            size_t const kWarpSize = 32;
+            size_t const kRegionSize = kWarpSize;
+            size_t const kGroupSize = 1;
             size_t const kInvocationDims = 2;
 
             size_t groupSize[kInvocationDims] = {
-                kRegionSize,
-                kRegionSize
-            };
-            size_t globalSize[kInvocationDims] = {
-                ((target->width() + groupSize[0] - 1) / groupSize[0]) * groupSize[0],
-                ((target->height() + groupSize[1] - 1) / groupSize[1]) * groupSize[1],
+                kGroupSize,
+                kGroupSize,
             };
 
-            error |= clEnqueueNDRangeKernel(cmdQueue, kernel, kInvocationDims, NULL, globalSize, groupSize, 0, NULL, NULL);
+            size2_t regionCount(
+                ((target->width() + kRegionSize - 1) / kRegionSize),
+                ((target->height() + kRegionSize - 1) / kRegionSize)
+            );
 
-            CS499R_ASSERT_NO_CL_ERROR(error);
+            size2_t regionPos;
+
+            for (regionPos.x = 0; regionPos.x < regionCount.x; regionPos.x++)
+            {
+                for (regionPos.y = 0; regionPos.y < regionCount.y; regionPos.y++)
+                {
+                    size_t globalOffset[kInvocationDims] = {
+                        kRegionSize * regionPos.x,
+                        kRegionSize * regionPos.y,
+                    };
+
+                    size_t globalSize[kInvocationDims] = {
+                        kRegionSize,
+                        kRegionSize,
+                    };
+
+                    error = clEnqueueNDRangeKernel(
+                        cmdQueue, kernel,
+                        kInvocationDims, globalOffset, globalSize, groupSize,
+                        0, NULL, NULL
+                    );
+
+                    CS499R_ASSERT_NO_CL_ERROR(error);
+                }
+            }
         }
 
         error |= clReleaseMemObject(shotContextBuffer);

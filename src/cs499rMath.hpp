@@ -338,6 +338,10 @@ typedef CS499R::vec2<uint32_t> uint32x2_t;
 typedef CS499R::vec3<uint32_t> uint32x3_t;
 typedef CS499R::vec4<uint32_t> uint32x4_t;
 
+typedef CS499R::vec2<size_t> size2_t;
+typedef CS499R::vec3<size_t> size3_t;
+typedef CS499R::vec4<size_t> size4_t;
+
 typedef float float32_t;
 typedef CS499R::vec2<float32_t> float32x2_t;
 typedef CS499R::vec3<float32_t> float32x3_t;
