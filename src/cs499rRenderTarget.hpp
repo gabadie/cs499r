@@ -68,7 +68,7 @@ namespace CS499R
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS
-        friend class SceneBuffer;
+        friend class RenderState;
 
     };
 

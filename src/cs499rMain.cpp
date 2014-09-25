@@ -90,8 +90,10 @@ main()
     {
         CS499R::RenderTarget target(&rayTracer, imageWidth, imageHeight);
         CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
+        CS499R::RenderState renderState;
 
-        sceneBuffer.render(&target, &camera);
+        renderState.mRenderTarget = &target;
+        renderState.shotScene(&sceneBuffer, &camera);
 
         target.download(&image);
     }
