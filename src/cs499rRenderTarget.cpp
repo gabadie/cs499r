@@ -25,7 +25,7 @@ namespace CS499R
             0, NULL, NULL
         );
 
-        CS499R_ASSERT(error == 0);
+        CS499R_ASSERT_NO_CL_ERROR(error);
 
         if (outImage->depth() == 16)
         {
