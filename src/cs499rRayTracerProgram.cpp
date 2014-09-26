@@ -295,24 +295,32 @@ namespace
 
             __local float32x3_t sampleColors[1024];
 
-            sampleColors[pixelSampleId] = sampleColor;
+            { // logarithmic sum of sampleColors[]
+                // pixelSampleCount is a power of two, therefore:
+                //  A % pixelSampleCount == A & (pixelSampleCount - 1)
+                uint32_t const sampleIdMask = pixelSampleCount - 1;
 
-            if (pixelSampleId == 0)
-            { // linear sum of sampleColors[]
-                float32x3_t pixelColor = 0.0f;
+                float32x3_t pixelColor = sampleColor;
 
-                barrier(CLK_LOCAL_MEM_FENCE);
-
-                for (uint32_t i = 0; i < pixelSampleCount; i++)
+                for (uint32_t i = 1; i < pixelSampleCount; i *= 2)
                 {
-                    pixelColor += sampleColors[i];
+                    uint32_t const sampleIdFetched = (pixelSampleId + i) & sampleIdMask;
+
+                    sampleColors[pixelSampleId] = pixelColor;
+
+                    barrier(CLK_LOCAL_MEM_FENCE);
+
+                    pixelColor += sampleColors[sampleIdFetched];
                 }
 
-                pixelColor *= (1.0f / (float32_t) pixelSampleCount);
+                if (pixelSampleId == 0)
+                {
+                    pixelColor *= (1.0f / (float32_t) pixelSampleCount);
 
-                renderTarget[pixelId * 3 + 0] = pixelColor.x;
-                renderTarget[pixelId * 3 + 1] = pixelColor.y;
-                renderTarget[pixelId * 3 + 2] = pixelColor.z;
+                    renderTarget[pixelId * 3 + 0] = pixelColor.x;
+                    renderTarget[pixelId * 3 + 1] = pixelColor.y;
+                    renderTarget[pixelId * 3 + 2] = pixelColor.z;
+                }
             }
         }
     );
