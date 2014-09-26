@@ -230,10 +230,15 @@ namespace
             sample_context_t sampleCx;
 
             { // set up random seed
-                sampleCx.randomSeed = (
-                        (pixelId * shotCx->render.z * shotCx->render.z + subpixelId) *
-                        get_local_size(2) + get_local_id(2)
-                    ) * kRecursionCount * kRandomPerRecursion;
+                uint32_t const subpixelCountPerPixel = shotCx->render.z * shotCx->render.z;
+                uint32_t const sampleCountPerSubPixel = get_local_size(2);
+
+                sampleCx.randomSeed = kRecursionCount * kRandomPerRecursion * (
+                    (pixelId * subpixelCountPerPixel + subpixelId) *
+                    sampleCountPerSubPixel + get_local_id(2)
+                );
+
+                sampleCx.randomSeed = sampleCx.randomSeed % 1436283;
             }
 
             { // set up first ray
