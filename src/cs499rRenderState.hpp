@@ -35,6 +35,12 @@ namespace CS499R
         shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling = nullptr);
 
 
+        // --------------------------------------------------------------------- CONSTS
+
+        static size_t const kDefaultPixelBorderSubdivisions = 4;
+        static size_t const kDefaultSamplesPerSubdivisions = 32;
+
+
         // --------------------------------------------------------------------- IDLE
 
         RenderState();

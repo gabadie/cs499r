@@ -169,6 +169,11 @@ main(int argc, char const * const * argv)
         camera.mShotDiagonalLength = 0.02f;
     }
 
+    { // sets up the render state
+        renderState.mPixelBorderSubdivisions = 4;
+        renderState.mSamplesPerSubdivisions = 32;
+    }
+
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
     CS499R::RenderProfiling renderProfiling;
 

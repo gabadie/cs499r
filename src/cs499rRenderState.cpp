@@ -142,8 +142,8 @@ namespace CS499R
 
     RenderState::RenderState()
     {
-        mPixelBorderSubdivisions = 4;
-        mSamplesPerSubdivisions = 32;
+        mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
+        mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
         mRenderTarget = nullptr;
     }
 
