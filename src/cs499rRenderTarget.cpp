@@ -44,7 +44,7 @@ namespace CS499R
                     value = 1.0f;
                 }
 
-                uint64_t uValue = (value * 65535.0f);
+                uint64_t uValue = (uint64_t)(value * 65535.0f);
 
                 if (uValue > 65535)
                 {
@@ -71,7 +71,7 @@ namespace CS499R
                     value = 1.0f;
                 }
 
-                uint64_t uValue = (value * 255.0f);
+                uint64_t uValue = (uint64_t)(value * 255.0f);
 
                 if (uValue > 255)
                 {

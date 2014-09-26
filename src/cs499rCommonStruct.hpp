@@ -61,8 +61,7 @@ namespace CS499R
             //      x is the image's width in pixels
             //      y is the image's height in pixels
             //      z is the image's subdivisions per pixels border
-            //      w is the image's samples computed per threads
-            __attribute__((aligned(16))) uint32x4_t render;
+            __attribute__((aligned(16))) uint32x3_t render;
 
             // the number of triangles in the scene
             __attribute__((aligned(16))) uint32_t triangleCount;

@@ -53,7 +53,7 @@ buildDummyScene(CS499R::Scene & scene)
     float32x3_t vl0 { radius - lightSize, radius, height };
     float32x3_t vl1 { radius, radius, height - lightSize };
     float32x3_t vl2 { radius, radius - lightSize, height };
-    float32x3_t light(20.0f);
+    float32x3_t light(5.0f);
 
     scene.addTriangle(vl0, vl1, vl2, black, light);
 }
@@ -171,7 +171,7 @@ main(int argc, char const * const * argv)
 
     { // sets up the render state
         renderState.mPixelBorderSubdivisions = 4;
-        renderState.mSamplesPerSubdivisions = 64;
+        renderState.mSamplesPerSubdivisions = 32;
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);

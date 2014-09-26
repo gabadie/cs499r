@@ -17,6 +17,7 @@ namespace CS499R
     {
         CS499R_ASSERT(sceneBuffer != nullptr);
         CS499R_ASSERT(camera != nullptr);
+        CS499R_ASSERT(validateParams());
         CS499R_ASSERT(mRenderTarget != nullptr);
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
@@ -39,7 +40,6 @@ namespace CS499R
             shotContext.render.x = mRenderTarget->width();
             shotContext.render.y = mRenderTarget->height();
             shotContext.render.z = mPixelBorderSubdivisions;
-            shotContext.render.w = 1;
 
             shotContext.triangleCount = sceneBuffer->mScene->mTriangles.size();
         }
@@ -93,6 +93,8 @@ namespace CS499R
             size2_t const tileCount = (globalSize + (tileSize[0] - 1)) / tileSize[0];
             size2_t tileCoord;
 
+            CS499R_ASSERT(groupSize[0] == groupSize[1]);
+            CS499R_ASSERT(tileSize[0] == tileSize[1]);
             CS499R_ASSERT(groupThreads <= maxWorkGroupSize);
 
             if (outProfiling)
@@ -145,11 +147,22 @@ namespace CS499R
         mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
         mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
         mRenderTarget = nullptr;
+
+        CS499R_ASSERT(validateParams());
     }
 
     RenderState::~RenderState()
     {
 
+    }
+
+    bool
+    RenderState::validateParams() const
+    {
+        CS499R_ASSERT(isPow2(mPixelBorderSubdivisions));
+        CS499R_ASSERT(isPow2(mSamplesPerSubdivisions));
+
+        return true;
     }
 
 }

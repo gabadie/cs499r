@@ -209,38 +209,44 @@ namespace
             __global float32_t * renderTarget
         )
         {
-            uint32x2_t const pixelCoord = ((uint32x2_t)(get_global_id(0) / shotCx->render.z, get_global_id(1) / shotCx->render.z));
+            uint32_t const pixelBorderSubpixelCount = shotCx->render.z;
+
+            uint32x2_t const pixelCoord = (uint32x2_t)(
+                get_global_id(0) / pixelBorderSubpixelCount,
+                get_global_id(1) / pixelBorderSubpixelCount
+            );
 
             if (pixelCoord.x >= shotCx->render.x || pixelCoord.y >= shotCx->render.y)
             {
                 return;
             }
 
-            uint32x2_t const subpixelCoord = (get_local_id(0), get_local_id(1));
+            uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(get_local_id(0), get_local_id(1));
 
             uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.x;
-            uint32_t const subpixelId = subpixelCoord.x + subpixelCoord.y * shotCx->render.z;
+            uint32_t const pixelSubpixelId = pixelSubpixelCoord.x + pixelSubpixelCoord.y * pixelBorderSubpixelCount;
+            uint32_t const pixelSubpixelCount = pixelBorderSubpixelCount * pixelBorderSubpixelCount;
+            uint32_t const subpixelSampleCount = get_local_size(2);
+            uint32_t const subpixelSampleId = get_local_id(2);
+            uint32_t const pixelSampleId = pixelSubpixelId * subpixelSampleCount + subpixelSampleId;
+            uint32_t const pixelSampleCount = pixelSubpixelCount * subpixelSampleCount;
 
-            float32x2_t const sampleCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
-                    (1.0f + 2.0f * (float32x2_t)(subpixelCoord.x, subpixelCoord.y)) *
+            float32x2_t const subpixelCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
+                    (1.0f + 2.0f * (float32x2_t)(pixelSubpixelCoord.x, pixelSubpixelCoord.y)) *
                     (0.5f / (float32_t) shotCx->render.z);
 
             float32x2_t areaCoord;
-            areaCoord.x = sampleCoord.x / ((float32_t)shotCx->render.x);
-            areaCoord.y = sampleCoord.y / ((float32_t)shotCx->render.y);
+            areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.x);
+            areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.y);
             areaCoord = areaCoord * 2.0f - 1.0f;
 
             sample_context_t sampleCx;
 
             { // set up random seed
-                uint32_t const subpixelCountPerPixel = shotCx->render.z * shotCx->render.z;
-                uint32_t const sampleCountPerSubPixel = get_local_size(2);
+                uint32_t const subpixelId = pixelId * pixelSubpixelCount + pixelSubpixelId;
+                uint32_t const sampleId = subpixelId * subpixelSampleCount + subpixelSampleId;
 
-                sampleCx.randomSeed = kRecursionCount * kRandomPerRecursion * (
-                    (pixelId * subpixelCountPerPixel + subpixelId) *
-                    sampleCountPerSubPixel + get_local_id(2)
-                );
-
+                sampleCx.randomSeed = sampleId * (kRecursionCount * kRandomPerRecursion);
                 sampleCx.randomSeed = sampleCx.randomSeed % 1436283;
             }
 
@@ -288,22 +294,21 @@ namespace
             }
 
             __local float32x3_t sampleColors[1024];
-            uint32_t const sampleId = subpixelId * get_local_size(2) + get_local_id(2);
 
-            sampleColors[sampleId] = sampleColor;
+            sampleColors[pixelSampleId] = sampleColor;
 
-            if ((get_local_id(0) + get_local_id(1) + get_local_id(2)) == 0)
-            {
+            if (pixelSampleId == 0)
+            { // linear sum of sampleColors[]
                 float32x3_t pixelColor = 0.0f;
 
-                uint32_t const sampleCount = shotCx->render.z * shotCx->render.z * get_local_size(2);
+                barrier(CLK_LOCAL_MEM_FENCE);
 
-                for (uint32_t i = 0; i < sampleCount; i++)
+                for (uint32_t i = 0; i < pixelSampleCount; i++)
                 {
                     pixelColor += sampleColors[i];
                 }
 
-                pixelColor *= (1.0f / (float32_t) sampleCount);
+                pixelColor *= (1.0f / (float32_t) pixelSampleCount);
 
                 renderTarget[pixelId * 3 + 0] = pixelColor.x;
                 renderTarget[pixelId * 3 + 1] = pixelColor.y;

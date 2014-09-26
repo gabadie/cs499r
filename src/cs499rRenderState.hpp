@@ -46,6 +46,16 @@ namespace CS499R
         RenderState();
         ~RenderState();
 
+
+    private:
+        // --------------------------------------------------------------------- METHODES
+
+        /*
+         * Validates members
+         */
+        bool
+        validateParams() const;
+
     };
 
 }

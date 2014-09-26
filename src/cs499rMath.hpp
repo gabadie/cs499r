@@ -252,6 +252,16 @@ define_vector_mono_operator(!);
 namespace CS499R
 {
 
+    // ------------------------------------------------------------------------- ARITHMETICS
+    template <typename T>
+    inline
+    bool
+    isPow2(T x)
+    {
+        return (x - 1 & x) == 0;
+    }
+
+
     // ------------------------------------------------------------------------- DOT PRODUCT
     template <typename T>
     inline
