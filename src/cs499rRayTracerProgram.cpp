@@ -61,6 +61,11 @@ namespace
 
         } sample_context_t;
 
+    );
+
+    char const * const kCodeLibEssentials = CS499R_CODE(
+
+        inline
         float32_t
         random(sample_context_t * sampleCx)
         {
@@ -75,10 +80,7 @@ namespace
             return s - floor(s);
         }
 
-    );
-
-    char const * const kCodeLibEssentials = CS499R_CODE(
-
+        inline
         void
         generate_basis(float32x3_t n, float32x3_t * u, float32x3_t * v)
         {
@@ -176,6 +178,7 @@ namespace
             sampleCx->rayInterNormal = normalize(normal);
         }
 
+        inline
         void
         intersect_scene(
             sample_context_t * sampleCx,
