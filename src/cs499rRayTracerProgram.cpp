@@ -296,26 +296,53 @@ namespace
                 sampleColorMultiply *= sampleCx.rayInterColorMultiply;
             }
 
-            __local float32x3_t sampleColors[1024];
-
-            { // logarithmic sum of sampleColors[]
-                // pixelSampleCount is a power of two, therefore:
-                //  A % pixelSampleCount == A & (pixelSampleCount - 1)
-                uint32_t const pixelSampleId = pixelSubpixelId * subpixelSampleCount + subpixelSampleId;
+            { // logarithmic sum of pixelSampleColors[]
+                /*
+                 * This algorithm is dedicated to compute the average color
+                 * value over pixelSampleColors[]. Here is an example of the
+                 * optimization for a warp size of 2 threads and group size of
+                 * a total of 8 threads.
+                 *
+                 *  warp id | local id | offset 4 | offset 2 | offset 1
+                 *          |          |
+                 *     0    |    0     | -+------- ---+------ ----+-----
+                 *     0    |    1     | -|-+----- ---|-+---- ----/
+                 *     1    |    2     | -|-|-+--- ---/ |  * warps 1 looping
+                 *     1    |    3     | -|-|-|-+- -----/  * on the barrier()
+                 *     2    |    4     | -/ | | |  *
+                 *     2    |    5     | ---/ | |  * warps 2 & 3 looping
+                 *     3    |    6     | -----/ |  * on the barrier()
+                 *     3    |    7     | -------/  *
+                 */
+                uint32_t const pixelSampleId = pixelSubpixelId + subpixelSampleId * pixelSubpixelCount;
                 uint32_t const pixelSampleCount = pixelSubpixelCount * subpixelSampleCount;
-                uint32_t const sampleIdMask = pixelSampleCount - 1;
 
                 float32x3_t pixelColor = sampleColor;
 
-                for (uint32_t i = 1; i < pixelSampleCount; i *= 2)
+                __local float32x3_t pixelSampleColors[1024];
+                __local float32x3_t * pixelSampleColor = pixelSampleColors + pixelSampleId;
+
+                pixelSampleColor[0] = pixelColor;
+
+                for (uint32_t sampleOffset = (pixelSampleCount >> 1); sampleOffset != 0; sampleOffset >>= 1)
                 {
-                    uint32_t const sampleIdFetched = (pixelSampleId + i) & sampleIdMask;
-
-                    sampleColors[pixelSampleId] = pixelColor;
-
                     barrier(CLK_LOCAL_MEM_FENCE);
 
-                    pixelColor += sampleColors[sampleIdFetched];
+                    if (pixelSampleId < sampleOffset)
+                    {
+                        /*
+                         * This condition here is very important, when the group
+                         * is instantiated with severals warps... Indeed, this
+                         * condition will then avoid most of the warps to do
+                         * useless operations while other still have threads
+                         * doing the additions to finish up the sum. Therefor
+                         * this idle time because of the barrier() can releases
+                         * GPU's ALUs usages.
+                         */
+                        pixelColor += pixelSampleColor[sampleOffset];
+
+                        pixelSampleColor[0] = pixelColor;
+                    }
                 }
 
                 if (pixelSampleId == 0)
