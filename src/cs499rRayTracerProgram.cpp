@@ -80,24 +80,6 @@ namespace
             return s - floor(s);
         }
 
-        inline
-        void
-        generate_basis(float32x3_t n, float32x3_t * u, float32x3_t * v)
-        {
-            if (fabs(n.x) > fabs(n.y))
-            {
-                float32_t invLen = 1.0 / (n.x * n.x + n.z * n.z);
-                *u = invLen * (float32x3_t)(-n.z, 0.0f, n.x);
-            }
-            else
-            {
-                float32_t invLen = 1.0 / (n.y * n.y + n.z * n.z);
-                *u = invLen * (float32x3_t)(0.0f, -n.z, n.y);
-            }
-
-            *v = cross(n, *u);
-        }
-
         void
         intersect_triangles(sample_context_t * sampleCx, __global common_triangle_t const * triangle)
         {
@@ -175,7 +157,7 @@ namespace
             sampleCx->rayInterDistance = rayInterDistance;
             sampleCx->rayInterColorMultiply = triangle->diffuseColor;
             sampleCx->rayInterColorAdd = triangle->emitColor;
-            sampleCx->rayInterNormal = normalize(normal);
+            sampleCx->rayInterNormal = normal;
         }
 
         inline
@@ -273,20 +255,31 @@ namespace
             for (uint32_t i = 0; i < kRecursionCount; i++)
             {
                 { // generate a new difuse ray
-                    float32x3_t u;
-                    float32x3_t v;
-
-                    generate_basis(sampleCx.rayInterNormal, &u, &v);
-
-                    float32_t const r1 = 2.0f * kPi * random(&sampleCx);
-                    float32_t const r2 = random(&sampleCx);
-                    float32_t const r2s = sqrt(r2);
-
                     sampleCx.rayOrigin += sampleCx.rayDirection * sampleCx.rayInterDistance;
-                    sampleCx.rayDirection = normalize(
+
+                    float32x3_t n = normalize(sampleCx.rayInterNormal);
+                    float32x3_t u;
+
+                    if (fabs(n.x) > fabs(n.y))
+                    {
+                        u = (float32x3_t)(-n.z, 0.0f, n.x);
+                    }
+                    else
+                    {
+                        u = (float32x3_t)(0.0f, -n.z, n.y);
+                    }
+
+                    float32x3_t const u2 = u * u;
+                    float32_t const r2 = random(&sampleCx);
+                    float32_t const r2s = sqrt(r2) * rsqrt(u2.x + u2.y + u2.z);
+
+                    float32x3_t const v = cross(n, u);
+                    float32_t const r1 = 2.0f * kPi * random(&sampleCx);
+
+                    sampleCx.rayDirection = (
                         u * (cos(r1) * r2s) +
                         v * (sin(r1) * r2s) +
-                        sampleCx.rayInterNormal * sqrt(1.0f - r2)
+                        n * sqrt(1.0f - r2)
                     );
                 }
 
