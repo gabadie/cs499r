@@ -198,6 +198,19 @@ namespace
 
     );
 
+    /*
+     * In some case, it might be more performant to recompute a variable within
+     * a functions instead of storing it into the stack.
+     */
+    char const * const kKernelDispatchKernelDefines = "\n"
+        "#define pixelBorderSubpixelCount shotCx->render.z\n"
+        "#define subpixelSampleCount get_local_size(2)\n"
+        "#define subpixelSampleId get_local_id(2)\n"
+        "#define pixelSubpixelCount (pixelBorderSubpixelCount * pixelBorderSubpixelCount)\n"
+        "#define pixelSubpixelId (pixelSubpixelCoord.x + pixelSubpixelCoord.y * pixelBorderSubpixelCount)\n"
+        "#define pixelId (pixelCoord.x + pixelCoord.y * shotCx->render.x)\n"
+    ;
+
     char const * const kKernelDispatchKernel = CS499R_CODE(
         /*
          * This trace the ray throught the scene
@@ -209,8 +222,6 @@ namespace
             __global float32_t * renderTarget
         )
         {
-            uint32_t const pixelBorderSubpixelCount = shotCx->render.z;
-
             uint32x2_t const pixelCoord = (uint32x2_t)(
                 get_global_id(0) / pixelBorderSubpixelCount,
                 get_global_id(1) / pixelBorderSubpixelCount
@@ -222,14 +233,6 @@ namespace
             }
 
             uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(get_local_id(0), get_local_id(1));
-
-            uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.x;
-            uint32_t const pixelSubpixelId = pixelSubpixelCoord.x + pixelSubpixelCoord.y * pixelBorderSubpixelCount;
-            uint32_t const pixelSubpixelCount = pixelBorderSubpixelCount * pixelBorderSubpixelCount;
-            uint32_t const subpixelSampleCount = get_local_size(2);
-            uint32_t const subpixelSampleId = get_local_id(2);
-            uint32_t const pixelSampleId = pixelSubpixelId * subpixelSampleCount + subpixelSampleId;
-            uint32_t const pixelSampleCount = pixelSubpixelCount * subpixelSampleCount;
 
             float32x2_t const subpixelCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
                     (1.0f + 2.0f * (float32x2_t)(pixelSubpixelCoord.x, pixelSubpixelCoord.y)) *
@@ -298,6 +301,8 @@ namespace
             { // logarithmic sum of sampleColors[]
                 // pixelSampleCount is a power of two, therefore:
                 //  A % pixelSampleCount == A & (pixelSampleCount - 1)
+                uint32_t const pixelSampleId = pixelSubpixelId * subpixelSampleCount + subpixelSampleId;
+                uint32_t const pixelSampleCount = pixelSubpixelCount * subpixelSampleCount;
                 uint32_t const sampleIdMask = pixelSampleCount - 1;
 
                 float32x3_t pixelColor = sampleColor;
@@ -317,9 +322,11 @@ namespace
                 {
                     pixelColor *= (1.0f / (float32_t) pixelSampleCount);
 
-                    renderTarget[pixelId * 3 + 0] = pixelColor.x;
-                    renderTarget[pixelId * 3 + 1] = pixelColor.y;
-                    renderTarget[pixelId * 3 + 2] = pixelColor.z;
+                    __global float32_t * pixelTarget = renderTarget + pixelId * 3;
+
+                    pixelTarget[0] = pixelColor.x;
+                    pixelTarget[1] = pixelColor.y;
+                    pixelTarget[2] = pixelColor.z;
                 }
             }
         }
@@ -340,6 +347,7 @@ namespace CS499R
             kCodeStructs,
             kCodeLibStructs,
             kCodeLibEssentials,
+            kKernelDispatchKernelDefines,
             kKernelDispatchKernel
         };
 
