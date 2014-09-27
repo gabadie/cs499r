@@ -63,7 +63,7 @@ namespace CS499R
 
         { // launch kernel
             size_t const kInvocationDims = 3;
-            size_t const kThreadsPerTilesTarget = 2048;
+            size_t const kThreadsPerTilesTarget = 2048 * 8;
 
             size_t const groupSize[kInvocationDims] = {
                 mPixelBorderSubdivisions,
