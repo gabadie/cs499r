@@ -1,0 +1,16 @@
+
+#
+# CS499R project is a library, then linked with different executable. This file
+# lists the library's source files
+#
+
+cs499rCamera.cpp
+cs499rCLUtils.cpp
+cs499rImage.cpp
+cs499rImagePNG.cpp
+cs499rRayTracer.cpp
+cs499rRayTracerProgram.cpp
+cs499rRenderState.cpp
+cs499rRenderTarget.cpp
+cs499rScene.cpp
+cs499rSceneBuffer.cpp
