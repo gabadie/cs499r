@@ -31,6 +31,7 @@ namespace CS499R
     class Scene;
     class SceneBuffer;
     class SceneMesh;
+    class SceneMeshInstance;
     class SceneObject;
 
 }

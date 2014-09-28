@@ -7,6 +7,7 @@
 #include <string>
 #include "cs499rCommonStruct.hpp"
 #include "cs499rSceneMesh.hpp"
+#include "cs499rSceneMeshInstance.hpp"
 
 
 namespace CS499R
@@ -37,7 +38,7 @@ namespace CS499R
         }
 
         /*
-         * Adds a mesh into the scene
+         * Adds stuff into the scene
          */
         SceneMesh *
         addMesh(std::string const & meshName, Mesh const & mesh)
@@ -49,8 +50,18 @@ namespace CS499R
             return sceneMesh;
         }
 
+        SceneMeshInstance *
+        addMeshInstance(std::string const & meshInstanceName, SceneMesh * sceneMesh)
+        {
+            auto sceneMeshInstance = new SceneMeshInstance(this, meshInstanceName, sceneMesh);
+
+            mObjectsMap.meshInstances.insert({meshInstanceName, sceneMeshInstance});
+
+            return sceneMeshInstance;
+        }
+
         /*
-         * Adds a mesh into the scene
+         * Finds stuff in the scene
          */
         SceneMesh *
         findMesh(std::string const & meshName)
@@ -58,6 +69,16 @@ namespace CS499R
             auto result = mObjectsMap.meshes.find(meshName);
 
             CS499R_ASSERT(result != mObjectsMap.meshes.end());
+
+            return result->second;
+        }
+
+        SceneMeshInstance *
+        findMeshInstance(std::string const & meshName)
+        {
+            auto result = mObjectsMap.meshInstances.find(meshName);
+
+            CS499R_ASSERT(result != mObjectsMap.meshInstances.end());
 
             return result->second;
         }
@@ -88,6 +109,9 @@ namespace CS499R
          */
         struct
         {
+            // all scene's mesh instances
+            Map<SceneMeshInstance> meshInstances;
+
             // all scene's meshes
             Map<SceneMesh> meshes;
         } mObjectsMap;

@@ -12,17 +12,22 @@ buildSceneMeshes(CS499R::Scene & scene)
 
     {
         float32x3_t meshVertices[] = {
-            float32x3_t(-radius, 0.0f, 0.0f),
-            float32x3_t(+radius, 0.0f, 0.0f),
-            float32x3_t(-radius, 0.0f, +height),
-            float32x3_t(-radius, 0.0f, +height),
-            float32x3_t(+radius, 0.0f, 0.0f),
-            float32x3_t(+radius, 0.0f, +height),
+            float32x3_t(0.0f, -radius, 0.0f),
+            float32x3_t(0.0f, +radius, 0.0f),
+            float32x3_t(0.0f, -radius, +height),
+            float32x3_t(0.0f, -radius, +height),
+            float32x3_t(0.0f, +radius, 0.0f),
+            float32x3_t(0.0f, +radius, +height),
         };
 
         CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-        scene.addMesh("roomWall", mesh);
+        auto sceneMesh = scene.addMesh("room/wall", mesh);
+
+        {
+            auto instance = scene.addMeshInstance("room/wall/x+", sceneMesh);
+            instance->mScenePosition = float32x3_t(10.0f, 0.0f, 0.0f);
+        }
     }
 
     {

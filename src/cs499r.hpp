@@ -15,6 +15,7 @@
 #include "cs499rScene.hpp"
 #include "cs499rSceneBuffer.hpp"
 #include "cs499rSceneMesh.hpp"
+#include "cs499rSceneMeshInstance.hpp"
 #include "cs499rSceneObject.hpp"
 
 

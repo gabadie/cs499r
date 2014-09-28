@@ -357,5 +357,56 @@ typedef CS499R::vec2<float32_t> float32x2_t;
 typedef CS499R::vec3<float32_t> float32x3_t;
 typedef CS499R::vec4<float32_t> float32x4_t;
 
+typedef CS499R::vec2<float32x2_t> float32x2x2_t;
+typedef CS499R::vec3<float32x3_t> float32x3x3_t;
+typedef CS499R::vec4<float32x4_t> float32x4x4_t;
+
+namespace CS499R
+{
+
+    // ------------------------------------------------------------------------- MATRICES
+    template <typename T>
+    inline
+    T
+    identity();
+
+    template <>
+    inline
+    float32x2x2_t
+    identity<float32x2x2_t>()
+    {
+        return float32x2x2_t(
+            float32x2_t(1.0f, 0.0f),
+            float32x2_t(0.0f, 1.0f)
+        );
+    }
+
+    template <>
+    inline
+    float32x3x3_t
+    identity<float32x3x3_t>()
+    {
+        return float32x3x3_t(
+            float32x3_t(1.0f, 0.0f, 0.0f),
+            float32x3_t(0.0f, 1.0f, 0.0f),
+            float32x3_t(0.0f, 0.0f, 1.0f)
+        );
+    }
+
+    template <>
+    inline
+    float32x4x4_t
+    identity<float32x4x4_t>()
+    {
+        return float32x4x4_t(
+            float32x4_t(1.0f, 0.0f, 0.0f, 0.0f),
+            float32x4_t(0.0f, 1.0f, 0.0f, 0.0f),
+            float32x4_t(0.0f, 0.0f, 1.0f, 0.0f),
+            float32x4_t(0.0f, 0.0f, 0.0f, 1.0f)
+        );
+    }
+
+}
+
 
 #endif // _H_CS499R_MATH

@@ -16,3 +16,4 @@ cs499rRenderTarget.cpp
 cs499rScene.cpp
 cs499rSceneBuffer.cpp
 cs499rSceneMesh.cpp
+cs499rSceneMeshInstance.cpp

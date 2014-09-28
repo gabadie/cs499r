@@ -22,6 +22,7 @@ namespace CS499R
         operator = (SceneMesh const &) = delete;
 
 
+    private:
         // --------------------------------------------------------------------- IDLE
 
         SceneMesh(
@@ -33,12 +34,11 @@ namespace CS499R
         ~SceneMesh();
 
 
-    private:
         // --------------------------------------------------------------------- STRUCTS
 
         /*
          * Scene mesh's primitives are ready to be copied into GPU scene's
-         * buffers.
+         * buffer
          */
         using Primitive = common_primitive_t;
 
@@ -62,6 +62,7 @@ namespace CS499R
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class Scene;
         friend class SceneBuffer;
 
     };
