@@ -24,11 +24,14 @@ namespace CS499R
 
     class Camera;
     class Image;
+    class Mesh;
     class RayTracer;
     class RenderState;
     class RenderTarget;
     class Scene;
     class SceneBuffer;
+    class SceneMesh;
+    class SceneObject;
 
 }
 

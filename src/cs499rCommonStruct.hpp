@@ -33,6 +33,13 @@ namespace CS499R
             uint32_t meshId;
         } mesh_instance_t;
 
+        typedef struct common_primitive_s
+        {
+            __attribute__((aligned(16))) float32x3_t v0;
+            __attribute__((aligned(16))) float32x3_t v1;
+            __attribute__((aligned(16))) float32x3_t v2;
+        } common_primitive_t;
+
         typedef struct common_triangle_s
         {
             __attribute__((aligned(16))) float32x3_t v0;

@@ -2,8 +2,11 @@
 #ifndef _H_CS499R_SCENE
 #define _H_CS499R_SCENE
 
+#include <map>
 #include <vector>
+#include <string>
 #include "cs499rCommonStruct.hpp"
+#include "cs499rSceneMesh.hpp"
 
 
 namespace CS499R
@@ -33,6 +36,32 @@ namespace CS499R
             mTriangles[i].emitColor = emit;
         }
 
+        /*
+         * Adds a mesh into the scene
+         */
+        SceneMesh *
+        addMesh(std::string const & meshName, Mesh const & mesh)
+        {
+            auto sceneMesh = new SceneMesh(this, meshName, mesh);
+
+            mObjectsMap.meshes.insert({meshName, sceneMesh});
+
+            return sceneMesh;
+        }
+
+        /*
+         * Adds a mesh into the scene
+         */
+        SceneMesh *
+        findMesh(std::string const & meshName)
+        {
+            auto result = mObjectsMap.meshes.find(meshName);
+
+            CS499R_ASSERT(result != mObjectsMap.meshes.end());
+
+            return result->second;
+        }
+
 
         // --------------------------------------------------------------------- IDLE
 
@@ -41,16 +70,39 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- STRUCTS
+
+        template <typename T>
+        using Map = std::map<std::string, T *>;
+
+
         // --------------------------------------------------------------------- MEMBERS
 
         // all scene's triangles
         std::vector<common_triangle_t> mTriangles;
 
+        /*
+         * scene's objects' maps
+         *
+         * Notes: they shall be sorted by order of destruction
+         */
+        struct
+        {
+            // all scene's meshes
+            Map<SceneMesh> meshes;
+        } mObjectsMap;
+
+
+        // --------------------------------------------------------------------- METHODES
+
+        static
+        void
+        destroyMap(Map<SceneObject> & map);
+
 
         // --------------------------------------------------------------------- FRIENDSHIPS
         friend class RenderState;
         friend class SceneBuffer;
-
 
     };
 

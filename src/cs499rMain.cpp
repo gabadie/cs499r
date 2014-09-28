@@ -5,8 +5,48 @@
 
 static
 void
+buildSceneMeshes(CS499R::Scene & scene)
+{
+    float32_t const radius = 20.0f;
+    float32_t const height = 10.0f;
+
+    {
+        float32x3_t meshVertices[] = {
+            float32x3_t(-radius, 0.0f, 0.0f),
+            float32x3_t(+radius, 0.0f, 0.0f),
+            float32x3_t(-radius, 0.0f, +height),
+            float32x3_t(-radius, 0.0f, +height),
+            float32x3_t(+radius, 0.0f, 0.0f),
+            float32x3_t(+radius, 0.0f, +height),
+        };
+
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
+
+        scene.addMesh("roomWall", mesh);
+    }
+
+    {
+        float32x3_t meshVertices[] = {
+            float32x3_t(-radius, -radius, 0.0f),
+            float32x3_t(+radius, -radius, 0.0f),
+            float32x3_t(-radius, +radius, 0.0f),
+            float32x3_t(-radius, +radius, 0.0f),
+            float32x3_t(+radius, -radius, 0.0f),
+            float32x3_t(+radius, +radius, 0.0f),
+        };
+
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
+
+        scene.addMesh("roomFloor", mesh);
+    }
+}
+
+static
+void
 buildDummyScene(CS499R::Scene & scene)
 {
+    buildSceneMeshes(scene);
+
     float const radius = 20.0f;
     float const height = 10.0f;
     float const lightSize = 9.0f;
