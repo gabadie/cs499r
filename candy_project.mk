@@ -99,12 +99,12 @@ $(LIB_BINARIES_TARGET): ARFLAGS += $(LIB_OBJECT_BINARIES)
 
 # ------------------------------------------------------------------------------ CS499R executable binaries
 
-EXEC_PRODUCT := $(call product_create,BINEXEC,cs499r)
+EXEC_PRODUCT := $(call product_create,BINEXEC,raytracer)
 EXEC_TARGET := $(call product_target,$(EXEC_PRODUCT))
 EXEC_TEST := $(call test_product,$(EXEC_PRODUCT))
 $(call product_public,$(EXEC_PRODUCT))
 
-EXEC_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499rMain.flist))
+EXEC_OBJECT_BINARIES := $(call bin_object_files,$(call filelist,./src/app.flist))
 
 # ------------------------------------------------------------ compilation/link configuration
 $(EXEC_TARGET): $(EXEC_OBJECT_BINARIES) $(LIB_BINARIES_TARGET)
