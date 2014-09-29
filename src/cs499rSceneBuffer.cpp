@@ -76,9 +76,32 @@ namespace CS499R
         }
 
         { // upload instances
-            size_t instanceId = 0;
             size_t const instanceCount = mScene->mObjectsMap.meshInstances.size();
-            auto const instanceArray = alloc<common_mesh_instance_t>(instanceCount);
+            auto const instanceArray = alloc<common_mesh_instance_t>(instanceCount + 1);
+
+            { // init the anonymous mesh instance
+                auto anonymousMesh = instanceArray + 0;
+
+                /*
+                 * The anonymous mesh has completly null matrices in order to
+                 * have a grey background on normal debuging.
+                 */
+                anonymousMesh->meshSceneMatrix.x = 0.0f;
+                anonymousMesh->meshSceneMatrix.y = 0.0f;
+                anonymousMesh->meshSceneMatrix.z = 0.0f;
+                anonymousMesh->meshSceneMatrix.w = 0.0f;
+                anonymousMesh->sceneMeshMatrix.x = 0.0f;
+                anonymousMesh->sceneMeshMatrix.y = 0.0f;
+                anonymousMesh->sceneMeshMatrix.z = 0.0f;
+                anonymousMesh->sceneMeshMatrix.w = 0.0f;
+
+                anonymousMesh->diffuseColor = 0.0f;
+                anonymousMesh->emitColor = 0.0f;
+                anonymousMesh->mesh.primFirst = 0;
+                anonymousMesh->mesh.primCount = 0;
+            }
+
+            size_t instanceId = 1;
 
             for (auto it : mScene->mObjectsMap.meshInstances)
             {
@@ -109,7 +132,7 @@ namespace CS499R
 
             mBuffer.meshInstances = clCreateBuffer(
                 context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-                instanceCount * sizeof(instanceArray[0]),
+                (instanceCount + 1) * sizeof(instanceArray[0]),
                 instanceArray,
                 &error
             );

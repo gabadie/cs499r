@@ -41,20 +41,25 @@ namespace
         typedef __private struct sample_context_s
         {
             // ray's origin in the mesh space
-            float32x3_t rayOrigin;
+            float32x3_t raySceneOrigin;
 
             // normalized ray's direction in the mesh space
-            float32x3_t rayDirection;
+            float32x3_t raySceneDirection;
+
+            // ray's origin in the mesh space
+            float32x3_t rayMeshOrigin;
+
+            // normalized ray's direction in the mesh space
+            float32x3_t rayMeshDirection;
 
             // ray's minimal distance found for depth test
             float32_t rayInterDistance;
 
-            // ray's computed colors
-            float32x3_t rayInterColorMultiply;
-            float32x3_t rayInterColorAdd;
+            // the ray's unnormalized intersection normal in the mesh space
+            float32x3_t rayInterMeshNormal;
 
-            // the ray's unnormalized intersection normal
-            float32x3_t rayInterNormal;
+            // the currently bound mesh instance
+            __global common_mesh_instance_t const * rayInterMeshInstance;
 
             // the sample's random seed
             uint32_t randomSeed;
@@ -134,8 +139,8 @@ namespace
              *
              */
 
-            float32_t OH = dot(sampleCx->rayOrigin - primitive->v0, normal);
-            float32_t normalDotRay = dot(sampleCx->rayDirection, normal);
+            float32_t OH = dot(sampleCx->rayMeshOrigin - primitive->v0, normal);
+            float32_t normalDotRay = dot(sampleCx->rayMeshDirection, normal);
             float32_t rayInterDistance = - OH / normalDotRay;
 
             if (isless(rayInterDistance, kEPSILONE) || isgreaterequal(rayInterDistance, sampleCx->rayInterDistance))
@@ -144,7 +149,7 @@ namespace
                 return;
             }
 
-            float32x3_t rayIntersectionVector = sampleCx->rayOrigin + sampleCx->rayDirection * rayInterDistance - primitive->v0;
+            float32x3_t rayIntersectionVector = sampleCx->rayMeshOrigin + sampleCx->rayMeshDirection * rayInterDistance - primitive->v0;
             float32_t basis_dot = dot(AB, AC);
             float32x2_t invSquareLenght = 1.0f / (float32x2_t)(dot(AB, AB), dot(AC, AC));
             float32x2_t invSquareLenghtBasisDot = basis_dot * invSquareLenght;
@@ -161,12 +166,8 @@ namespace
             // there is an intersection, so we update the context
 
             sampleCx->rayInterDistance = rayInterDistance;
-            sampleCx->rayInterNormal = normal;
-
-            __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
-
-            sampleCx->rayInterColorMultiply = meshInstance->diffuseColor;
-            sampleCx->rayInterColorAdd = meshInstance->emitColor;
+            sampleCx->rayInterMeshNormal = normal;
+            sampleCx->rayInterMeshInstance = sampleCx->boundMeshInstance;
         }
 
         inline
@@ -177,6 +178,20 @@ namespace
         )
         {
             __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
+
+            sampleCx->rayMeshOrigin = (
+                meshInstance->sceneMeshMatrix.x * sampleCx->raySceneOrigin.x +
+                meshInstance->sceneMeshMatrix.y * sampleCx->raySceneOrigin.y +
+                meshInstance->sceneMeshMatrix.z * sampleCx->raySceneOrigin.z +
+                meshInstance->sceneMeshMatrix.w
+            );
+
+            sampleCx->rayMeshDirection = (
+                meshInstance->sceneMeshMatrix.x * sampleCx->raySceneDirection.x +
+                meshInstance->sceneMeshMatrix.y * sampleCx->raySceneDirection.y +
+                meshInstance->sceneMeshMatrix.z * sampleCx->raySceneDirection.z
+            );
+
             __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
             uint32_t const primCount = meshInstance->mesh.primCount;
 
@@ -195,11 +210,17 @@ namespace
             __global common_primitive_t const * primitives
         )
         {
-            sampleCx->rayInterColorMultiply = (float3)(0.0f);
-            sampleCx->rayInterColorAdd = (float3)(0.0f);
             sampleCx->rayInterDistance = INFINITY;
 
-            for (uint32_t i = 0; i < shotCx->meshInstanceCount; i++)
+            /*
+             * We sets up the intersection mesh as the anonymous mesh first
+             */
+            sampleCx->rayInterMeshInstance = meshInstances;
+
+            /*
+             * i = 1 because we skip over the anonymous mesh instance
+             */
+            for (uint32_t i = 1; i < shotCx->meshInstanceMaxId; i++)
             {
                 sampleCx->boundMeshInstance = meshInstances + i;
 
@@ -225,15 +246,19 @@ namespace
             areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.y);
             areaCoord = areaCoord * 2.0f - 1.0f;
 
-            float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
+            float32x3_t rayFocusPoint = (
                 shotCx->camera.focusBasisU * areaCoord.x +
-                shotCx->camera.focusBasisV * areaCoord.y;
+                shotCx->camera.focusBasisV * areaCoord.y +
+                shotCx->camera.focusPosition
+            );
 
-            sampleCx->rayOrigin = shotCx->camera.shotPosition +
+            sampleCx->raySceneOrigin = (
                 shotCx->camera.shotBasisU * areaCoord.x +
-                shotCx->camera.shotBasisV * areaCoord.y;
+                shotCx->camera.shotBasisV * areaCoord.y +
+                shotCx->camera.shotPosition
+            );
 
-            sampleCx->rayDirection = normalize(rayFocusPoint - sampleCx->rayOrigin);
+            sampleCx->raySceneDirection = normalize(rayFocusPoint - sampleCx->raySceneOrigin);
         }
 
     );
@@ -288,15 +313,23 @@ namespace
             camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
             scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
-            float32x3_t sampleColor = sampleCx.rayInterColorAdd;
-            float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
+            float32x3_t sampleColor = sampleCx.rayInterMeshInstance->emitColor;
+            float32x3_t sampleColorMultiply = sampleCx.rayInterMeshInstance->diffuseColor;
 
             for (uint32_t i = 0; i < kRecursionCount; i++)
             {
                 { // generate a new difuse ray
-                    sampleCx.rayOrigin += sampleCx.rayDirection * sampleCx.rayInterDistance;
+                    sampleCx.raySceneOrigin += sampleCx.raySceneDirection * sampleCx.rayInterDistance;
 
-                    float32x3_t n = normalize(sampleCx.rayInterNormal);
+                    __global common_mesh_instance_t const * const meshInstance = sampleCx.rayInterMeshInstance;
+
+                    float32x3_t const meshNormal = normalize(sampleCx.rayInterMeshNormal);
+                    float32x3_t const n = (
+                        meshInstance->meshSceneMatrix.x * meshNormal.x +
+                        meshInstance->meshSceneMatrix.y * meshNormal.y +
+                        meshInstance->meshSceneMatrix.z * meshNormal.z
+                    );
+
                     float32x3_t u;
 
                     if (fabs(n.x) > fabs(n.y))
@@ -315,7 +348,7 @@ namespace
                     float32x3_t const v = cross(n, u);
                     float32_t const r1 = 2.0f * kPi * random(&sampleCx);
 
-                    sampleCx.rayDirection = (
+                    sampleCx.raySceneDirection = (
                         u * (cos(r1) * r2s) +
                         v * (sin(r1) * r2s) +
                         n * sqrt(1.0f - r2)
@@ -324,8 +357,8 @@ namespace
 
                 scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
-                sampleColor += sampleCx.rayInterColorAdd * sampleColorMultiply;
-                sampleColorMultiply *= sampleCx.rayInterColorMultiply;
+                sampleColor += sampleCx.rayInterMeshInstance->emitColor * sampleColorMultiply;
+                sampleColorMultiply *= sampleCx.rayInterMeshInstance->diffuseColor;
             }
 
             { // logarithmic sum of pixelSampleColors[]
@@ -418,7 +451,16 @@ namespace
             camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
             scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
-            float32x3_t pixelColor = normalize(sampleCx.rayInterNormal) * 0.5f + 0.5f;
+            __global common_mesh_instance_t const * const meshInstance = sampleCx.rayInterMeshInstance;
+
+            float32x3_t const meshNormal = normalize(sampleCx.rayInterMeshNormal);
+            float32x3_t const sceneNormal = (
+                meshInstance->meshSceneMatrix.x * meshNormal.x +
+                meshInstance->meshSceneMatrix.y * meshNormal.y +
+                meshInstance->meshSceneMatrix.z * meshNormal.z
+            );
+
+            float32x3_t pixelColor = sceneNormal * 0.5f + 0.5f;
 
             __global float32_t * pixelTarget = renderTarget + pixelId * 3;
 

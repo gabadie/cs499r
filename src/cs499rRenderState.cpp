@@ -45,7 +45,8 @@ namespace CS499R
             shotContext.render.y = mRenderTarget->height();
             shotContext.render.z = pixelBorderSubdivisions;
 
-            shotContext.meshInstanceCount = sceneBuffer->mScene->mObjectsMap.meshInstances.size();
+            // +1 because of the anonymous mesh
+            shotContext.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
         }
 
         cl_mem shotContextBuffer = clCreateBuffer(context,

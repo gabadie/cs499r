@@ -11,79 +11,74 @@ buildSceneMeshes(CS499R::Scene & scene)
     float32_t const height = 10.0f;;
     float32_t const lightSize = 9.0f;
 
-    float32x3_t const colorRed { 0.75f, 0.25f, 0.25f };
-    float32x3_t const colorBlue { 0.25f, 0.25f, 0.75f };
+    float32x3_t const colorRed(0.75f, 0.25f, 0.25f);
+    float32x3_t const colorBlue(0.25f, 0.25f, 0.75f);
+    float32x3_t const colorWhite(0.75f, 0.75f, 0.75f);
     float32x3_t const colorLight(5.0f);
 
 
-    { // X-
+    { // Room's walls
         float32x3_t meshVertices[] = {
-            float32x3_t(-radius, -radius, 0.0f),
-            float32x3_t(-radius, +radius, 0.0f),
-            float32x3_t(-radius, -radius, +height),
-            float32x3_t(-radius, -radius, +height),
-            float32x3_t(-radius, +radius, 0.0f),
-            float32x3_t(-radius, +radius, +height),
+            float32x3_t(0.0f, -radius, 0.0f),
+            float32x3_t(0.0f, +radius, 0.0f),
+            float32x3_t(0.0f, -radius, +height),
+            float32x3_t(0.0f, -radius, +height),
+            float32x3_t(0.0f, +radius, 0.0f),
+            float32x3_t(0.0f, +radius, +height),
         };
 
         CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-        auto sceneMesh = scene.addMesh("room/wall/x-", mesh);
-        auto sceneMeshInstance = scene.addMeshInstance("room/wall/x-", sceneMesh);
+        auto sceneMesh = scene.addMesh("room/wall", mesh);
 
-        sceneMeshInstance->mColorDiffuse = colorRed;
+        {
+            auto sceneMeshInstance = scene.addMeshInstance("room/wall/x-", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = colorRed;
+            sceneMeshInstance->mScenePosition = float32x3_t(-radius, 0.0f, 0.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(+1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, +1.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        {
+            auto sceneMeshInstance = scene.addMeshInstance("room/wall/y-", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = colorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(0.0f, -radius, 0.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(0.0f, +1.0f, 0.0f),
+                float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        {
+            auto sceneMeshInstance = scene.addMeshInstance("room/wall/x+", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = colorBlue;
+            sceneMeshInstance->mScenePosition = float32x3_t(+radius, 0.0f, 0.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, -1.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        {
+            auto sceneMeshInstance = scene.addMeshInstance("room/wall/y+", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = colorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(0.0f, +radius, 0.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(0.0f, -1.0f, 0.0f),
+                float32x3_t(+1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
     }
-
-    { // X+
-        float32x3_t meshVertices[] = {
-            float32x3_t(+radius, -radius, 0.0f),
-            float32x3_t(+radius, -radius, +height),
-            float32x3_t(+radius, +radius, 0.0f),
-            float32x3_t(+radius, +radius, 0.0f),
-            float32x3_t(+radius, -radius, +height),
-            float32x3_t(+radius, +radius, +height),
-        };
-
-        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
-
-        auto sceneMesh = scene.addMesh("room/wall/x+", mesh);
-        auto sceneMeshInstance = scene.addMeshInstance("room/wall/x+", sceneMesh);
-
-        sceneMeshInstance->mColorDiffuse = colorBlue;
-    }
-
-    { // Y-
-        float32x3_t meshVertices[] = {
-            float32x3_t(-radius, -radius, 0.0f),
-            float32x3_t(-radius, -radius, +height),
-            float32x3_t(+radius, -radius, 0.0f),
-            float32x3_t(+radius, -radius, 0.0f),
-            float32x3_t(-radius, -radius, +height),
-            float32x3_t(+radius, -radius, +height),
-        };
-
-        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
-
-        auto sceneMesh = scene.addMesh("room/wall/y-", mesh);
-        scene.addMeshInstance("room/wall/y-", sceneMesh);
-    }
-
-    { // Y+
-        float32x3_t meshVertices[] = {
-            float32x3_t(-radius, +radius, 0.0f),
-            float32x3_t(+radius, +radius, 0.0f),
-            float32x3_t(-radius, +radius, +height),
-            float32x3_t(-radius, +radius, +height),
-            float32x3_t(+radius, +radius, 0.0f),
-            float32x3_t(+radius, +radius, +height),
-        };
-
-        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
-
-        auto sceneMesh = scene.addMesh("room/wall/y+", mesh);
-        scene.addMeshInstance("room/wall/y+", sceneMesh);
-    }
-
 
     { // Z-
         float32x3_t meshVertices[] = {

@@ -82,8 +82,8 @@ namespace CS499R
             //      z is the image's subdivisions per pixels border
             __attribute__((aligned(16))) uint32x3_t render;
 
-            // the number of mesh instances in the scene
-            __attribute__((aligned(16))) uint32_t meshInstanceCount;
+            // the max id of mesh instances in the scene
+            __attribute__((aligned(16))) uint32_t meshInstanceMaxId;
 
         } common_shot_context_t;
 
