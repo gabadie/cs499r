@@ -263,26 +263,26 @@ namespace CS499R
 
 
     // ------------------------------------------------------------------------- DOT PRODUCT
-    template <typename T>
+    template <typename T, typename VEC>
     inline
-    T
-    dot(vec2<T> const & a, vec2<T> const & b)
+    VEC
+    dot(vec2<VEC> const & a, vec2<T> const & b)
     {
         return a.x * b.x + a.y * b.y;
     }
 
-    template <typename T>
+    template <typename T, typename VEC>
     inline
-    T
-    dot(vec3<T> const & a, vec3<T> const & b)
+    VEC
+    dot(vec3<VEC> const & a, vec3<T> const & b)
     {
         return a.x * b.x + a.y * b.y + a.z * b.z;
     }
 
-    template <typename T>
+    template <typename T, typename VEC>
     inline
-    T
-    dot(vec4<T> const & a, vec4<T> const & b)
+    VEC
+    dot(vec4<VEC> const & a, vec4<T> const & b)
     {
         return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
     }
