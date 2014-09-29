@@ -33,6 +33,8 @@ namespace CS499R
         struct
         {
             cl_mem triangles;
+            cl_mem primitives;
+            cl_mem meshInstances;
         } mBuffer;
 
 

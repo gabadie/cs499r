@@ -53,6 +53,8 @@ namespace CS499R
         SceneMeshInstance *
         addMeshInstance(std::string const & meshInstanceName, SceneMesh * sceneMesh)
         {
+            CS499R_ASSERT(sceneMesh->mScene == this);
+
             auto sceneMeshInstance = new SceneMeshInstance(this, meshInstanceName, sceneMesh);
 
             mObjectsMap.meshInstances.insert({meshInstanceName, sceneMeshInstance});

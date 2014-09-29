@@ -28,6 +28,8 @@ namespace CS499R
         cl_context context = mRayTracer->mContext;
         cl_command_queue cmdQueue = mRayTracer->mCmdQueue;
 
+        std::map<SceneMesh *, size_t> meshOffsetMap;
+
         { // upload triangles
             mBuffer.triangles = clCreateBuffer(
                 context,
@@ -48,6 +50,91 @@ namespace CS499R
                 &mScene->mTriangles[0],
                 0, NULL, NULL
             );
+        }
+
+        { // upload primitives
+            size_t totalPrimCount = 0;
+
+            for (auto it : mScene->mObjectsMap.meshes)
+            {
+                auto sceneMesh = it.second;
+
+                meshOffsetMap.insert({sceneMesh, totalPrimCount});
+
+                totalPrimCount += sceneMesh->mPrimitiveCount;
+            }
+
+            CS499R_ASSERT(totalPrimCount != 0);
+
+            mBuffer.primitives = clCreateBuffer(
+                context, CL_MEM_READ_ONLY,
+                totalPrimCount * sizeof(common_primitive_t),
+                NULL,
+                &error
+            );
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
+
+            size_t meshPrimOffset = 0;
+
+            for (auto it : mScene->mObjectsMap.meshes)
+            {
+                auto sceneMesh = it.second;
+
+                error |= clEnqueueWriteBuffer(
+                    cmdQueue, mBuffer.triangles, CL_FALSE,
+                    meshPrimOffset * sizeof(common_primitive_t),
+                    sceneMesh->mPrimitiveCount * sizeof(common_primitive_t),
+                    sceneMesh->mPrimitiveArray,
+                    0, NULL, NULL
+                );
+
+                CS499R_ASSERT_NO_CL_ERROR(error);
+
+                meshPrimOffset += sceneMesh->mPrimitiveCount;
+            }
+        }
+
+        { // upload instances
+            size_t const instanceCount = mScene->mObjectsMap.meshInstances.size();
+            size_t instanceId = 0;
+            auto instanceArray = new common_mesh_instance_t[instanceCount];
+
+            for (auto it : mScene->mObjectsMap.meshInstances)
+            {
+                auto sceneMeshInstance = it.second;
+                auto sceneMesh = it.second->mSceneMesh;
+                auto sceneMeshPrimFirst = meshOffsetMap.find(sceneMesh)->second;
+                auto commonMesh = instanceArray + instanceId;
+
+                commonMesh->meshSceneMatrix.c[0] = sceneMeshInstance->mMeshSceneMatrix.x;
+                commonMesh->meshSceneMatrix.c[1] = sceneMeshInstance->mMeshSceneMatrix.y;
+                commonMesh->meshSceneMatrix.c[2] = sceneMeshInstance->mMeshSceneMatrix.z;
+                commonMesh->meshSceneMatrix.c[3] = sceneMeshInstance->mScenePosition;
+
+                auto sceneMeshMatrix = transpose(sceneMeshInstance->mMeshSceneMatrix);
+
+                commonMesh->sceneMeshMatrix.c[0] = sceneMeshMatrix.x;
+                commonMesh->sceneMeshMatrix.c[1] = sceneMeshMatrix.y;
+                commonMesh->sceneMeshMatrix.c[2] = sceneMeshMatrix.z;
+                commonMesh->sceneMeshMatrix.c[3] = -dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition);
+
+                commonMesh->diffuseColor = sceneMeshInstance->mColorDiffuse;
+                commonMesh->emitColor = sceneMeshInstance->mColorEmit;
+                commonMesh->mesh.primFirst = sceneMeshPrimFirst;
+                commonMesh->mesh.primCount = sceneMesh->mPrimitiveCount;
+            }
+
+            mBuffer.primitives = clCreateBuffer(
+                context, CL_MEM_READ_ONLY,
+                instanceCount * sizeof(common_mesh_instance_t),
+                NULL,
+                &error
+            );
+
+            delete [] instanceArray;
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
         CS499R_ASSERT(error == 0);

@@ -15,23 +15,42 @@ namespace CS499R
     static char const * const kCodeStructs = CS499R_CL_STRUCTS
     (
 
-        typedef struct mat4_s
+        typedef
+        struct
+        __attribute__((aligned(16)))
+        common_mat3x4_s
         {
-            float32x4_t c[4];
-        } mat4_t;
+            float32x3_t c[4];
+        } common_mat3x4_t;
 
-        typedef struct mesh_s
+        typedef
+        struct __attribute__((aligned(16), packed))
+        common_mesh_s
         {
-            uint32_t firstPrime; // first triangle ID
-            uint32_t primeCount; // triangles count
-        } mesh_t;
+            // mesh's first primitive
+            uint32_t primFirst;
 
-        typedef struct mesh_instance_s
+            // mesh's triangles count
+            uint32_t primCount;
+        } common_mesh_t;
+
+        typedef
+        struct __attribute__((aligned(16)))
+        common_mesh_instance_s
         {
-            mat4_t meshToSpace;
-            mat4_t spaceToMesh;
-            uint32_t meshId;
-        } mesh_instance_t;
+            // matrix from the mesh space to the scene space
+            common_mat3x4_t meshSceneMatrix;
+
+            // matrix from the scene space to the mesh space
+            common_mat3x4_t sceneMeshMatrix;
+
+            // the mesh instance's colors
+            __attribute__((aligned(16))) float32x3_t diffuseColor;
+            __attribute__((aligned(16))) float32x3_t emitColor;
+
+            // the mesh's informations
+            common_mesh_t mesh;
+        } common_mesh_instance_t;
 
         typedef struct common_primitive_s
         {
