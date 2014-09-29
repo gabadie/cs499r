@@ -406,6 +406,39 @@ namespace CS499R
         );
     }
 
+    inline
+    float32x2x2_t
+    transpose(float32x2x2_t const & m)
+    {
+        return float32x2x2_t(
+            float32x2_t(m.x.x, m.y.x),
+            float32x2_t(m.x.y, m.y.y)
+        );
+    }
+
+    inline
+    float32x3x3_t
+    transpose(float32x3x3_t const & m)
+    {
+        return float32x3x3_t(
+            float32x3_t(m.x.x, m.y.x, m.z.x),
+            float32x3_t(m.x.y, m.y.y, m.z.y),
+            float32x3_t(m.x.z, m.y.z, m.z.z)
+        );
+    }
+
+    inline
+    float32x4x4_t
+    transpose(float32x4x4_t const & m)
+    {
+        return float32x4x4_t(
+            float32x4_t(m.x.x, m.y.x, m.z.x, m.w.x),
+            float32x4_t(m.x.y, m.y.y, m.z.y, m.w.y),
+            float32x4_t(m.x.z, m.y.z, m.z.z, m.w.z),
+            float32x4_t(m.x.w, m.y.w, m.z.w, m.w.w)
+        );
+    }
+
 }
 
 
