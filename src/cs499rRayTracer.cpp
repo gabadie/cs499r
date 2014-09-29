@@ -13,11 +13,11 @@ namespace CS499R
         mDeviceId = device;
         mContext = clCreateContext(0, 1, &device, 0, 0, &error);
 
-        CS499R_ASSERT(error == 0);
+        CS499R_ASSERT_NO_CL_ERROR(error);
 
         mCmdQueue = clCreateCommandQueue(mContext, device, 0, &error);
 
-        CS499R_ASSERT(error == 0);
+        CS499R_ASSERT_NO_CL_ERROR(error);
 
         buildProgram();
     }
@@ -26,12 +26,18 @@ namespace CS499R
     {
         cl_int error = 0;
 
-        error |= clReleaseKernel(mKernel.dispatch);
+        for (size_t i = 0; i < kRayAlgorithmCount; i++)
+        {
+            error = clReleaseKernel(mKernelArray[i]);
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
+        }
+
         error |= clReleaseProgram(mProgram);
         error |= clReleaseCommandQueue(mCmdQueue);
         error |= clReleaseContext(mContext);
 
-        CS499R_ASSERT(error == 0);
+        CS499R_ASSERT_NO_CL_ERROR(error);
     }
 
 }

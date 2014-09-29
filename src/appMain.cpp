@@ -252,6 +252,8 @@ main(int argc, char const * const * argv)
     { // sets up the render state
         renderState.mPixelBorderSubdivisions = 4;
         renderState.mSamplesPerSubdivisions = 32;
+        renderState.mRayAlgorithm = CS499R::kRayAlgorithmPathTracer;
+        //renderState.mRayAlgorithm = CS499R::kRayAlgorithmDebugNormal;
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);

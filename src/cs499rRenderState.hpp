@@ -2,7 +2,7 @@
 #ifndef _H_CS499R_RENDERSTATE
 #define _H_CS499R_RENDERSTATE
 
-#include "cs499rPrefix.hpp"
+#include "cs499rEnums.hpp"
 
 
 namespace CS499R
@@ -21,6 +21,9 @@ namespace CS499R
 
         // number of samples per pixel subdivisions
         size_t mSamplesPerSubdivisions;
+
+        // the ray tracer algorithm to use
+        RayAlgorithm mRayAlgorithm;
 
         // the render target to render to
         RenderTarget * mRenderTarget;

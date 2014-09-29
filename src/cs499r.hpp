@@ -6,6 +6,7 @@
 
 #include "cs499rBenchmark.hpp"
 #include "cs499rCamera.hpp"
+#include "cs499rEnums.hpp"
 #include "cs499rImage.hpp"
 #include "cs499rMesh.hpp"
 #include "cs499rRayTracer.hpp"

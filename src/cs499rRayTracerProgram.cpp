@@ -207,13 +207,42 @@ namespace
             }
         }
 
+        inline
+        void
+        camera_first_ray(
+            sample_context_t * const sampleCx,
+            __global common_shot_context_t const * shotCx,
+            uint32x2_t const pixelCoord,
+            uint32x2_t const pixelSubpixelCoord
+        )
+        {
+            float32x2_t const subpixelCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
+                    (1.0f + 2.0f * (float32x2_t)(pixelSubpixelCoord.x, pixelSubpixelCoord.y)) *
+                    (0.5f / (float32_t) shotCx->render.z);
+
+            float32x2_t areaCoord;
+            areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.x);
+            areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.y);
+            areaCoord = areaCoord * 2.0f - 1.0f;
+
+            float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
+                shotCx->camera.focusBasisU * areaCoord.x +
+                shotCx->camera.focusBasisV * areaCoord.y;
+
+            sampleCx->rayOrigin = shotCx->camera.shotPosition +
+                shotCx->camera.shotBasisU * areaCoord.x +
+                shotCx->camera.shotBasisV * areaCoord.y;
+
+            sampleCx->rayDirection = normalize(rayFocusPoint - sampleCx->rayOrigin);
+        }
+
     );
 
     /*
      * In some case, it might be more performant to recompute a variable within
      * a functions instead of storing it into the stack.
      */
-    char const * const kKernelDispatchKernelDefines = "\n"
+    char const * const kKernelCommonDefines = "\n"
         "#define pixelBorderSubpixelCount shotCx->render.z\n"
         "#define subpixelSampleCount get_local_size(2)\n"
         "#define subpixelSampleId get_local_id(2)\n"
@@ -222,12 +251,12 @@ namespace
         "#define pixelId (pixelCoord.x + pixelCoord.y * shotCx->render.x)\n"
     ;
 
-    char const * const kKernelDispatchKernel = CS499R_CODE(
+    char const * const kKernelPathTracer = CS499R_CODE(
         /*
-         * This trace the ray throught the scene
+         * Path tracer's main entry point
          */
         __kernel void
-        dispatch_main(
+        kernel_path_tracer_main(
             __global common_shot_context_t const * shotCx,
             __global common_mesh_instance_t const * meshInstances,
             __global common_primitive_t const * primitives,
@@ -246,15 +275,6 @@ namespace
 
             uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(get_local_id(0), get_local_id(1));
 
-            float32x2_t const subpixelCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
-                    (1.0f + 2.0f * (float32x2_t)(pixelSubpixelCoord.x, pixelSubpixelCoord.y)) *
-                    (0.5f / (float32_t) shotCx->render.z);
-
-            float32x2_t areaCoord;
-            areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.x);
-            areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.y);
-            areaCoord = areaCoord * 2.0f - 1.0f;
-
             sample_context_t sampleCx;
 
             { // set up random seed
@@ -265,25 +285,11 @@ namespace
                 sampleCx.randomSeed = sampleCx.randomSeed % 1436283;
             }
 
-            { // set up first ray
-                float32x3_t rayFocusPoint = shotCx->camera.focusPosition +
-                    shotCx->camera.focusBasisU * areaCoord.x +
-                    shotCx->camera.focusBasisV * areaCoord.y;
-
-                sampleCx.rayOrigin = shotCx->camera.shotPosition +
-                    shotCx->camera.shotBasisU * areaCoord.x +
-                    shotCx->camera.shotBasisV * areaCoord.y;
-
-                sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
-            }
-
+            camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
             scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
             float32x3_t sampleColor = sampleCx.rayInterColorAdd;
             float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
-
-            //sampleColor = normalize(sampleCx.rayInterNormal) * 0.5f + 0.5f;
-            //sampleColorMultiply = (float32x3_t)(0.0f, 0.0f, 0.0f);
 
             for (uint32_t i = 0; i < kRecursionCount; i++)
             {
@@ -385,6 +391,44 @@ namespace
         }
     );
 
+    char const * const kKernelDebug = CS499R_CODE(
+        __kernel
+        void
+        kernel_debug_normal(
+            __global common_shot_context_t const * shotCx,
+            __global common_mesh_instance_t const * meshInstances,
+            __global common_primitive_t const * primitives,
+            __global float32_t * renderTarget
+        )
+        {
+            uint32x2_t const pixelCoord = (uint32x2_t)(
+                get_global_id(0) / pixelBorderSubpixelCount,
+                get_global_id(1) / pixelBorderSubpixelCount
+            );
+
+            if (pixelCoord.x >= shotCx->render.x || pixelCoord.y >= shotCx->render.y)
+            {
+                return;
+            }
+
+            uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(get_local_id(0), get_local_id(1));
+
+            sample_context_t sampleCx;
+
+            camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
+            scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
+
+            float32x3_t pixelColor = normalize(sampleCx.rayInterNormal) * 0.5f + 0.5f;
+
+            __global float32_t * pixelTarget = renderTarget + pixelId * 3;
+
+            pixelTarget[0] = pixelColor.x;
+            pixelTarget[1] = pixelColor.y;
+            pixelTarget[2] = pixelColor.z;
+        }
+
+    );
+
 }
 
 namespace CS499R
@@ -400,8 +444,14 @@ namespace CS499R
             kCodeStructs,
             kCodeLibStructs,
             kCodeLibEssentials,
-            kKernelDispatchKernelDefines,
-            kKernelDispatchKernel
+            kKernelCommonDefines,
+            kKernelPathTracer,
+            kKernelDebug,
+        };
+
+        char const * programKernelNameArray[] = {
+            "kernel_path_tracer_main",
+            "kernel_debug_normal",
         };
 
         { // initialize program
@@ -433,10 +483,11 @@ namespace CS499R
             }
         }
 
+        for (size_t i = 0; i < kRayAlgorithmCount; i++)
         {
-            mKernel.dispatch = clCreateKernel(mProgram, "dispatch_main", &error);
+            mKernelArray[i] = clCreateKernel(mProgram, programKernelNameArray[i], &error);
 
-            CS499R_ASSERT(error == 0);
+            CS499R_ASSERT_NO_CL_ERROR(error);
         }
     }
 
