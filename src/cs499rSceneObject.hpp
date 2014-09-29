@@ -52,10 +52,10 @@ namespace CS499R
          * Gets the object's scene name
          */
         inline
-        Scene *
+        std::string
         name()
         {
-            return mScene;
+            return mSceneObjectName;
         }
 
 
