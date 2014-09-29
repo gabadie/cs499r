@@ -30,28 +30,6 @@ namespace CS499R
 
         std::map<SceneMesh *, size_t> meshOffsetMap;
 
-        { // upload triangles
-            mBuffer.triangles = clCreateBuffer(
-                context,
-                CL_MEM_READ_ONLY,
-                sizeof(common_triangle_t) * mScene->mTriangles.size(),
-                NULL,
-                &error
-            );
-
-            CS499R_ASSERT(error == 0);
-            CS499R_ASSERT(mBuffer.triangles != nullptr);
-
-            error |= clEnqueueWriteBuffer(
-                cmdQueue,
-                mBuffer.triangles,
-                CL_FALSE, 0,
-                sizeof(common_triangle_t) * mScene->mTriangles.size(),
-                &mScene->mTriangles[0],
-                0, NULL, NULL
-            );
-        }
-
         { // upload primitives
             size_t totalPrimCount = 0;
 
@@ -81,8 +59,10 @@ namespace CS499R
             {
                 auto sceneMesh = it.second;
 
+                CS499R_ASSERT_ALIGNMENT(sceneMesh->mPrimitiveArray);
+
                 error |= clEnqueueWriteBuffer(
-                    cmdQueue, mBuffer.triangles, CL_FALSE,
+                    cmdQueue, mBuffer.primitives, CL_FALSE,
                     meshPrimOffset * sizeof(common_primitive_t),
                     sceneMesh->mPrimitiveCount * sizeof(common_primitive_t),
                     sceneMesh->mPrimitiveArray,
@@ -96,9 +76,9 @@ namespace CS499R
         }
 
         { // upload instances
-            size_t const instanceCount = mScene->mObjectsMap.meshInstances.size();
             size_t instanceId = 0;
-            auto instanceArray = new common_mesh_instance_t[instanceCount];
+            size_t const instanceCount = mScene->mObjectsMap.meshInstances.size();
+            auto const instanceArray = alloc<common_mesh_instance_t>(instanceCount);
 
             for (auto it : mScene->mObjectsMap.meshInstances)
             {
@@ -107,32 +87,34 @@ namespace CS499R
                 auto sceneMeshPrimFirst = meshOffsetMap.find(sceneMesh)->second;
                 auto commonMesh = instanceArray + instanceId;
 
-                commonMesh->meshSceneMatrix.c[0] = sceneMeshInstance->mMeshSceneMatrix.x;
-                commonMesh->meshSceneMatrix.c[1] = sceneMeshInstance->mMeshSceneMatrix.y;
-                commonMesh->meshSceneMatrix.c[2] = sceneMeshInstance->mMeshSceneMatrix.z;
-                commonMesh->meshSceneMatrix.c[3] = sceneMeshInstance->mScenePosition;
+                commonMesh->meshSceneMatrix.x = sceneMeshInstance->mMeshSceneMatrix.x;
+                commonMesh->meshSceneMatrix.y = sceneMeshInstance->mMeshSceneMatrix.y;
+                commonMesh->meshSceneMatrix.z = sceneMeshInstance->mMeshSceneMatrix.z;
+                commonMesh->meshSceneMatrix.w = sceneMeshInstance->mScenePosition;
 
                 auto sceneMeshMatrix = transpose(sceneMeshInstance->mMeshSceneMatrix);
 
-                commonMesh->sceneMeshMatrix.c[0] = sceneMeshMatrix.x;
-                commonMesh->sceneMeshMatrix.c[1] = sceneMeshMatrix.y;
-                commonMesh->sceneMeshMatrix.c[2] = sceneMeshMatrix.z;
-                commonMesh->sceneMeshMatrix.c[3] = -dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition);
+                commonMesh->sceneMeshMatrix.x = sceneMeshMatrix.x;
+                commonMesh->sceneMeshMatrix.y = sceneMeshMatrix.y;
+                commonMesh->sceneMeshMatrix.z = sceneMeshMatrix.z;
+                commonMesh->sceneMeshMatrix.w = -dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition);
 
                 commonMesh->diffuseColor = sceneMeshInstance->mColorDiffuse;
                 commonMesh->emitColor = sceneMeshInstance->mColorEmit;
                 commonMesh->mesh.primFirst = sceneMeshPrimFirst;
                 commonMesh->mesh.primCount = sceneMesh->mPrimitiveCount;
+
+                instanceId++;
             }
 
-            mBuffer.primitives = clCreateBuffer(
-                context, CL_MEM_READ_ONLY,
-                instanceCount * sizeof(common_mesh_instance_t),
-                NULL,
+            mBuffer.meshInstances = clCreateBuffer(
+                context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
+                instanceCount * sizeof(instanceArray[0]),
+                instanceArray,
                 &error
             );
 
-            delete [] instanceArray;
+            free(instanceArray);
 
             CS499R_ASSERT_NO_CL_ERROR(error);
         }

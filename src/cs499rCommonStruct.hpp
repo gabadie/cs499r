@@ -16,11 +16,13 @@ namespace CS499R
     (
 
         typedef
-        struct
-        __attribute__((aligned(16)))
+        struct __attribute__((aligned(16)))
         common_mat3x4_s
         {
-            float32x3_t c[4];
+            __attribute__((aligned(16))) float32x3_t x;
+            __attribute__((aligned(16))) float32x3_t y;
+            __attribute__((aligned(16))) float32x3_t z;
+            __attribute__((aligned(16))) float32x3_t w;
         } common_mat3x4_t;
 
         typedef
@@ -59,15 +61,6 @@ namespace CS499R
             __attribute__((aligned(16))) float32x3_t v2;
         } common_primitive_t;
 
-        typedef struct common_triangle_s
-        {
-            __attribute__((aligned(16))) float32x3_t v0;
-            __attribute__((aligned(16))) float32x3_t v1;
-            __attribute__((aligned(16))) float32x3_t v2;
-            __attribute__((aligned(16))) float32x3_t diffuseColor;
-            __attribute__((aligned(16))) float32x3_t emitColor;
-        } common_triangle_t;
-
         typedef struct common_camera_s
         {
             __attribute__((aligned(16))) float32x3_t shotPosition;
@@ -89,8 +82,8 @@ namespace CS499R
             //      z is the image's subdivisions per pixels border
             __attribute__((aligned(16))) uint32x3_t render;
 
-            // the number of triangles in the scene
-            __attribute__((aligned(16))) uint32_t triangleCount;
+            // the number of mesh instances in the scene
+            __attribute__((aligned(16))) uint32_t meshInstanceCount;
 
         } common_shot_context_t;
 

@@ -8,29 +8,84 @@ void
 buildSceneMeshes(CS499R::Scene & scene)
 {
     float32_t const radius = 20.0f;
-    float32_t const height = 10.0f;
+    float32_t const height = 10.0f;;
+    float32_t const lightSize = 9.0f;
 
-    {
+    float32x3_t const colorRed { 0.75f, 0.25f, 0.25f };
+    float32x3_t const colorBlue { 0.25f, 0.25f, 0.75f };
+    float32x3_t const colorLight(5.0f);
+
+
+    { // X-
         float32x3_t meshVertices[] = {
-            float32x3_t(0.0f, -radius, 0.0f),
-            float32x3_t(0.0f, +radius, 0.0f),
-            float32x3_t(0.0f, -radius, +height),
-            float32x3_t(0.0f, -radius, +height),
-            float32x3_t(0.0f, +radius, 0.0f),
-            float32x3_t(0.0f, +radius, +height),
+            float32x3_t(-radius, -radius, 0.0f),
+            float32x3_t(-radius, +radius, 0.0f),
+            float32x3_t(-radius, -radius, +height),
+            float32x3_t(-radius, -radius, +height),
+            float32x3_t(-radius, +radius, 0.0f),
+            float32x3_t(-radius, +radius, +height),
         };
 
         CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-        auto sceneMesh = scene.addMesh("room/wall", mesh);
+        auto sceneMesh = scene.addMesh("room/wall/x-", mesh);
+        auto sceneMeshInstance = scene.addMeshInstance("room/wall/x-", sceneMesh);
 
-        {
-            auto instance = scene.addMeshInstance("room/wall/x+", sceneMesh);
-            instance->mScenePosition = float32x3_t(10.0f, 0.0f, 0.0f);
-        }
+        sceneMeshInstance->mColorDiffuse = colorRed;
     }
 
-    {
+    { // X+
+        float32x3_t meshVertices[] = {
+            float32x3_t(+radius, -radius, 0.0f),
+            float32x3_t(+radius, -radius, +height),
+            float32x3_t(+radius, +radius, 0.0f),
+            float32x3_t(+radius, +radius, 0.0f),
+            float32x3_t(+radius, -radius, +height),
+            float32x3_t(+radius, +radius, +height),
+        };
+
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
+
+        auto sceneMesh = scene.addMesh("room/wall/x+", mesh);
+        auto sceneMeshInstance = scene.addMeshInstance("room/wall/x+", sceneMesh);
+
+        sceneMeshInstance->mColorDiffuse = colorBlue;
+    }
+
+    { // Y-
+        float32x3_t meshVertices[] = {
+            float32x3_t(-radius, -radius, 0.0f),
+            float32x3_t(-radius, -radius, +height),
+            float32x3_t(+radius, -radius, 0.0f),
+            float32x3_t(+radius, -radius, 0.0f),
+            float32x3_t(-radius, -radius, +height),
+            float32x3_t(+radius, -radius, +height),
+        };
+
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
+
+        auto sceneMesh = scene.addMesh("room/wall/y-", mesh);
+        scene.addMeshInstance("room/wall/y-", sceneMesh);
+    }
+
+    { // Y+
+        float32x3_t meshVertices[] = {
+            float32x3_t(-radius, +radius, 0.0f),
+            float32x3_t(+radius, +radius, 0.0f),
+            float32x3_t(-radius, +radius, +height),
+            float32x3_t(-radius, +radius, +height),
+            float32x3_t(+radius, +radius, 0.0f),
+            float32x3_t(+radius, +radius, +height),
+        };
+
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
+
+        auto sceneMesh = scene.addMesh("room/wall/y+", mesh);
+        scene.addMeshInstance("room/wall/y+", sceneMesh);
+    }
+
+
+    { // Z-
         float32x3_t meshVertices[] = {
             float32x3_t(-radius, -radius, 0.0f),
             float32x3_t(+radius, -radius, 0.0f),
@@ -42,65 +97,45 @@ buildSceneMeshes(CS499R::Scene & scene)
 
         CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-        scene.addMesh("roomFloor", mesh);
+        auto sceneMesh = scene.addMesh("room/floor", mesh);
+        scene.addMeshInstance("room/floor", sceneMesh);
     }
-}
 
-static
-void
-buildDummyScene(CS499R::Scene & scene)
-{
-    buildSceneMeshes(scene);
+    { // Z+
+        float32x3_t meshVertices[] = {
+            float32x3_t(-radius, -radius, +height),
+            float32x3_t(-radius, +radius, +height),
+            float32x3_t(+radius, -radius, +height),
+            float32x3_t(+radius, -radius, +height),
+            float32x3_t(-radius, +radius, +height),
+            float32x3_t(+radius, +radius, +height),
+        };
 
-    float const radius = 20.0f;
-    float const height = 10.0f;
-    float const lightSize = 9.0f;
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-    float32x3_t v000 { -radius, -radius, 0.0f };
-    float32x3_t v100 { +radius, -radius, 0.0f };
-    float32x3_t v010 { -radius, +radius, 0.0f };
-    float32x3_t v110 { +radius, +radius, 0.0f };
-    float32x3_t v001 { -radius, -radius, height };
-    float32x3_t v101 { +radius, -radius, height };
-    float32x3_t v011 { -radius, +radius, height };
-    float32x3_t v111 { +radius, +radius, height };
+        auto sceneMesh = scene.addMesh("room/roof", mesh);
+        scene.addMeshInstance("room/roof", sceneMesh);
+    }
 
-    float32x3_t red { 0.75f, 0.25f, 0.25f };
-    float32x3_t blue { 0.25f, 0.25f, 0.75f };
-    float32x3_t white { 0.75f, 0.75f, 0.75f };
-    float32x3_t black { 0.0f, 0.0f, 0.0f };
+    { // light
+        float32x3_t vl0 { radius - lightSize, radius, height };
+        float32x3_t vl1 { radius, radius, height - lightSize };
+        float32x3_t vl2 { radius, radius - lightSize, height };
 
-    // X-
-    scene.addTriangle(v000, v010, v001, red, black);
-    scene.addTriangle(v001, v010, v011, red, black);
+        float32x3_t meshVertices[] = {
+            vl0,
+            vl1,
+            vl2,
+        };
 
-    // X+
-    scene.addTriangle(v100, v101, v110, blue, black);
-    scene.addTriangle(v101, v111, v110, blue, black);
+        CS499R::Mesh mesh(CS499R_ARRAY_SIZE(meshVertices), meshVertices);
 
-    // Y-
-    scene.addTriangle(v000, v001, v100, white, black);
-    scene.addTriangle(v001, v101, v100, white, black);
+        auto sceneMesh = scene.addMesh("room/light", mesh);
+        auto sceneMeshInstance = scene.addMeshInstance("room/light", sceneMesh);
 
-    // Y+
-    scene.addTriangle(v010, v110, v011, white, black);
-    scene.addTriangle(v011, v110, v111, white, black);
-
-    // Z-
-    scene.addTriangle(v000, v100, v010, white, black);
-    scene.addTriangle(v010, v100, v110, white, black);
-
-    // Z+
-    scene.addTriangle(v001, v011, v101, white, black);
-    scene.addTriangle(v011, v111, v101, white, black);
-
-    // light
-    float32x3_t vl0 { radius - lightSize, radius, height };
-    float32x3_t vl1 { radius, radius, height - lightSize };
-    float32x3_t vl2 { radius, radius - lightSize, height };
-    float32x3_t light(5.0f);
-
-    scene.addTriangle(vl0, vl1, vl2, black, light);
+        sceneMeshInstance->mColorDiffuse = colorLight;
+        sceneMeshInstance->mColorEmit = colorLight;
+    }
 }
 
 static
@@ -222,7 +257,7 @@ main(int argc, char const * const * argv)
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
     CS499R::RenderProfiling renderProfiling;
 
-    buildDummyScene(scene);
+    buildSceneMeshes(scene);
 
     {
         CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);

@@ -59,6 +59,9 @@ namespace
             // the sample's random seed
             uint32_t randomSeed;
 
+            // the currently bound mesh instance
+            __global common_mesh_instance_t const * boundMeshInstance;
+
         } sample_context_t;
 
     );
@@ -81,10 +84,13 @@ namespace
         }
 
         void
-        intersect_triangles(sample_context_t * sampleCx, __global common_triangle_t const * triangle)
+        primitive_intersection(
+            sample_context_t * sampleCx,
+            __global common_primitive_t const * primitive
+        )
         {
-            float32x3_t AB = triangle->v1 - triangle->v0;
-            float32x3_t AC = triangle->v2 - triangle->v0;
+            float32x3_t AB = primitive->v1 - primitive->v0;
+            float32x3_t AC = primitive->v2 - primitive->v0;
             float32x3_t normal = cross(AB, AC);
 
             /*
@@ -119,7 +125,7 @@ namespace
              * Glossary:
              *      Point `O` is the origin of the ray (sampleCx->rayOrigin)
              *      Vector `d` is direction of the ray (sampleCx->rayDirection)
-             *      Point `A` is the first vertex of the current triangle (triangle->v0)
+             *      Point `A` is the first vertex of the current triangle (primitive->v0)
              *      Point `I` is the ray intersection with the triangle
              *      Distance `OI` is the intersection distance (rayInterDistance)
              *
@@ -128,7 +134,7 @@ namespace
              *
              */
 
-            float32_t OH = dot(sampleCx->rayOrigin - triangle->v0, normal);
+            float32_t OH = dot(sampleCx->rayOrigin - primitive->v0, normal);
             float32_t normalDotRay = dot(sampleCx->rayDirection, normal);
             float32_t rayInterDistance = - OH / normalDotRay;
 
@@ -138,7 +144,7 @@ namespace
                 return;
             }
 
-            float32x3_t rayIntersectionVector = sampleCx->rayOrigin + sampleCx->rayDirection * rayInterDistance - triangle->v0;
+            float32x3_t rayIntersectionVector = sampleCx->rayOrigin + sampleCx->rayDirection * rayInterDistance - primitive->v0;
             float32_t basis_dot = dot(AB, AC);
             float32x2_t invSquareLenght = 1.0f / (float32x2_t)(dot(AB, AB), dot(AC, AC));
             float32x2_t invSquareLenghtBasisDot = basis_dot * invSquareLenght;
@@ -155,26 +161,49 @@ namespace
             // there is an intersection, so we update the context
 
             sampleCx->rayInterDistance = rayInterDistance;
-            sampleCx->rayInterColorMultiply = triangle->diffuseColor;
-            sampleCx->rayInterColorAdd = triangle->emitColor;
             sampleCx->rayInterNormal = normal;
+
+            __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
+
+            sampleCx->rayInterColorMultiply = meshInstance->diffuseColor;
+            sampleCx->rayInterColorAdd = meshInstance->emitColor;
         }
 
         inline
         void
-        intersect_scene(
+        mesh_instance_intersection(
+            sample_context_t * sampleCx,
+            __global common_primitive_t const * primitives
+        )
+        {
+            __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
+            __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
+            uint32_t const primCount = meshInstance->mesh.primCount;
+
+            for (uint32_t primId = 0; primId < primCount; primId++)
+            {
+                primitive_intersection(sampleCx, meshPrimitives + primId);
+            }
+        }
+
+        inline
+        void
+        scene_intersection(
             sample_context_t * sampleCx,
             __global common_shot_context_t const * shotCx,
-            __global common_triangle_t const * triangles
+            __global common_mesh_instance_t const * meshInstances,
+            __global common_primitive_t const * primitives
         )
         {
             sampleCx->rayInterColorMultiply = (float3)(0.0f);
             sampleCx->rayInterColorAdd = (float3)(0.0f);
             sampleCx->rayInterDistance = INFINITY;
 
-            for (uint i = 0; i < shotCx->triangleCount; i++)
+            for (uint32_t i = 0; i < shotCx->meshInstanceCount; i++)
             {
-                intersect_triangles(sampleCx, triangles + i);
+                sampleCx->boundMeshInstance = meshInstances + i;
+
+                mesh_instance_intersection(sampleCx, primitives);
             }
         }
 
@@ -200,7 +229,8 @@ namespace
         __kernel void
         dispatch_main(
             __global common_shot_context_t const * shotCx,
-            __global common_triangle_t const * triangles,
+            __global common_mesh_instance_t const * meshInstances,
+            __global common_primitive_t const * primitives,
             __global float32_t * renderTarget
         )
         {
@@ -247,10 +277,13 @@ namespace
                 sampleCx.rayDirection = normalize(rayFocusPoint - sampleCx.rayOrigin);
             }
 
-            intersect_scene(&sampleCx, shotCx, triangles);
+            scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
             float32x3_t sampleColor = sampleCx.rayInterColorAdd;
             float32x3_t sampleColorMultiply = sampleCx.rayInterColorMultiply;
+
+            //sampleColor = normalize(sampleCx.rayInterNormal) * 0.5f + 0.5f;
+            //sampleColorMultiply = (float32x3_t)(0.0f, 0.0f, 0.0f);
 
             for (uint32_t i = 0; i < kRecursionCount; i++)
             {
@@ -283,7 +316,7 @@ namespace
                     );
                 }
 
-                intersect_scene(&sampleCx, shotCx, triangles);
+                scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
 
                 sampleColor += sampleCx.rayInterColorAdd * sampleColorMultiply;
                 sampleColorMultiply *= sampleCx.rayInterColorMultiply;

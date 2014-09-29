@@ -22,7 +22,7 @@ namespace CS499R
     {
         CS499R_ASSERT(mPrimitiveCount != 0);
 
-        delete [] mPrimitiveArray;
+        free(mPrimitiveArray);
     }
 
     void
@@ -31,7 +31,7 @@ namespace CS499R
         CS499R_ASSERT(mesh.mPrimitiveCount != 0);
 
         mPrimitiveCount = mesh.mPrimitiveCount;
-        mPrimitiveArray = new Primitive[mPrimitiveCount];
+        mPrimitiveArray = alloc<common_primitive_t>(mPrimitiveCount);
 
         for (size_t primId = 0; primId < mPrimitiveCount; primId++)
         {
