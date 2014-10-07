@@ -51,6 +51,9 @@ namespace CS499R
         // the primitive array
         Primitive * mPrimitiveArray;
 
+        // the mesh's center pos within the octree basis
+        float32x3_t mCenterPosition;
+
 
         // --------------------------------------------------------------------- METHODES
 

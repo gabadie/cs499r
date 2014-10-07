@@ -113,14 +113,20 @@ namespace CS499R
                 commonMesh->meshSceneMatrix.x = sceneMeshInstance->mMeshSceneMatrix.x;
                 commonMesh->meshSceneMatrix.y = sceneMeshInstance->mMeshSceneMatrix.y;
                 commonMesh->meshSceneMatrix.z = sceneMeshInstance->mMeshSceneMatrix.z;
-                commonMesh->meshSceneMatrix.w = sceneMeshInstance->mScenePosition;
+                commonMesh->meshSceneMatrix.w = (
+                    sceneMeshInstance->mScenePosition -
+                    dot(sceneMeshInstance->mMeshSceneMatrix, sceneMesh->mCenterPosition)
+                );
 
                 auto sceneMeshMatrix = transpose(sceneMeshInstance->mMeshSceneMatrix);
 
                 commonMesh->sceneMeshMatrix.x = sceneMeshMatrix.x;
                 commonMesh->sceneMeshMatrix.y = sceneMeshMatrix.y;
                 commonMesh->sceneMeshMatrix.z = sceneMeshMatrix.z;
-                commonMesh->sceneMeshMatrix.w = -dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition);
+                commonMesh->sceneMeshMatrix.w = (
+                    sceneMesh->mCenterPosition -
+                    dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition)
+                );
 
                 commonMesh->diffuseColor = sceneMeshInstance->mColorDiffuse;
                 commonMesh->emitColor = sceneMeshInstance->mColorEmit;

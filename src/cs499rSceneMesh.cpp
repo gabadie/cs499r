@@ -32,12 +32,13 @@ namespace CS499R
 
         mPrimitiveCount = mesh.mPrimitiveCount;
         mPrimitiveArray = alloc<common_primitive_t>(mPrimitiveCount);
+        mCenterPosition = -mesh.lowerBoundCoordinate();
 
         for (size_t primId = 0; primId < mPrimitiveCount; primId++)
         {
-            mPrimitiveArray[primId].v0 = mesh.mPrimitiveArray[primId].vertex[0];
-            mPrimitiveArray[primId].v1 = mesh.mPrimitiveArray[primId].vertex[1];
-            mPrimitiveArray[primId].v2 = mesh.mPrimitiveArray[primId].vertex[2];
+            mPrimitiveArray[primId].v0 = mCenterPosition + mesh.mPrimitiveArray[primId].vertex[0];
+            mPrimitiveArray[primId].v1 = mCenterPosition + mesh.mPrimitiveArray[primId].vertex[1];
+            mPrimitiveArray[primId].v2 = mCenterPosition + mesh.mPrimitiveArray[primId].vertex[2];
         }
     }
 

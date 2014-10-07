@@ -16,6 +16,12 @@ namespace CS499R
     public:
         // --------------------------------------------------------------------- METHODES
 
+        /*
+         * Returns the scene mesh's lwer bound coordinate
+         */
+        float32x3_t
+        lowerBoundCoordinate() const;
+
 
 
         // --------------------------------------------------------------------- CONSTANTS
