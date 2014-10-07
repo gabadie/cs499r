@@ -336,6 +336,31 @@ namespace CS499R
     template <typename T>
     inline
     T
+    min(vec2<T> const & v)
+    {
+        return min(v.x, v.y);
+    }
+
+    template <typename T>
+    inline
+    T
+    min(vec3<T> const & v)
+    {
+        return min(v.x, min(v.y, v.z));
+    }
+
+    template <typename T>
+    inline
+    T
+    min(vec4<T> const & v)
+    {
+        return min(min(v.x, v.y), min(v.z, v.w));
+    }
+
+
+    template <typename T>
+    inline
+    T
     max(T const & a, T const & b)
     {
         return a > b ? a : b;
@@ -376,6 +401,31 @@ namespace CS499R
             max(a.w, b.w)
         );
     }
+
+    template <typename T>
+    inline
+    T
+    max(vec2<T> const & v)
+    {
+        return max(v.x, v.y);
+    }
+
+    template <typename T>
+    inline
+    T
+    max(vec3<T> const & v)
+    {
+        return max(v.x, max(v.y, v.z));
+    }
+
+    template <typename T>
+    inline
+    T
+    max(vec4<T> const & v)
+    {
+        return max(max(v.x, v.y), max(v.z, v.w));
+    }
+
 
 
     // ------------------------------------------------------------------------- CROSS PRODUCT
