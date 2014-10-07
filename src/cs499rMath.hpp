@@ -288,6 +288,96 @@ namespace CS499R
     }
 
 
+    // ------------------------------------------------------------------------- MIN/MAX
+    template <typename T>
+    inline
+    T
+    min(T const & a, T const & b)
+    {
+        return a > b ? b : a;
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    min(vec2<T> const & a, vec2<T> const & b)
+    {
+        return vec2<T>(
+            min(a.x, b.x),
+            min(a.y, b.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    min(vec3<T> const & a, vec3<T> const & b)
+    {
+        return vec3<T>(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            min(a.z, b.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    min(vec4<T> const & a, vec4<T> const & b)
+    {
+        return vec4<T>(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            min(a.z, b.z),
+            min(a.w, b.w)
+        );
+    }
+
+    template <typename T>
+    inline
+    T
+    max(T const & a, T const & b)
+    {
+        return a > b ? a : b;
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    max(vec2<T> const & a, vec2<T> const & b)
+    {
+        return vec2<T>(
+            max(a.x, b.x),
+            max(a.y, b.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    max(vec3<T> const & a, vec3<T> const & b)
+    {
+        return vec3<T>(
+            max(a.x, b.x),
+            max(a.y, b.y),
+            max(a.z, b.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    max(vec4<T> const & a, vec4<T> const & b)
+    {
+        return vec4<T>(
+            max(a.x, b.x),
+            max(a.y, b.y),
+            max(a.z, b.z),
+            max(a.w, b.w)
+        );
+    }
+
+
     // ------------------------------------------------------------------------- CROSS PRODUCT
     template <typename T>
     inline
