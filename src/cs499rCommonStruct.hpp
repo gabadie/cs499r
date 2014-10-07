@@ -27,6 +27,20 @@ namespace CS499R
 
         typedef
         struct __attribute__((aligned(16), packed))
+        common_mesh_octree_node_s
+        {
+            // mesh's first primitive
+            uint32_t subNodeOffsets[8];
+
+            // node's first primitive within the mesh's primitives' array
+            uint32_t primFirst;
+
+            // node's primitives count
+            uint32_t primCount;
+        } common_mesh_octree_node_t;
+
+        typedef
+        struct __attribute__((aligned(16), packed))
         common_mesh_s
         {
             // mesh's first primitive

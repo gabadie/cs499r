@@ -51,6 +51,12 @@ namespace CS499R
         // the primitive array
         Primitive * mPrimitiveArray;
 
+        // the number of octree's nodes
+        size_t mOctreeNodeCount;
+
+        // the octree's node array
+        common_mesh_octree_node_t * mOctreeNodeArray;
+
         // the mesh's center pos within the octree basis
         float32x3_t mCenterPosition;
 

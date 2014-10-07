@@ -17,10 +17,10 @@ namespace CS499R
         // --------------------------------------------------------------------- METHODES
 
         /*
-         * Returns the scene mesh's lwer bound coordinate
+         * Returns the mesh's bounding box corners
          */
-        float32x3_t
-        lowerBoundCoordinate() const;
+        void
+        computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const;
 
 
 

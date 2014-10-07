@@ -5,20 +5,23 @@
 namespace CS499R
 {
 
-    float32x3_t
-    Mesh::lowerBoundCoordinate() const
+    void
+    Mesh::computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const
     {
-        float32x3_t lowerBound (INFINITY);
+        float32x3_t lowerBound(INFINITY);
+        float32x3_t upperBound(-INFINITY);
 
         for (size_t primId = 0; primId < mPrimitiveCount; primId++)
         {
             for (size_t vertexId = 0; vertexId < kPrimitiveVertexCount; vertexId++)
             {
                 lowerBound = min(lowerBound, mPrimitiveArray[primId].vertex[vertexId]);
+                upperBound = max(upperBound, mPrimitiveArray[primId].vertex[vertexId]);
             }
         }
 
-        return lowerBound;
+        *outLowerBound = lowerBound;
+        *outUpperBound = upperBound;
     }
 
     Mesh::Mesh()
