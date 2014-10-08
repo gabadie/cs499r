@@ -55,7 +55,7 @@ namespace
             // ray's minimal distance found for depth test
             float32_t rayInterDistance;
 
-            // the ray's unnormalized intersection normal in the mesh space
+            // the ray's normalized intersection normal in the mesh space
             float32x3_t rayInterMeshNormal;
 
             // the currently bound mesh instance
@@ -94,10 +94,6 @@ namespace
             __global common_primitive_t const * primitive
         )
         {
-            float32x3_t AB = primitive->v1 - primitive->v0;
-            float32x3_t AC = primitive->v2 - primitive->v0;
-            float32x3_t normal = cross(AB, AC);
-
             /*
              *      (triangle)
              *          |
@@ -139,9 +135,11 @@ namespace
              *
              */
 
-            float32_t OH = dot(sampleCx->rayMeshOrigin - primitive->v0, normal);
-            float32_t normalDotRay = dot(sampleCx->rayMeshDirection, normal);
-            float32_t rayInterDistance = - OH / normalDotRay;
+            float32x3_t const normal = (float32x3_t)(primitive->v0.w, primitive->e0.w, primitive->e1.w);
+            float32x3_t const vAO = sampleCx->rayMeshOrigin - primitive->v0.xyz;
+            float32_t const OH = dot(vAO, normal);
+            float32_t const normalDotRay = dot(sampleCx->rayMeshDirection, normal);
+            float32_t const rayInterDistance = - OH / normalDotRay;
 
             if (isless(rayInterDistance, kEPSILONE) || isgreaterequal(rayInterDistance, sampleCx->rayInterDistance))
             {
@@ -149,15 +147,13 @@ namespace
                 return;
             }
 
-            float32x3_t rayIntersectionVector = sampleCx->rayMeshOrigin + sampleCx->rayMeshDirection * rayInterDistance - primitive->v0;
-            float32_t basis_dot = dot(AB, AC);
-            float32x2_t invSquareLenght = 1.0f / (float32x2_t)(dot(AB, AB), dot(AC, AC));
-            float32x2_t invSquareLenghtBasisDot = basis_dot * invSquareLenght;
-            float32x2_t h = (float32x2_t)(dot(rayIntersectionVector, AB), dot(rayIntersectionVector, AC)) * invSquareLenght;
-            float32_t invDet = 1.0f / (1.0f - invSquareLenghtBasisDot.x * invSquareLenghtBasisDot.y);
-            float32x2_t coord = invDet * (h - h.yx * invSquareLenghtBasisDot);
+            float32x3_t const vAI = vAO + sampleCx->rayMeshDirection * rayInterDistance;
+            float32x2_t const uv = (
+                primitive->uvMatrix.x * dot(vAI, primitive->e0.xyz) +
+                primitive->uvMatrix.y * dot(vAI, primitive->e1.xyz)
+            );
 
-            if ((coord.x < 0.0f) || (coord.y < 0.0f) || ((coord.x + coord.y) > 1.0f))
+            if ((uv.x < 0.0f) || (uv.y < 0.0f) || ((uv.x + uv.y) > 1.0f))
             {
                 // the intersection would be outside the triangle
                 return;
@@ -271,7 +267,7 @@ namespace
 
             __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
 
-            float32x3_t const meshNormal = normalize(sampleCx->rayInterMeshNormal);
+            float32x3_t const meshNormal = sampleCx->rayInterMeshNormal;
             float32x3_t const n = (
                 meshInstance->meshSceneMatrix.x * meshNormal.x +
                 meshInstance->meshSceneMatrix.y * meshNormal.y +
@@ -459,7 +455,7 @@ namespace
 
             __global common_mesh_instance_t const * const meshInstance = sampleCx.rayInterMeshInstance;
 
-            float32x3_t const meshNormal = normalize(sampleCx.rayInterMeshNormal);
+            float32x3_t const meshNormal = sampleCx.rayInterMeshNormal;
             float32x3_t const sceneNormal = (
                 meshInstance->meshSceneMatrix.x * meshNormal.x +
                 meshInstance->meshSceneMatrix.y * meshNormal.y +

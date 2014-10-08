@@ -26,6 +26,14 @@ namespace CS499R
         } common_mat3x4_t;
 
         typedef
+        struct __attribute__((aligned(16)))
+        common_mat2x2_s
+        {
+            __attribute__((aligned(8))) float32x2_t x;
+            __attribute__((aligned(8))) float32x2_t y;
+        } common_mat2x2_t;
+
+        typedef
         struct __attribute__((aligned(16), packed))
         common_mesh_octree_node_s
         {
@@ -68,11 +76,24 @@ namespace CS499R
             common_mesh_t mesh;
         } common_mesh_instance_t;
 
-        typedef struct common_primitive_s
+        typedef
+        struct __attribute__((aligned(16), packed))
+        common_primitive_s
         {
-            __attribute__((aligned(16))) float32x3_t v0;
-            __attribute__((aligned(16))) float32x3_t v1;
-            __attribute__((aligned(16))) float32x3_t v2;
+            // primitive's origin vertex
+            __attribute__((aligned(16))) float32x4_t v0;
+
+            // primitive's edges
+            __attribute__((aligned(16))) float32x4_t e0;
+            __attribute__((aligned(16))) float32x4_t e1;
+
+            // primitive precomputed normal
+            // float32x3_t normal = float32x3_t(v0.w, e0.w, e1.w)
+            //                    = normalize(cross(e0, e1))
+
+            // precomputed matrix calculated from v0, e1
+            // to compute the uv coordinates from (dot(AI,e0), dot(AI,e1))
+            common_mat2x2_t uvMatrix;
         } common_primitive_t;
 
         typedef struct common_camera_s

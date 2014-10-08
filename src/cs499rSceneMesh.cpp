@@ -251,9 +251,24 @@ namespace CS499R
             auto const originalPrimitive = mesh.mPrimitiveArray + primId;
             auto const commonPrimitive = mPrimitiveArray + primNewIds[primId];
 
-            commonPrimitive->v0 = mCenterPosition + originalPrimitive->vertex[0];
-            commonPrimitive->v1 = mCenterPosition + originalPrimitive->vertex[1];
-            commonPrimitive->v2 = mCenterPosition + originalPrimitive->vertex[2];
+            float32x3_t const v0 = mCenterPosition + originalPrimitive->vertex[0];
+            float32x3_t const e0 = originalPrimitive->vertex[1] - originalPrimitive->vertex[0];
+            float32x3_t const e1 = originalPrimitive->vertex[2] - originalPrimitive->vertex[0];
+            float32x3_t const normal = normalize(cross(e0, e1));
+
+            float32_t const basisDot = dot(e0, e1);
+            float32x2_t const invSquareLenght = 1.0f / (float32x2_t)(dot(commonPrimitive->e0, commonPrimitive->e0), dot(commonPrimitive->e1, commonPrimitive->e1));
+            float32x2_t const invSquareLenghtBasisDot = basisDot * invSquareLenght;
+            float32_t const invDet = 1.0f / (1.0f - invSquareLenghtBasisDot.x * invSquareLenghtBasisDot.y);
+            float32x2_t const factorAIdot = invDet * invSquareLenght;
+
+            commonPrimitive->v0 = float32x4_t(v0.x, v0.y, v0.z, normal.x);
+            commonPrimitive->e0 = float32x4_t(e0.x, e0.y, e0.z, normal.y);
+            commonPrimitive->e1 = float32x4_t(e1.x, e1.y, e1.z, normal.z);
+            commonPrimitive->uvMatrix.x.x = factorAIdot.x;
+            commonPrimitive->uvMatrix.x.y = - factorAIdot.y * invSquareLenghtBasisDot.x;
+            commonPrimitive->uvMatrix.y.x = - factorAIdot.x * invSquareLenghtBasisDot.y;
+            commonPrimitive->uvMatrix.y.y = factorAIdot.y;
         }
 
         delete octreeRoot;
