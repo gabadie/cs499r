@@ -23,6 +23,11 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- STRUCTS
+
+        using SceneMeshOffsetMap = std::map<SceneMesh *, size_t>;
+
+
         // --------------------------------------------------------------------- MEMBERS
 
         // the scene source
@@ -36,6 +41,7 @@ namespace CS499R
         {
             cl_mem primitives;
             cl_mem meshInstances;
+            cl_mem meshOctreeNodes;
         } mBuffer;
 
 
@@ -51,13 +57,19 @@ namespace CS499R
          * Creates mBuffer.primitives
          */
         void
-        createPrimitivesBuffer(std::map<SceneMesh *, size_t> & meshPrimitivesGlobalOffsets);
+        createPrimitivesBuffer(SceneMeshOffsetMap & meshPrimitivesGlobalOffsets);
 
         /*
          * Creates mBuffer.meshInstances
          */
         void
-        createMeshInstancesBuffer(std::map<SceneMesh *, size_t> const & meshPrimitivesGlobalOffsets);
+        createMeshInstancesBuffer(SceneMeshOffsetMap const & meshPrimitivesGlobalOffsets);
+
+        /*
+         * Creates mBuffer.meshOctreeNodes
+         */
+        void
+        createMeshOctreeNodesBuffer(SceneMeshOffsetMap & meshOctreeRootGlobalId);
 
         /*
          * Releases GPU side buffers

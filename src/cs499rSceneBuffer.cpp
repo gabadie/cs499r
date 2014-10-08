@@ -24,15 +24,18 @@ namespace CS499R
     void
     SceneBuffer::createBuffers()
     {
-        std::map<SceneMesh *, size_t> meshPrimitivesGlobalOffsets;
+        SceneMeshOffsetMap meshPrimitivesGlobalOffsets;
+        SceneMeshOffsetMap meshOctreeRootGlobalId;
 
         createPrimitivesBuffer(meshPrimitivesGlobalOffsets);
+
+        createMeshOctreeNodesBuffer(meshOctreeRootGlobalId);
 
         createMeshInstancesBuffer(meshPrimitivesGlobalOffsets);
     }
 
     void
-    SceneBuffer::createPrimitivesBuffer(std::map<SceneMesh *, size_t> & meshPrimitivesGlobalOffsets)
+    SceneBuffer::createPrimitivesBuffer(SceneMeshOffsetMap & meshPrimitivesGlobalOffsets)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -83,7 +86,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createMeshInstancesBuffer(std::map<SceneMesh *, size_t> const & meshPrimitivesGlobalOffsets)
+    SceneBuffer::createMeshInstancesBuffer(SceneMeshOffsetMap const & meshPrimitivesGlobalOffsets)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -158,6 +161,61 @@ namespace CS499R
         free(instanceArray);
 
         CS499R_ASSERT_NO_CL_ERROR(error);
+    }
+
+    void
+    SceneBuffer::createMeshOctreeNodesBuffer(SceneMeshOffsetMap & meshOctreeRootGlobalId)
+    {
+        cl_int error = 0;
+
+        { // alloc mBuffer.meshOctreeNodes
+            cl_context const context = mRayTracer->mContext;
+            size_t totalMeshOctreeNodeCount = 0;
+
+            for (auto it : mScene->mObjectsMap.meshes)
+            {
+                auto sceneMesh = it.second;
+
+                meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
+
+                totalMeshOctreeNodeCount += sceneMesh->mOctreeNodeCount;
+            }
+
+            CS499R_ASSERT(totalMeshOctreeNodeCount != 0);
+
+            mBuffer.meshOctreeNodes = clCreateBuffer(
+                context, CL_MEM_READ_ONLY,
+                totalMeshOctreeNodeCount * sizeof(common_mesh_octree_node_t),
+                NULL,
+                &error
+            );
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
+        }
+
+        { // upload mBuffer.meshOctreeNodes's content
+            cl_command_queue const cmdQueue = mRayTracer->mCmdQueue;
+            size_t meshOctreeNodeOffset = 0;
+
+            for (auto it : mScene->mObjectsMap.meshes)
+            {
+                auto sceneMesh = it.second;
+
+                CS499R_ASSERT_ALIGNMENT(sceneMesh->mOctreeNodeArray);
+
+                error |= clEnqueueWriteBuffer(
+                    cmdQueue, mBuffer.meshOctreeNodes, CL_FALSE,
+                    meshOctreeNodeOffset * sizeof(common_mesh_octree_node_t),
+                    sceneMesh->mOctreeNodeCount * sizeof(common_mesh_octree_node_t),
+                    sceneMesh->mOctreeNodeArray,
+                    0, NULL, NULL
+                );
+
+                CS499R_ASSERT_NO_CL_ERROR(error);
+
+                meshOctreeNodeOffset += sceneMesh->mOctreeNodeCount;
+            }
+        }
     }
 
     void
