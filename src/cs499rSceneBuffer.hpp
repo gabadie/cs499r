@@ -2,6 +2,8 @@
 #ifndef _H_CS499R_SCENEBUFFER
 #define _H_CS499R_SCENEBUFFER
 
+#include <map>
+
 #include "cs499rPrefix.hpp"
 
 
@@ -44,6 +46,18 @@ namespace CS499R
          */
         void
         createBuffers();
+
+        /*
+         * Creates mBuffer.primitives
+         */
+        void
+        createPrimitivesBuffer(std::map<SceneMesh *, size_t> & meshPrimitivesGlobalOffsets);
+
+        /*
+         * Creates mBuffer.meshInstances
+         */
+        void
+        createMeshInstancesBuffer(std::map<SceneMesh *, size_t> const & meshPrimitivesGlobalOffsets);
 
         /*
          * Releases GPU side buffers
