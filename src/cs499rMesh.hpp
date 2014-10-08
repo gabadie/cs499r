@@ -33,6 +33,7 @@ namespace CS499R
         // --------------------------------------------------------------------- IDLE
 
         Mesh();
+        Mesh(char const * filePath);
         Mesh(size_t primitiveCount, float32x3_t const * primitiveArray);
         ~Mesh();
 
@@ -56,6 +57,15 @@ namespace CS499R
 
         // the primitive array
         Primitive * mPrimitiveArray;
+
+
+        // --------------------------------------------------------------------- METHODES
+
+        /*
+         * Loads an OBJ file
+         */
+        void
+        loadObjFile(char const * filePath);
 
 
         // --------------------------------------------------------------------- FRIENDSHIP
