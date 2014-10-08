@@ -12,6 +12,7 @@
 
 #include "cs499rMath.hpp"
 #include "cs499rUtils.hpp"
+#include "cs499rMemory.hpp"
 #include "cs499rCLUtils.hpp"
 
 
@@ -24,11 +25,15 @@ namespace CS499R
 
     class Camera;
     class Image;
+    class Mesh;
     class RayTracer;
     class RenderState;
     class RenderTarget;
     class Scene;
     class SceneBuffer;
+    class SceneMesh;
+    class SceneMeshInstance;
+    class SceneObject;
 
 }
 

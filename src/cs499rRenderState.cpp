@@ -21,15 +21,19 @@ namespace CS499R
         CS499R_ASSERT(mRenderTarget != nullptr);
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
-        auto rayTracer = sceneBuffer->mRayTracer;
+        auto const rayTracer = sceneBuffer->mRayTracer;
 
         timestamp_t kernelStart;
         timestamp_t kernelEnd;
 
         cl_int error = 0;
-        cl_context context = rayTracer->mContext;
-        cl_command_queue cmdQueue = rayTracer->mCmdQueue;
-        cl_kernel kernel = rayTracer->mKernel.dispatch;
+        cl_context const context = rayTracer->mContext;
+        cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
+        cl_kernel const kernel = rayTracer->mKernelArray[mRayAlgorithm];
+
+        bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
+        size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
+        size_t const samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
 
         float const aspectRatio = float(mRenderTarget->width()) / float(mRenderTarget->height());
         common_shot_context_t shotContext;
@@ -39,9 +43,10 @@ namespace CS499R
 
             shotContext.render.x = mRenderTarget->width();
             shotContext.render.y = mRenderTarget->height();
-            shotContext.render.z = mPixelBorderSubdivisions;
+            shotContext.render.z = pixelBorderSubdivisions;
 
-            shotContext.triangleCount = sceneBuffer->mScene->mTriangles.size();
+            // +1 because of the anonymous mesh
+            shotContext.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
         }
 
         cl_mem shotContextBuffer = clCreateBuffer(context,
@@ -55,8 +60,9 @@ namespace CS499R
 
         { // kernel arguments
             error |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &shotContextBuffer);
-            error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.triangles);
-            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
+            error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.meshInstances);
+            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sceneBuffer->mBuffer.primitives);
+            error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
 
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
@@ -66,17 +72,17 @@ namespace CS499R
             size_t const kThreadsPerTilesTarget = 2048 * 8;
 
             size_t const groupSize[kInvocationDims] = {
-                mPixelBorderSubdivisions,
-                mPixelBorderSubdivisions,
-                mSamplesPerSubdivisions,
+                pixelBorderSubdivisions,
+                pixelBorderSubdivisions,
+                samplesPerSubdivisions,
             };
 
             size_t maxWorkGroupSize = 0;
             clGetDeviceInfo(rayTracer->mDeviceId, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(maxWorkGroupSize), &maxWorkGroupSize, NULL);
 
             size2_t const globalSize(
-                mRenderTarget->width() * mPixelBorderSubdivisions,
-                mRenderTarget->height() * mPixelBorderSubdivisions
+                mRenderTarget->width() * groupSize[0],
+                mRenderTarget->height() * groupSize[1]
             );
 
             size_t const groupThreads = groupSize[0] * groupSize[1] * groupSize[2];
@@ -133,8 +139,8 @@ namespace CS499R
         if (outProfiling)
         {
             outProfiling->mCPUDuration = kernelEnd - kernelStart;
-            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() *
-                mPixelBorderSubdivisions * mPixelBorderSubdivisions * mSamplesPerSubdivisions;
+            outProfiling->mSamples = mRenderTarget->width() * mRenderTarget->height() *
+                pixelBorderSubdivisions * pixelBorderSubdivisions * samplesPerSubdivisions;
         }
 
         error = clReleaseMemObject(shotContextBuffer);
@@ -146,6 +152,7 @@ namespace CS499R
     {
         mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
         mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
+        mRayAlgorithm = kRayAlgorithmPathTracer;
         mRenderTarget = nullptr;
 
         CS499R_ASSERT(validateParams());
@@ -161,6 +168,7 @@ namespace CS499R
     {
         CS499R_ASSERT(isPow2(mPixelBorderSubdivisions));
         CS499R_ASSERT(isPow2(mSamplesPerSubdivisions));
+        CS499R_ASSERT(mRayAlgorithm < kRayAlgorithmCount);
 
         return true;
     }

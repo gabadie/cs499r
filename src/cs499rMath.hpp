@@ -263,29 +263,169 @@ namespace CS499R
 
 
     // ------------------------------------------------------------------------- DOT PRODUCT
-    template <typename T>
+    template <typename T, typename VEC>
     inline
-    T
-    dot(vec2<T> const & a, vec2<T> const & b)
+    VEC
+    dot(vec2<VEC> const & a, vec2<T> const & b)
     {
         return a.x * b.x + a.y * b.y;
     }
 
+    template <typename T, typename VEC>
+    inline
+    VEC
+    dot(vec3<VEC> const & a, vec3<T> const & b)
+    {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
+    template <typename T, typename VEC>
+    inline
+    VEC
+    dot(vec4<VEC> const & a, vec4<T> const & b)
+    {
+        return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+    }
+
+
+    // ------------------------------------------------------------------------- MIN/MAX
     template <typename T>
     inline
     T
-    dot(vec3<T> const & a, vec3<T> const & b)
+    min(T const & a, T const & b)
     {
-        return a.x * b.x + a.y * b.y + a.z * b.z;
+        return a > b ? b : a;
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    min(vec2<T> const & a, vec2<T> const & b)
+    {
+        return vec2<T>(
+            min(a.x, b.x),
+            min(a.y, b.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    min(vec3<T> const & a, vec3<T> const & b)
+    {
+        return vec3<T>(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            min(a.z, b.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    min(vec4<T> const & a, vec4<T> const & b)
+    {
+        return vec4<T>(
+            min(a.x, b.x),
+            min(a.y, b.y),
+            min(a.z, b.z),
+            min(a.w, b.w)
+        );
     }
 
     template <typename T>
     inline
     T
-    dot(vec4<T> const & a, vec4<T> const & b)
+    min(vec2<T> const & v)
     {
-        return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
+        return min(v.x, v.y);
     }
+
+    template <typename T>
+    inline
+    T
+    min(vec3<T> const & v)
+    {
+        return min(v.x, min(v.y, v.z));
+    }
+
+    template <typename T>
+    inline
+    T
+    min(vec4<T> const & v)
+    {
+        return min(min(v.x, v.y), min(v.z, v.w));
+    }
+
+
+    template <typename T>
+    inline
+    T
+    max(T const & a, T const & b)
+    {
+        return a > b ? a : b;
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    max(vec2<T> const & a, vec2<T> const & b)
+    {
+        return vec2<T>(
+            max(a.x, b.x),
+            max(a.y, b.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    max(vec3<T> const & a, vec3<T> const & b)
+    {
+        return vec3<T>(
+            max(a.x, b.x),
+            max(a.y, b.y),
+            max(a.z, b.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    max(vec4<T> const & a, vec4<T> const & b)
+    {
+        return vec4<T>(
+            max(a.x, b.x),
+            max(a.y, b.y),
+            max(a.z, b.z),
+            max(a.w, b.w)
+        );
+    }
+
+    template <typename T>
+    inline
+    T
+    max(vec2<T> const & v)
+    {
+        return max(v.x, v.y);
+    }
+
+    template <typename T>
+    inline
+    T
+    max(vec3<T> const & v)
+    {
+        return max(v.x, max(v.y, v.z));
+    }
+
+    template <typename T>
+    inline
+    T
+    max(vec4<T> const & v)
+    {
+        return max(max(v.x, v.y), max(v.z, v.w));
+    }
+
 
 
     // ------------------------------------------------------------------------- CROSS PRODUCT
@@ -356,6 +496,90 @@ typedef float float32_t;
 typedef CS499R::vec2<float32_t> float32x2_t;
 typedef CS499R::vec3<float32_t> float32x3_t;
 typedef CS499R::vec4<float32_t> float32x4_t;
+
+typedef CS499R::vec2<float32x2_t> float32x2x2_t;
+typedef CS499R::vec3<float32x3_t> float32x3x3_t;
+typedef CS499R::vec4<float32x4_t> float32x4x4_t;
+
+namespace CS499R
+{
+
+    // ------------------------------------------------------------------------- MATRICES
+    template <typename T>
+    inline
+    T
+    identity();
+
+    template <>
+    inline
+    float32x2x2_t
+    identity<float32x2x2_t>()
+    {
+        return float32x2x2_t(
+            float32x2_t(1.0f, 0.0f),
+            float32x2_t(0.0f, 1.0f)
+        );
+    }
+
+    template <>
+    inline
+    float32x3x3_t
+    identity<float32x3x3_t>()
+    {
+        return float32x3x3_t(
+            float32x3_t(1.0f, 0.0f, 0.0f),
+            float32x3_t(0.0f, 1.0f, 0.0f),
+            float32x3_t(0.0f, 0.0f, 1.0f)
+        );
+    }
+
+    template <>
+    inline
+    float32x4x4_t
+    identity<float32x4x4_t>()
+    {
+        return float32x4x4_t(
+            float32x4_t(1.0f, 0.0f, 0.0f, 0.0f),
+            float32x4_t(0.0f, 1.0f, 0.0f, 0.0f),
+            float32x4_t(0.0f, 0.0f, 1.0f, 0.0f),
+            float32x4_t(0.0f, 0.0f, 0.0f, 1.0f)
+        );
+    }
+
+    inline
+    float32x2x2_t
+    transpose(float32x2x2_t const & m)
+    {
+        return float32x2x2_t(
+            float32x2_t(m.x.x, m.y.x),
+            float32x2_t(m.x.y, m.y.y)
+        );
+    }
+
+    inline
+    float32x3x3_t
+    transpose(float32x3x3_t const & m)
+    {
+        return float32x3x3_t(
+            float32x3_t(m.x.x, m.y.x, m.z.x),
+            float32x3_t(m.x.y, m.y.y, m.z.y),
+            float32x3_t(m.x.z, m.y.z, m.z.z)
+        );
+    }
+
+    inline
+    float32x4x4_t
+    transpose(float32x4x4_t const & m)
+    {
+        return float32x4x4_t(
+            float32x4_t(m.x.x, m.y.x, m.z.x, m.w.x),
+            float32x4_t(m.x.y, m.y.y, m.z.y, m.w.y),
+            float32x4_t(m.x.z, m.y.z, m.z.z, m.w.z),
+            float32x4_t(m.x.w, m.y.w, m.z.w, m.w.w)
+        );
+    }
+
+}
 
 
 #endif // _H_CS499R_MATH

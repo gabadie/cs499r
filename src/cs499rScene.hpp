@@ -2,8 +2,12 @@
 #ifndef _H_CS499R_SCENE
 #define _H_CS499R_SCENE
 
+#include <map>
 #include <vector>
+#include <string>
 #include "cs499rCommonStruct.hpp"
+#include "cs499rSceneMesh.hpp"
+#include "cs499rSceneMeshInstance.hpp"
 
 
 namespace CS499R
@@ -18,19 +22,51 @@ namespace CS499R
         // --------------------------------------------------------------------- METHODES
 
         /*
-         * Adds a triangle into the scene
+         * Adds stuff into the scene
          */
-        void
-        addTriangle(float32x3_t v0, float32x3_t v1, float32x3_t v2, float32x3_t diffuse, float32x3_t emit)
+        SceneMesh *
+        addMesh(std::string const & meshName, Mesh const & mesh)
         {
-            size_t i = mTriangles.size();
+            auto sceneMesh = new SceneMesh(this, meshName, mesh);
 
-            mTriangles.resize(i + 1);
-            mTriangles[i].v0 = v0;
-            mTriangles[i].v1 = v1;
-            mTriangles[i].v2 = v2;
-            mTriangles[i].diffuseColor = diffuse;
-            mTriangles[i].emitColor = emit;
+            mObjectsMap.meshes.insert({meshName, sceneMesh});
+
+            return sceneMesh;
+        }
+
+        SceneMeshInstance *
+        addMeshInstance(std::string const & meshInstanceName, SceneMesh * sceneMesh)
+        {
+            CS499R_ASSERT(sceneMesh->mScene == this);
+
+            auto sceneMeshInstance = new SceneMeshInstance(this, meshInstanceName, sceneMesh);
+
+            mObjectsMap.meshInstances.insert({meshInstanceName, sceneMeshInstance});
+
+            return sceneMeshInstance;
+        }
+
+        /*
+         * Finds stuff in the scene
+         */
+        SceneMesh *
+        findMesh(std::string const & meshName)
+        {
+            auto result = mObjectsMap.meshes.find(meshName);
+
+            CS499R_ASSERT(result != mObjectsMap.meshes.end());
+
+            return result->second;
+        }
+
+        SceneMeshInstance *
+        findMeshInstance(std::string const & meshName)
+        {
+            auto result = mObjectsMap.meshInstances.find(meshName);
+
+            CS499R_ASSERT(result != mObjectsMap.meshInstances.end());
+
+            return result->second;
         }
 
 
@@ -41,16 +77,39 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- STRUCTS
+
+        template <typename T>
+        using Map = std::map<std::string, T *>;
+
+
         // --------------------------------------------------------------------- MEMBERS
 
-        // all scene's triangles
-        std::vector<common_triangle_t> mTriangles;
+        /*
+         * scene's objects' maps
+         *
+         * Notes: they shall be sorted by order of destruction
+         */
+        struct
+        {
+            // all scene's mesh instances
+            Map<SceneMeshInstance> meshInstances;
+
+            // all scene's meshes
+            Map<SceneMesh> meshes;
+        } mObjectsMap;
+
+
+        // --------------------------------------------------------------------- METHODES
+
+        static
+        void
+        destroyMap(Map<SceneObject> & map);
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS
         friend class RenderState;
         friend class SceneBuffer;
-
 
     };
 

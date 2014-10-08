@@ -15,32 +15,86 @@ namespace CS499R
     static char const * const kCodeStructs = CS499R_CL_STRUCTS
     (
 
-        typedef struct mat4_s
+        typedef
+        struct __attribute__((aligned(16)))
+        common_mat3x4_s
         {
-            float32x4_t c[4];
-        } mat4_t;
+            __attribute__((aligned(16))) float32x3_t x;
+            __attribute__((aligned(16))) float32x3_t y;
+            __attribute__((aligned(16))) float32x3_t z;
+            __attribute__((aligned(16))) float32x3_t w;
+        } common_mat3x4_t;
 
-        typedef struct mesh_s
+        typedef
+        struct __attribute__((aligned(16)))
+        common_mat2x2_s
         {
-            uint32_t firstPrime; // first triangle ID
-            uint32_t primeCount; // triangles count
-        } mesh_t;
+            __attribute__((aligned(8))) float32x2_t x;
+            __attribute__((aligned(8))) float32x2_t y;
+        } common_mat2x2_t;
 
-        typedef struct mesh_instance_s
+        typedef
+        struct __attribute__((aligned(16), packed))
+        common_mesh_octree_node_s
         {
-            mat4_t meshToSpace;
-            mat4_t spaceToMesh;
-            uint32_t meshId;
-        } mesh_instance_t;
+            // mesh's first primitive
+            uint32_t subNodeOffsets[8];
 
-        typedef struct common_triangle_s
+            // node's first primitive within the mesh's primitives' array
+            uint32_t primFirst;
+
+            // node's primitives count
+            uint32_t primCount;
+        } common_mesh_octree_node_t;
+
+        typedef
+        struct __attribute__((aligned(16), packed))
+        common_mesh_s
         {
-            __attribute__((aligned(16))) float32x3_t v0;
-            __attribute__((aligned(16))) float32x3_t v1;
-            __attribute__((aligned(16))) float32x3_t v2;
+            // mesh's first primitive
+            uint32_t primFirst;
+
+            // mesh's triangles count
+            uint32_t primCount;
+        } common_mesh_t;
+
+        typedef
+        struct __attribute__((aligned(16)))
+        common_mesh_instance_s
+        {
+            // matrix from the mesh space to the scene space
+            common_mat3x4_t meshSceneMatrix;
+
+            // matrix from the scene space to the mesh space
+            common_mat3x4_t sceneMeshMatrix;
+
+            // the mesh instance's colors
             __attribute__((aligned(16))) float32x3_t diffuseColor;
             __attribute__((aligned(16))) float32x3_t emitColor;
-        } common_triangle_t;
+
+            // the mesh's informations
+            common_mesh_t mesh;
+        } common_mesh_instance_t;
+
+        typedef
+        struct __attribute__((aligned(16), packed))
+        common_primitive_s
+        {
+            // primitive's origin vertex
+            __attribute__((aligned(16))) float32x4_t v0;
+
+            // primitive's edges
+            __attribute__((aligned(16))) float32x4_t e0;
+            __attribute__((aligned(16))) float32x4_t e1;
+
+            // primitive precomputed normal
+            // float32x3_t normal = float32x3_t(v0.w, e0.w, e1.w)
+            //                    = normalize(cross(e0, e1))
+
+            // precomputed matrix calculated from v0, e1
+            // to compute the uv coordinates from (dot(AI,e0), dot(AI,e1))
+            common_mat2x2_t uvMatrix;
+        } common_primitive_t;
 
         typedef struct common_camera_s
         {
@@ -63,8 +117,8 @@ namespace CS499R
             //      z is the image's subdivisions per pixels border
             __attribute__((aligned(16))) uint32x3_t render;
 
-            // the number of triangles in the scene
-            __attribute__((aligned(16))) uint32_t triangleCount;
+            // the max id of mesh instances in the scene
+            __attribute__((aligned(16))) uint32_t meshInstanceMaxId;
 
         } common_shot_context_t;
 

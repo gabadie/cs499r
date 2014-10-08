@@ -17,7 +17,7 @@ namespace CS499R
         timestamp_t mCPUDuration;
 
         // Ray shot
-        uint64_t mRays;
+        uint64_t mSamples;
     };
 
 }

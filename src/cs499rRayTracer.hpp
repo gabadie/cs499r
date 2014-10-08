@@ -2,7 +2,7 @@
 #ifndef _H_CS499R_RAYTRACER
 #define _H_CS499R_RAYTRACER
 
-#include "cs499rPrefix.hpp"
+#include "cs499rEnums.hpp"
 
 
 namespace CS499R
@@ -42,10 +42,7 @@ namespace CS499R
         cl_program mProgram;
 
         // the ray tracing kernels
-        struct
-        {
-            cl_kernel dispatch;
-        } mKernel;
+        cl_kernel mKernelArray[kRayAlgorithmCount];
 
 
         // --------------------------------------------------------------------- METHODES

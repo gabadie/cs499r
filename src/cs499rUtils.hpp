@@ -38,6 +38,16 @@
     }
 
 /*
+ * Crashes the program doesn't verify the given condition
+ */
+#define CS499R_ASSERT_ALIGNMENT(ptr) \
+    if (size_t(ptr) % __alignof(*(ptr))) \
+    { \
+        fprintf(stderr, "MEMORY ALIGNMENT FAILURE(%s:%i) IN `%s`: %s\n", __FILE__, __LINE__, __func__, #ptr); \
+        __CS499R_CRASH(); \
+    }
+
+/*
  * Transform code line into a C string
  */
 #define CS499R_CODE(code) \
