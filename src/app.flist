@@ -4,4 +4,6 @@
 # lists the executable's source files that will linked with the library
 #
 
+appCommand.cpp
 appMain.cpp
+appScene.cpp
