@@ -54,17 +54,17 @@ main(int argc, char const * const * argv)
     image.saveToFile("render.gitignore.png");
 
     std::cout << "Input:" << std::endl;
-    std::cout << "    Render width:          " << imageWidth << " px" << std::endl;
-    std::cout << "    Render height:         " << imageHeight << " px" << std::endl;
-    std::cout << "    Sub-pixels:            " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
-    std::cout << "    Sample per sub-pixels: " << renderState.mSamplesPerSubdivisions << std::endl;
+    std::cout << "    Render width:             " << imageWidth << " px" << std::endl;
+    std::cout << "    Render height:            " << imageHeight << " px" << std::endl;
+    std::cout << "    Sub-pixels:               " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
+    std::cout << "    Sample per sub-pixels:    " << renderState.mSamplesPerSubdivisions << std::endl;
     std::cout << std::endl;
 
     std::cout << "Output:" << std::endl;
-    std::cout << "    Rays shot:             " << renderProfiling.mRays << std::endl;
-    std::cout << "    CPU duration:          " << renderProfiling.mCPUDuration << " us" << std::endl;
-    std::cout << "    CPU duration per rays: " <<
-        double(renderProfiling.mCPUDuration) / double(renderProfiling.mRays) << " us" << std::endl;
+    std::cout << "    Total Samples:            " << renderProfiling.mSamples << std::endl;
+    std::cout << "    CPU duration:             " << renderProfiling.mCPUDuration << " us" << std::endl;
+    std::cout << "    CPU duration per samples: " <<
+        double(renderProfiling.mCPUDuration) / double(renderProfiling.mSamples) << " us" << std::endl;
     std::cout << std::endl;
 
     return 0;

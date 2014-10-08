@@ -139,7 +139,7 @@ namespace CS499R
         if (outProfiling)
         {
             outProfiling->mCPUDuration = kernelEnd - kernelStart;
-            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() *
+            outProfiling->mSamples = mRenderTarget->width() * mRenderTarget->height() *
                 pixelBorderSubdivisions * pixelBorderSubdivisions * samplesPerSubdivisions;
         }
 
