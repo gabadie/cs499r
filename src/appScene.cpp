@@ -132,6 +132,21 @@ namespace App
             sceneMeshInstance->mColorDiffuse = colorLight;
             sceneMeshInstance->mColorEmit = colorLight;
         }
+
+        { // Monkey
+            CS499R::Mesh mesh("models/monkey.obj");
+
+            auto sceneMesh = scene.addMesh("monkey", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("monkey/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = colorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(-0.0f, -0.0f, 2.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(0.0f, +1.0f, 0.0f),
+                float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
     }
 
 }
