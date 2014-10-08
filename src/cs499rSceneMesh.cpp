@@ -164,6 +164,7 @@ namespace CS499R
 
         OctreeNode * const octreeRoot = new OctreeNode(octreeBoxSize * 0.5f + lowerBound, octreeBoxSizeLog);
         size_t octreeNodeCount = 1;
+        size_t primCount = 0;
 
         { // build up mesh's octree
             /*
@@ -185,6 +186,11 @@ namespace CS499R
                 auto currentOctreeNode = octreeRoot;
 
                 CS499R_ASSERT(primOctreeDepth <= currentOctreeNode->mSizeLog);
+
+                if (primOctreeDepth < -30)
+                {
+                    continue;
+                }
 
                 // seek the correct node who should contain this primitive
                 while (currentOctreeNode->mSizeLog != primOctreeDepth)
@@ -222,11 +228,12 @@ namespace CS499R
                 }
 
                 currentOctreeNode->mPrimitiveIds.push_back(primId);
+                primCount++;
             }
         }
 
         { // inits scene mesh's members
-            mPrimitiveCount = mesh.mPrimitiveCount;
+            mPrimitiveCount = primCount;
             mPrimitiveArray = alloc<common_primitive_t>(mPrimitiveCount);
             mOctreeNodeCount = octreeNodeCount;
             mOctreeNodeArray = alloc<common_mesh_octree_node_t>(mOctreeNodeCount);
@@ -248,6 +255,8 @@ namespace CS499R
         // export primitives
         for (size_t primId = 0; primId < mPrimitiveCount; primId++)
         {
+            CS499R_ASSERT(primNewIds[primId] < mPrimitiveCount);
+
             auto const originalPrimitive = mesh.mPrimitiveArray + primId;
             auto const commonPrimitive = mPrimitiveArray + primNewIds[primId];
 
