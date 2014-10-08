@@ -75,17 +75,20 @@ namespace
 
         inline
         float32_t
-        random(sample_context_t * sampleCx)
+        noise(uint32_t seed)
         {
-            uint32_t seed = sampleCx->randomSeed;
-
-            seed++;
-
-            sampleCx->randomSeed = seed;
-
             float32_t s = sin((float32_t)seed * 12.9898f) * 43758.5453f;
 
             return s - floor(s);
+        }
+
+        inline
+        float32_t
+        random(sample_context_t * sampleCx)
+        {
+            uint32_t seed = sampleCx->randomSeed++;
+
+            return noise(seed);
         }
 
         void
@@ -341,7 +344,13 @@ namespace
             sample_context_t sampleCx;
 
             { // set up random seed
-                uint32_t const subpixelId = pixelId * pixelSubpixelCount + pixelSubpixelId;
+                uint32_t const subpixelId = (
+                    (
+                        (pixelCoord.x & 0x3F) +
+                        (pixelCoord.y & 0x3F) * 0x3F
+                    ) * pixelSubpixelCount +
+                    pixelSubpixelId
+                );
                 uint32_t const sampleId = subpixelId * subpixelSampleCount + subpixelSampleId;
 
                 sampleCx.randomSeed = sampleId * (kRecursionCount * kRandomPerRecursion);
