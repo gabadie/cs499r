@@ -1,5 +1,6 @@
 
 #include <string.h>
+#include "cs499rProgram.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rCommonStruct.hpp"
 
@@ -498,58 +499,64 @@ namespace
 namespace CS499R
 {
 
-    void RayTracer::buildProgram()
+    void RayTracer::buildPrograms()
     {
         cl_int error = 0;
 
-        char const * programCode[] = {
-            kCodeLibTypedef,
-            kCodeLibConsts,
-            kCodeStructs,
-            kCodeLibStructs,
-            kCodeLibEssentials,
-            kKernelCommonDefines,
-            kKernelPathTracer,
-            kKernelDebug,
+        char const * programCodes[kRayAlgorithmCount] = {
+            kCS499RProgramPathTracer,
+            kCS499RProgramDebugNormal
         };
 
-        char const * programKernelNameArray[] = {
+        char const * const programKernelNameArray[kRayAlgorithmCount] = {
             "kernel_path_tracer_main",
             "kernel_debug_normal",
         };
 
+        for (size_t programId = 0; programId < kRayAlgorithmCount; programId++)
         { // initialize program
-            mProgram = clCreateProgramWithSource(
+            mProgram[programId].program = clCreateProgramWithSource(
                 mContext,
-                CS499R_ARRAY_SIZE(programCode), programCode,
+                1, programCodes + programId,
                 NULL, &error
             );
 
-            CS499R_ASSERT(error == 0);
+            CS499R_ASSERT_NO_CL_ERROR(error);
 
-            error |= clBuildProgram(mProgram, 0, NULL, NULL, NULL, NULL);
+            error |= clBuildProgram(mProgram[programId].program, 0, NULL, NULL, NULL, NULL);
 
             if (error)
             {
                 size_t bufferSize;
-                clGetProgramBuildInfo(mProgram, mDeviceId, CL_PROGRAM_BUILD_LOG, 0, nullptr, &bufferSize);
+                clGetProgramBuildInfo(
+                    mProgram[programId].program, mDeviceId,
+                    CL_PROGRAM_BUILD_LOG,
+                    0, nullptr, &bufferSize
+                );
 
                 char * buffer = new char [bufferSize + 1];
                 memset(buffer, 0, bufferSize + 1);
 
-                clGetProgramBuildInfo(mProgram, mDeviceId, CL_PROGRAM_BUILD_LOG, bufferSize + 1, buffer, &bufferSize);
+                clGetProgramBuildInfo(
+                    mProgram[programId].program, mDeviceId,
+                    CL_PROGRAM_BUILD_LOG,
+                    bufferSize + 1, buffer, &bufferSize
+                );
 
+                fprintf(stderr, "OPENCL COMPILATION (%s) FAILED\n", programKernelNameArray[programId]);
                 fprintf(stderr, "%s\n", buffer);
 
                 delete [] buffer;
 
+                CS499R_ASSERT_NO_CL_ERROR(error);
                 CS499R_CRASH();
             }
-        }
 
-        for (size_t i = 0; i < kRayAlgorithmCount; i++)
-        {
-            mKernelArray[i] = clCreateKernel(mProgram, programKernelNameArray[i], &error);
+            mProgram[programId].kernel = clCreateKernel(
+                mProgram[programId].program,
+                programKernelNameArray[programId],
+                &error
+            );
 
             CS499R_ASSERT_NO_CL_ERROR(error);
         }

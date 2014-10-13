@@ -28,6 +28,21 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- STRUCTS
+
+        /*
+         * Contain all a program
+         */
+        struct Program
+        {
+            // the ray tracing program
+            cl_program program;
+
+            // the ray tracing kernel
+            cl_kernel kernel;
+        };
+
+
         // --------------------------------------------------------------------- MEMBERS
         // the GPU's device id
         cl_device_id mDeviceId;
@@ -38,18 +53,15 @@ namespace CS499R
         // the main computing queue
         cl_command_queue mCmdQueue;
 
-        // the ray tracing program
-        cl_program mProgram;
-
         // the ray tracing kernels
-        cl_kernel mKernelArray[kRayAlgorithmCount];
+        Program mProgram[kRayAlgorithmCount];
 
 
         // --------------------------------------------------------------------- METHODES
         /*
          * Build programs and its kernels
          */
-        void buildProgram();
+        void buildPrograms();
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS

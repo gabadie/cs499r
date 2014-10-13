@@ -19,7 +19,7 @@ namespace CS499R
 
         CS499R_ASSERT_NO_CL_ERROR(error);
 
-        buildProgram();
+        buildPrograms();
     }
 
     RayTracer::~RayTracer()
@@ -28,12 +28,13 @@ namespace CS499R
 
         for (size_t i = 0; i < kRayAlgorithmCount; i++)
         {
-            error = clReleaseKernel(mKernelArray[i]);
+            error = clReleaseKernel(mProgram[i].kernel);
+            CS499R_ASSERT_NO_CL_ERROR(error);
 
+            error = clReleaseProgram(mProgram[i].program);
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
-        error |= clReleaseProgram(mProgram);
         error |= clReleaseCommandQueue(mCmdQueue);
         error |= clReleaseContext(mContext);
 

@@ -2,6 +2,11 @@
 #ifndef _H_CS499R_MATH
 #define _H_CS499R_MATH
 
+#ifndef __CS499R_OPENCL_PREPROCESSOR
+/*
+ * We are not preprocessing code for OpenCL...
+ */
+
 #include <math.h>
 #include "cs499rPrefix.hpp"
 
@@ -581,5 +586,27 @@ namespace CS499R
 
 }
 
+
+#else // __CS499R_OPENCL_PREPROCESSOR
+/*
+ * We are preprocessing code for OpenCL...
+ */
+
+typedef int int32_t;
+typedef int2 int32x2_t;
+typedef int3 int32x3_t;
+typedef int4 int32x4_t;
+
+typedef uint uint32_t;
+typedef uint2 uint32x2_t;
+typedef uint3 uint32x3_t;
+typedef uint4 uint32x4_t;
+
+typedef float float32_t;
+typedef float2 float32x2_t;
+typedef float3 float32x3_t;
+typedef float4 float32x4_t;
+
+#endif // __CS499R_OPENCL_PREPROCESSOR
 
 #endif // _H_CS499R_MATH

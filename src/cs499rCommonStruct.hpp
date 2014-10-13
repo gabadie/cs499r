@@ -4,6 +4,10 @@
 
 #include "cs499rMath.hpp"
 
+#ifndef __CS499R_OPENCL_FILE
+/*
+ * We are not preprocessing code for OpenCL, so we add the CS499R namespace
+ */
 
 #define CS499R_CL_STRUCTS(structs_code) \
     CS499R_CODE(structs_code); \
@@ -14,6 +18,8 @@ namespace CS499R
 
     static char const * const kCodeStructs = CS499R_CL_STRUCTS
     (
+
+#endif // __CS499R_OPENCL_FILE
 
         typedef
         struct __attribute__((aligned(16)))
@@ -128,9 +134,11 @@ namespace CS499R
 
         } common_shot_context_t;
 
+#ifndef __CS499R_OPENCL_FILE
     )
 
-}
+} // namespace CS499R
+#endif // __CS499R_OPENCL_FILE
 
 
 #endif // _H_CS499R_COMMON_STRUCTS

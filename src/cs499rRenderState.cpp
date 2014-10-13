@@ -29,7 +29,7 @@ namespace CS499R
         cl_int error = 0;
         cl_context const context = rayTracer->mContext;
         cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
-        cl_kernel const kernel = rayTracer->mKernelArray[mRayAlgorithm];
+        cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
