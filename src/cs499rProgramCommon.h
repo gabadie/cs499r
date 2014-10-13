@@ -29,6 +29,9 @@ __private struct sample_context_s
     // normalized ray's direction in the mesh space
     float32x3_t rayMeshDirection;
 
+    // normalized ray's direction inverted
+    float32x3_t rayMeshDirectionInverted;
+
     // ray's minimal distance found for depth test
     float32_t rayInterDistance;
 
@@ -43,6 +46,10 @@ __private struct sample_context_s
 
     // the currently bound mesh instance
     __global common_mesh_instance_t const * boundMeshInstance;
+
+#ifdef _CL_DEBUG
+    float32x3_t pixelColor;
+#endif
 
 } sample_context_t;
 
@@ -67,53 +74,49 @@ random(sample_context_t * sampleCx)
     return noise(seed);
 }
 
+
+/*
+ *      (triangle)
+ *          |
+ *    \     |
+ *      \   |
+ *        \ |             (normal)
+ *          I--------------->
+ *          | \
+ *          |   \
+ *          |     \
+ *          |       \
+ *          |         \
+ *          A           \   (ray)
+ *          |  \          \
+ *          |     \         \
+ *          |        \        \
+ *          |           \       \       ->
+ *          |              \      \ __  d
+ *          |                 \    |\
+ *          |                    \    \
+ *          |                       \   \
+ *          |                          \  \
+ *          |                             \ \
+ *          |                                \\
+ *          H  -  -  -  -  -  -  -  -  -  -  -  O
+ *          |
+ *          |
+ *
+ *
+ * Glossary:
+ *      Point `O` is the origin of the ray (sampleCx->rayMeshOrigin)
+ *      Vector `d` is direction of the ray (sampleCx->rayMeshDirection)
+ *      Point `A` is the first vertex of the current triangle (primitive->v0)
+ *      Point `I` is the ray intersection with the triangle
+ *      Distance `OI` is the intersection distance (rayInterDistance)
+ */
 void
 primitive_intersection(
     sample_context_t * sampleCx,
     __global common_primitive_t const * primitive
 )
 {
-    /*
-     *      (triangle)
-     *          |
-     *    \     |
-     *      \   |
-     *        \ |             (normal)
-     *          I--------------->
-     *          | \
-     *          |   \
-     *          |     \
-     *          |       \
-     *          |         \
-     *          A           \   (ray)
-     *          |  \          \
-     *          |     \         \
-     *          |        \        \
-     *          |           \       \       ->
-     *          |              \      \ __  d
-     *          |                 \    |\
-     *          |                    \    \
-     *          |                       \   \
-     *          |                          \  \
-     *          |                             \ \
-     *          |                                \\
-     *          H  -  -  -  -  -  -  -  -  -  -  -  O
-     *          |
-     *          |
-     *
-     *
-     * Glossary:
-     *      Point `O` is the origin of the ray (sampleCx->rayOrigin)
-     *      Vector `d` is direction of the ray (sampleCx->rayDirection)
-     *      Point `A` is the first vertex of the current triangle (primitive->v0)
-     *      Point `I` is the ray intersection with the triangle
-     *      Distance `OI` is the intersection distance (rayInterDistance)
-     *
-     *
-     *
-     *
-     */
-
     float32x3_t const normal = (float32x3_t)(primitive->v0.w, primitive->e0.w, primitive->e1.w);
     float32x3_t const vAO = sampleCx->rayMeshOrigin - primitive->v0.xyz;
     float32_t const OH = dot(vAO, normal);
@@ -145,6 +148,59 @@ primitive_intersection(
     sampleCx->rayInterMeshInstance = sampleCx->boundMeshInstance;
 }
 
+/*
+ * Detects if there is an intersection between the box and the context's ray.
+ *
+ *                 \
+ *                  \
+ *                   \
+ *                    \
+ *          H---------------G
+ *          |           \   |
+ *          |            \  |
+ *          |             \ |
+ *          |              \|
+ *          |               I
+ *          |               |\
+ *          |               | \
+ *          E---------------F  \
+ *                              \
+ *                               \
+ *                                \    ->
+ *                                 \__ d
+ *                                 /\
+ *                                   \
+ *                                    O
+ *  y
+ *  ^
+ *  |
+ *  |
+ *  z----> x
+ *
+ *
+ * Glossary:
+ *      Point `O` is the origin of the ray (sampleCx->rayMeshOrigin)
+ *      Vector `d` is direction of the ray (sampleCx->rayMeshDirection)
+ *      Point `I` is the nearest ray intersection with the box
+ */
+inline
+uint32_t
+box_intersection(sample_context_t const * const sampleCx, float32x3_t const OE, float32x3_t const OG)
+{
+    float32x3_t const t0 = OE * sampleCx->rayMeshDirectionInverted;
+    float32x3_t const t1 = OG * sampleCx->rayMeshDirectionInverted;
+    float32x3_t const tMin = min(t0, t1);
+    float32x3_t const tMax = max(t0, t1);
+
+    return (
+        (tMin.x < tMax.y) &&
+        (tMin.y < tMax.x) &&
+        (max(tMin.x, tMin.y) < tMax.z) &&
+        (tMin.z < min(tMax.x, tMax.y)) &&
+        (max(t0.x, max(t0.y, t0.z)) > 0.0f)
+    );
+}
+
 inline
 void
 mesh_instance_intersection(
@@ -168,8 +224,27 @@ mesh_instance_intersection(
         meshInstance->sceneMeshMatrix.z * sampleCx->raySceneDirection.z
     );
 
+    sampleCx->rayMeshDirectionInverted = 1.0f / sampleCx->rayMeshDirection;
+
+#if 1
+    {
+        float32x3_t const OE = -sampleCx->rayMeshOrigin;
+        float32x3_t const OG = OE + meshInstance->mesh.vertexUpperBound.xyz;
+
+        if (!box_intersection(sampleCx, OE, OG))
+        {
+            /*
+             * The ray has no intersection with this mesh instance's bounding
+             * box, so we skip it right away.
+             */
+            return;
+        }
+    }
+#endif
+
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
     __global common_mesh_octree_node_t const * const meshNodes = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
+
     uint32_t const nodeCount = meshInstance->mesh.octreeNodeCount;
 
     for (uint32_t nodeId = 0; nodeId < nodeCount; nodeId++)

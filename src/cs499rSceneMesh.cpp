@@ -238,6 +238,8 @@ namespace CS499R
             mOctreeNodeCount = octreeNodeCount;
             mOctreeNodeArray = alloc<common_mesh_octree_node_t>(mOctreeNodeCount);
             mCenterPosition = -lowerBound;
+            mVertexUpperBound = upperBound - lowerBound;
+            mOctreeRootHalfSize = octreeBoxSize * 0.5f;
         }
 
         auto const primNewIds = new size_t[mPrimitiveCount];
@@ -290,7 +292,7 @@ namespace CS499R
         common_mesh_t * outMesh
     ) const
     {
-        CS499R_STATIC_ASSERT(sizeof(common_mesh_t) == sizeof(uint32_t) * 4);
+        CS499R_STATIC_ASSERT(sizeof(common_mesh_t) == sizeof(uint32_t) * 8);
 
         auto const sceneMeshPrimFirst = ctx.meshPrimitivesGlobalOffsets.find(this)->second;
         auto const sceneMeshOctreeRootId = ctx.meshOctreeRootGlobalId.find(this)->second;
@@ -299,6 +301,10 @@ namespace CS499R
         outMesh->primCount = mPrimitiveCount;
         outMesh->octreeRootGlobalId = sceneMeshOctreeRootId;
         outMesh->octreeNodeCount = mOctreeNodeCount;
+        outMesh->vertexUpperBound.x = mVertexUpperBound.x;
+        outMesh->vertexUpperBound.y = mVertexUpperBound.y;
+        outMesh->vertexUpperBound.z = mVertexUpperBound.z;
+        outMesh->vertexUpperBound.w = mOctreeRootHalfSize;
     }
 
 }

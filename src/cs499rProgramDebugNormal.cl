@@ -1,4 +1,5 @@
 
+//#define _CL_DEBUG
 #include "cs499rProgramCommon.h"
 
 
@@ -42,6 +43,12 @@ kernel_debug_normal(
     );
 
     float32x3_t pixelColor = sceneNormal * 0.5f + 0.5f;
+
+#ifdef _CL_DEBUG
+    {
+        pixelColor = sampleCx.pixelColor;
+    }
+#endif
 
     uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.x;
 

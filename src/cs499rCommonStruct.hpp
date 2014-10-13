@@ -59,6 +59,10 @@ namespace CS499R
 
         // mesh's octree node count
         uint32_t octreeNodeCount;
+
+        // mesh's vertexs' upper bound
+        //  w contains the mesh's octree root's half size
+        float32x4_t vertexUpperBound;
     } common_mesh_t;
 
     typedef
