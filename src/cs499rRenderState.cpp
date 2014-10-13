@@ -61,8 +61,9 @@ namespace CS499R
         { // kernel arguments
             error |= clSetKernelArg(kernel, 0, sizeof(cl_mem), &shotContextBuffer);
             error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.meshInstances);
-            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sceneBuffer->mBuffer.primitives);
-            error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
+            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sceneBuffer->mBuffer.meshOctreeNodes);
+            error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &sceneBuffer->mBuffer.primitives);
+            error |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
 
             CS499R_ASSERT_NO_CL_ERROR(error);
         }

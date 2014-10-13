@@ -325,6 +325,7 @@ namespace
         kernel_path_tracer_main(
             __global common_shot_context_t const * shotCx,
             __global common_mesh_instance_t const * meshInstances,
+            __global common_mesh_octree_node_t const * meshOctreeNodes,
             __global common_primitive_t const * primitives,
             __global float32_t * renderTarget
         )
@@ -441,6 +442,7 @@ namespace
         kernel_debug_normal(
             __global common_shot_context_t const * shotCx,
             __global common_mesh_instance_t const * meshInstances,
+            __global common_mesh_octree_node_t const * meshOctreeNodes,
             __global common_primitive_t const * primitives,
             __global float32_t * renderTarget
         )
