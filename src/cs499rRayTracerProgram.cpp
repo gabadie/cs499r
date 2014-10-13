@@ -173,6 +173,7 @@ namespace
         void
         mesh_instance_intersection(
             sample_context_t * sampleCx,
+            __global common_mesh_octree_node_t const * meshOctreeNodes,
             __global common_primitive_t const * primitives
         )
         {
@@ -192,11 +193,18 @@ namespace
             );
 
             __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
-            uint32_t const primCount = meshInstance->mesh.primCount;
+            __global common_mesh_octree_node_t const * const meshNodes = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
+            uint32_t const nodeCount = meshInstance->mesh.octreeNodeCount;
 
-            for (uint32_t primId = 0; primId < primCount; primId++)
+            for (uint32_t nodeId = 0; nodeId < nodeCount; nodeId++)
             {
-                primitive_intersection(sampleCx, meshPrimitives + primId);
+                __global common_mesh_octree_node_t const * const node = meshNodes + nodeId;
+                uint32_t const primEnd = node->primFirst + node->primCount;
+
+                for (uint32_t primId = node->primFirst; primId < primEnd; primId++)
+                {
+                    primitive_intersection(sampleCx, meshPrimitives + primId);
+                }
             }
         }
 
@@ -206,6 +214,7 @@ namespace
             sample_context_t * sampleCx,
             __global common_shot_context_t const * shotCx,
             __global common_mesh_instance_t const * meshInstances,
+            __global common_mesh_octree_node_t const * meshOctreeNodes,
             __global common_primitive_t const * primitives
         )
         {
@@ -223,7 +232,7 @@ namespace
             {
                 sampleCx->boundMeshInstance = meshInstances + i;
 
-                mesh_instance_intersection(sampleCx, primitives);
+                mesh_instance_intersection(sampleCx, meshOctreeNodes, primitives);
             }
         }
 
@@ -359,7 +368,7 @@ namespace
             }
 
             camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
-            scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
+            scene_intersection(&sampleCx, shotCx, meshInstances, meshOctreeNodes, primitives);
 
             float32x3_t sampleColor = sampleCx.rayInterMeshInstance->emitColor;
             float32x3_t sampleColorMultiply = sampleCx.rayInterMeshInstance->diffuseColor;
@@ -367,7 +376,7 @@ namespace
             for (uint32_t i = 0; i < kRecursionCount; i++)
             {
                 path_tracer_rebound(&sampleCx);
-                scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
+                scene_intersection(&sampleCx, shotCx, meshInstances, meshOctreeNodes, primitives);
 
                 sampleColor += sampleCx.rayInterMeshInstance->emitColor * sampleColorMultiply;
                 sampleColorMultiply *= sampleCx.rayInterMeshInstance->diffuseColor;
@@ -462,7 +471,7 @@ namespace
             sample_context_t sampleCx;
 
             camera_first_ray(&sampleCx, shotCx, pixelCoord, pixelSubpixelCoord);
-            scene_intersection(&sampleCx, shotCx, meshInstances, primitives);
+            scene_intersection(&sampleCx, shotCx, meshInstances, meshOctreeNodes, primitives);
 
             __global common_mesh_instance_t const * const meshInstance = sampleCx.rayInterMeshInstance;
 

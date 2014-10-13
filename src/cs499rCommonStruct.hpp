@@ -56,6 +56,12 @@ namespace CS499R
 
             // mesh's triangles count
             uint32_t primCount;
+
+            // mesh's octree root's global id
+            uint32_t octreeRootGlobalId;
+
+            // mesh's octree node count
+            uint32_t octreeNodeCount;
         } common_mesh_t;
 
         typedef

@@ -53,7 +53,7 @@ namespace CS499R
          */
         inline
         std::string
-        name()
+        name() const
         {
             return mSceneObjectName;
         }

@@ -290,10 +290,15 @@ namespace CS499R
         common_mesh_t * outMesh
     ) const
     {
-        auto sceneMeshPrimFirst = ctx.meshPrimitivesGlobalOffsets.find(this)->second;
+        CS499R_STATIC_ASSERT(sizeof(common_mesh_t) == sizeof(uint32_t) * 4);
+
+        auto const sceneMeshPrimFirst = ctx.meshPrimitivesGlobalOffsets.find(this)->second;
+        auto const sceneMeshOctreeRootId = ctx.meshOctreeRootGlobalId.find(this)->second;
 
         outMesh->primFirst = sceneMeshPrimFirst;
         outMesh->primCount = mPrimitiveCount;
+        outMesh->octreeRootGlobalId = sceneMeshOctreeRootId;
+        outMesh->octreeNodeCount = mOctreeNodeCount;
     }
 
 }
