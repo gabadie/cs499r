@@ -2,6 +2,8 @@
 #ifndef _H_CS499R_SCENEMESH
 #define _H_CS499R_SCENEMESH
 
+#include <map>
+
 #include "cs499rMesh.hpp"
 #include "cs499rCommonStruct.hpp"
 #include "cs499rSceneObject.hpp"
@@ -23,6 +25,23 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- IDLE
+
+        using SceneMeshOffsetMap = std::map<SceneMesh const *, size_t>;
+
+        /*
+         * Context when building up SceneBuffer
+         */
+        struct SceneBufferCtx
+        {
+            // global primitive offset for each meshes
+            SceneMeshOffsetMap meshPrimitivesGlobalOffsets;
+
+            // global node id of the mesh's octree root
+            SceneMeshOffsetMap meshOctreeRootGlobalId;
+        };
+
+
         // --------------------------------------------------------------------- IDLE
 
         SceneMesh(
@@ -69,10 +88,20 @@ namespace CS499R
         void
         buildFromMesh(Mesh const & mesh);
 
+        /*
+         * Export to common mesh
+         */
+        void
+        exportToCommonMesh(
+            SceneMesh::SceneBufferCtx const & ctx,
+            common_mesh_t * outMesh
+        ) const;
+
 
         // --------------------------------------------------------------------- FRIENDSHIPS
         friend class Scene;
         friend class SceneBuffer;
+        friend class SceneMeshInstance;
 
     };
 

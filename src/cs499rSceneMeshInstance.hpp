@@ -2,7 +2,8 @@
 #ifndef _H_CS499R_SCENEMESHINSTANCE
 #define _H_CS499R_SCENEMESHINSTANCE
 
-#include "cs499rSceneObject.hpp"
+#include "cs499rCommonStruct.hpp"
+#include "cs499rSceneMesh.hpp"
 
 
 namespace CS499R
@@ -48,8 +49,21 @@ namespace CS499R
         ~SceneMeshInstance();
 
 
+        // --------------------------------------------------------------------- METHODS
+
+        /*
+         * Export to common mesh instance
+         */
+        void
+        exportToCommonMeshInstance(
+            SceneMesh::SceneBufferCtx const & ctx,
+            common_mesh_instance_t * outMeshInstance
+        ) const;
+
+
         // --------------------------------------------------------------------- FRIENDSHIP
         friend class Scene;
+        friend class SceneBuffer;
 
     };
 

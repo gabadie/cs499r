@@ -22,4 +22,35 @@ namespace CS499R
     SceneMeshInstance::~SceneMeshInstance()
     { }
 
+    void
+    SceneMeshInstance::exportToCommonMeshInstance(
+        SceneMesh::SceneBufferCtx const & ctx,
+        common_mesh_instance_t * outMeshInstance
+    ) const
+    {
+        outMeshInstance->meshSceneMatrix.x = mMeshSceneMatrix.x;
+        outMeshInstance->meshSceneMatrix.y = mMeshSceneMatrix.y;
+        outMeshInstance->meshSceneMatrix.z = mMeshSceneMatrix.z;
+        outMeshInstance->meshSceneMatrix.w = (
+            mScenePosition -
+            dot(mMeshSceneMatrix, mSceneMesh->mCenterPosition)
+        );
+
+        auto sceneMeshMatrix = transpose(mMeshSceneMatrix);
+
+        outMeshInstance->sceneMeshMatrix.x = sceneMeshMatrix.x;
+        outMeshInstance->sceneMeshMatrix.y = sceneMeshMatrix.y;
+        outMeshInstance->sceneMeshMatrix.z = sceneMeshMatrix.z;
+        outMeshInstance->sceneMeshMatrix.w = (
+            mSceneMesh->mCenterPosition -
+            dot(sceneMeshMatrix, mScenePosition)
+        );
+
+        outMeshInstance->diffuseColor = mColorDiffuse;
+        outMeshInstance->emitColor = mColorEmit;
+
+        mSceneMesh->exportToCommonMesh(ctx, &outMeshInstance->mesh);
+    }
+
+
 }

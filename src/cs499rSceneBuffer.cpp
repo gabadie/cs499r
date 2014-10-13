@@ -24,18 +24,17 @@ namespace CS499R
     void
     SceneBuffer::createBuffers()
     {
-        SceneMeshOffsetMap meshPrimitivesGlobalOffsets;
-        SceneMeshOffsetMap meshOctreeRootGlobalId;
+        SceneMesh::SceneBufferCtx ctx;
 
-        createPrimitivesBuffer(meshPrimitivesGlobalOffsets);
+        createPrimitivesBuffer(ctx);
 
-        createMeshOctreeNodesBuffer(meshOctreeRootGlobalId);
+        createMeshOctreeNodesBuffer(ctx);
 
-        createMeshInstancesBuffer(meshPrimitivesGlobalOffsets);
+        createMeshInstancesBuffer(ctx);
     }
 
     void
-    SceneBuffer::createPrimitivesBuffer(SceneMeshOffsetMap & meshPrimitivesGlobalOffsets)
+    SceneBuffer::createPrimitivesBuffer(SceneMesh::SceneBufferCtx & ctx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -47,7 +46,7 @@ namespace CS499R
         {
             auto sceneMesh = it.second;
 
-            meshPrimitivesGlobalOffsets.insert({sceneMesh, totalPrimCount});
+            ctx.meshPrimitivesGlobalOffsets.insert({sceneMesh, totalPrimCount});
 
             totalPrimCount += sceneMesh->mPrimitiveCount;
         }
@@ -86,7 +85,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createMeshInstancesBuffer(SceneMeshOffsetMap const & meshPrimitivesGlobalOffsets)
+    SceneBuffer::createMeshInstancesBuffer(SceneMesh::SceneBufferCtx const & ctx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -120,33 +119,10 @@ namespace CS499R
 
         for (auto it : mScene->mObjectsMap.meshInstances)
         {
-            auto sceneMeshInstance = it.second;
-            auto sceneMesh = it.second->mSceneMesh;
-            auto sceneMeshPrimFirst = meshPrimitivesGlobalOffsets.find(sceneMesh)->second;
-            auto commonMesh = instanceArray + instanceId;
+            auto const sceneMeshInstance = it.second;
+            auto const commonMesh = instanceArray + instanceId;
 
-            commonMesh->meshSceneMatrix.x = sceneMeshInstance->mMeshSceneMatrix.x;
-            commonMesh->meshSceneMatrix.y = sceneMeshInstance->mMeshSceneMatrix.y;
-            commonMesh->meshSceneMatrix.z = sceneMeshInstance->mMeshSceneMatrix.z;
-            commonMesh->meshSceneMatrix.w = (
-                sceneMeshInstance->mScenePosition -
-                dot(sceneMeshInstance->mMeshSceneMatrix, sceneMesh->mCenterPosition)
-            );
-
-            auto sceneMeshMatrix = transpose(sceneMeshInstance->mMeshSceneMatrix);
-
-            commonMesh->sceneMeshMatrix.x = sceneMeshMatrix.x;
-            commonMesh->sceneMeshMatrix.y = sceneMeshMatrix.y;
-            commonMesh->sceneMeshMatrix.z = sceneMeshMatrix.z;
-            commonMesh->sceneMeshMatrix.w = (
-                sceneMesh->mCenterPosition -
-                dot(sceneMeshMatrix, sceneMeshInstance->mScenePosition)
-            );
-
-            commonMesh->diffuseColor = sceneMeshInstance->mColorDiffuse;
-            commonMesh->emitColor = sceneMeshInstance->mColorEmit;
-            commonMesh->mesh.primFirst = sceneMeshPrimFirst;
-            commonMesh->mesh.primCount = sceneMesh->mPrimitiveCount;
+            sceneMeshInstance->exportToCommonMeshInstance(ctx, commonMesh);
 
             instanceId++;
         }
@@ -164,7 +140,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createMeshOctreeNodesBuffer(SceneMeshOffsetMap & meshOctreeRootGlobalId)
+    SceneBuffer::createMeshOctreeNodesBuffer(SceneMesh::SceneBufferCtx & ctx)
     {
         cl_int error = 0;
 
@@ -176,7 +152,7 @@ namespace CS499R
             {
                 auto sceneMesh = it.second;
 
-                meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
+                ctx.meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
 
                 totalMeshOctreeNodeCount += sceneMesh->mOctreeNodeCount;
             }

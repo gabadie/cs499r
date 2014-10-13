@@ -284,4 +284,16 @@ namespace CS499R
         delete [] primNewIds;
     }
 
+    void
+    SceneMesh::exportToCommonMesh(
+        SceneMesh::SceneBufferCtx const & ctx,
+        common_mesh_t * outMesh
+    ) const
+    {
+        auto sceneMeshPrimFirst = ctx.meshPrimitivesGlobalOffsets.find(this)->second;
+
+        outMesh->primFirst = sceneMeshPrimFirst;
+        outMesh->primCount = mPrimitiveCount;
+    }
+
 }

@@ -2,8 +2,6 @@
 #ifndef _H_CS499R_SCENEBUFFER
 #define _H_CS499R_SCENEBUFFER
 
-#include <map>
-
 #include "cs499rPrefix.hpp"
 
 
@@ -23,11 +21,6 @@ namespace CS499R
 
 
     private:
-        // --------------------------------------------------------------------- STRUCTS
-
-        using SceneMeshOffsetMap = std::map<SceneMesh *, size_t>;
-
-
         // --------------------------------------------------------------------- MEMBERS
 
         // the scene source
@@ -57,19 +50,19 @@ namespace CS499R
          * Creates mBuffer.primitives
          */
         void
-        createPrimitivesBuffer(SceneMeshOffsetMap & meshPrimitivesGlobalOffsets);
+        createPrimitivesBuffer(SceneMesh::SceneBufferCtx & ctx);
 
         /*
          * Creates mBuffer.meshInstances
          */
         void
-        createMeshInstancesBuffer(SceneMeshOffsetMap const & meshPrimitivesGlobalOffsets);
+        createMeshInstancesBuffer(SceneMesh::SceneBufferCtx const & ctx);
 
         /*
          * Creates mBuffer.meshOctreeNodes
          */
         void
-        createMeshOctreeNodesBuffer(SceneMeshOffsetMap & meshOctreeRootGlobalId);
+        createMeshOctreeNodesBuffer(SceneMesh::SceneBufferCtx & ctx);
 
         /*
          * Releases GPU side buffers
