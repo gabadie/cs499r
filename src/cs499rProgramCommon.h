@@ -226,7 +226,7 @@ mesh_instance_intersection(
 
     sampleCx->rayMeshDirectionInverted = 1.0f / sampleCx->rayMeshDirection;
 
-#if 1
+#ifndef _CL_NO_BOUNDING_BOX_CHECKING
     {
         float32x3_t const OE = -sampleCx->rayMeshOrigin;
         float32x3_t const OG = OE + meshInstance->mesh.vertexUpperBound.xyz;
@@ -240,7 +240,7 @@ mesh_instance_intersection(
             return;
         }
     }
-#endif
+#endif // _CL_NO_BOUNDING_BOX_CHECKING
 
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
     __global common_mesh_octree_node_t const * const meshNodes = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
