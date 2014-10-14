@@ -10,6 +10,7 @@
 __constant float32_t kEPSILONE = 0.00001f;
 __constant float32_t kPi = 3.14159265359f;
 
+__constant uint32_t kOctreeNodeSubdivisonCount = 8;
 
 
 // ----------------------------------------------------------------------------- STRUCTS
@@ -197,8 +198,94 @@ box_intersection(sample_context_t const * const sampleCx, float32x3_t const OE, 
         (tMin.y < tMax.x) &&
         (max(tMin.x, tMin.y) < tMax.z) &&
         (tMin.z < min(tMax.x, tMax.y)) &&
-        (max(t0.x, max(t0.y, t0.z)) > 0.0f)
+        (max(tMax.x, max(tMax.y, tMax.z)) > 0.0f)
     );
+}
+
+
+__constant float32x4_t const kOctreeSubnodeInfoOffset[] = {
+    (float32x4_t)(0.0f, 0.0f, 0.0f, -0.5f),
+    (float32x4_t)(1.0f, 0.0f, 0.0f, -0.5f),
+    (float32x4_t)(0.0f, 1.0f, 0.0f, -0.5f),
+    (float32x4_t)(1.0f, 1.0f, 0.0f, -0.5f),
+    (float32x4_t)(0.0f, 0.0f, 1.0f, -0.5f),
+    (float32x4_t)(1.0f, 0.0f, 1.0f, -0.5f),
+    (float32x4_t)(0.0f, 1.0f, 1.0f, -0.5f),
+    (float32x4_t)(1.0f, 1.0f, 1.0f, -0.5f)
+};
+
+__constant uint32_t const kOctreeNodeStackSize = 32;
+
+inline
+void
+mesh_octree_intersection(
+    sample_context_t * const sampleCx,
+    __global common_mesh_instance_t const * const meshInstance,
+    __global common_primitive_t const * const meshPrimitives,
+    __global common_mesh_octree_node_t const * const rootNode
+)
+{
+    uint32_t nodeStackSize = 1;
+    uint32_t nodeStack[kOctreeNodeStackSize];
+    uint32_t subNodeIdStack[kOctreeNodeStackSize];
+    float32x4_t nodeInfosStack[kOctreeNodeStackSize];
+
+    {
+        nodeStack[0] = 0;
+        subNodeIdStack[0] = 0;
+        nodeInfosStack[0] = (float32x4_t)(
+            0.0f, 0.0f, 0.0f, meshInstance->mesh.vertexUpperBound.w
+        );
+
+        nodeInfosStack[0].xyz -= sampleCx->rayMeshOrigin;
+    }
+
+    while (nodeStackSize)
+    {
+        uint32_t const subNodeId = subNodeIdStack[nodeStackSize - 1]++;
+
+        if (subNodeId == kOctreeNodeSubdivisonCount)
+        {
+            // going up
+            nodeStackSize--;
+            continue;
+        }
+
+        __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
+
+        if (subNodeId == 0)
+        {
+            uint32_t const primEnd = node->primFirst + node->primCount;
+
+            for (uint32_t primId = node->primFirst; primId < primEnd; primId++)
+            {
+                primitive_intersection(sampleCx, meshPrimitives + primId);
+            }
+        }
+
+        if (node->subNodeOffsets[subNodeId] == 0)
+        {
+            continue;
+        }
+
+        float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
+        float32x4_t const subNodeInfos = (
+            nodeInfos.w * kOctreeSubnodeInfoOffset[subNodeId] +
+            nodeInfos
+        );
+
+        if (!box_intersection(sampleCx, subNodeInfos.xyz - subNodeInfos.w, subNodeInfos.xyz + 3.0f * subNodeInfos.w))
+        {
+            continue;
+        }
+
+        // going down
+        nodeStack[nodeStackSize] = node->subNodeOffsets[subNodeId];
+        subNodeIdStack[nodeStackSize] = 0;
+        nodeInfosStack[nodeStackSize] = subNodeInfos;
+
+        nodeStackSize++;
+    }
 }
 
 inline
@@ -243,13 +330,14 @@ mesh_instance_intersection(
 #endif // _CL_NO_BOUNDING_BOX_CHECKING
 
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
-    __global common_mesh_octree_node_t const * const meshNodes = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
+    __global common_mesh_octree_node_t const * const meshRootNode = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
 
+#if 0
     uint32_t const nodeCount = meshInstance->mesh.octreeNodeCount;
 
     for (uint32_t nodeId = 0; nodeId < nodeCount; nodeId++)
     {
-        __global common_mesh_octree_node_t const * const node = meshNodes + nodeId;
+        __global common_mesh_octree_node_t const * const node = meshRootNode + nodeId;
         uint32_t const primEnd = node->primFirst + node->primCount;
 
         for (uint32_t primId = node->primFirst; primId < primEnd; primId++)
@@ -257,6 +345,14 @@ mesh_instance_intersection(
             primitive_intersection(sampleCx, meshPrimitives + primId);
         }
     }
+#else
+    mesh_octree_intersection(
+        sampleCx,
+        meshInstance,
+        meshPrimitives,
+        meshRootNode
+    );
+#endif
 }
 
 inline

@@ -30,6 +30,16 @@ namespace
         // --------------------------------------------------------------------- METHODS
 
         /*
+         * Compute the node's size
+         */
+        inline
+        float32_t
+        size() const
+        {
+            return pow(2.0f, mSizeLog);
+        }
+
+        /*
          * Compute the sub node id from its sub coordinate
          */
         static
@@ -85,7 +95,7 @@ namespace
 
                 auto const subNodeId = cursors[0];
 
-                commonNode->subNodeOffsets[i] = subNodeId - nodeId;
+                commonNode->subNodeOffsets[i] = subNodeId;
 
                 subNode->generateCommonOctree(
                     outPrimNewIds,
@@ -159,7 +169,7 @@ namespace CS499R
 
         mesh.computeBoundingBox(&lowerBound, &upperBound);
 
-        auto const octreeBoxSizeLog = int32_t(ceil(log(max(upperBound - lowerBound))));
+        auto const octreeBoxSizeLog = int32_t(ceil(log2(max(upperBound - lowerBound))));
         auto const octreeBoxSize = float32_t(pow(2.0f, octreeBoxSizeLog));
 
         OctreeNode * const octreeRoot = new OctreeNode(octreeBoxSize * 0.5f + lowerBound, octreeBoxSizeLog);
@@ -173,28 +183,27 @@ namespace CS499R
 
             for (size_t primId = 0; primId < mesh.mPrimitiveCount; primId++)
             {
-                auto prim = mesh.mPrimitiveArray + primId;
-                auto primCenter = (prim->vertex[0] + prim->vertex[1] + prim->vertex[2]) * 0.3333f;
-
-                float32_t const primLongestEdge = max(float32x3_t(
-                    length(prim->vertex[0] - prim->vertex[1]),
-                    length(prim->vertex[1] - prim->vertex[2]),
-                    length(prim->vertex[2] - prim->vertex[0])
-                ));
-
-                auto const primOctreeDepth = int32_t(ceil(log(primLongestEdge / sqrt(3.0f))));
+                auto const prim = mesh.mPrimitiveArray + primId;
+                auto const primLowerBound = min(prim->vertex[0], min(prim->vertex[1], prim->vertex[2]));
+                auto const primUpperBound = max(prim->vertex[0], max(prim->vertex[1], prim->vertex[2]));
+                auto const primCenter = (primLowerBound + primUpperBound) * 0.5f;
+                auto const primBiggestDimSize = max(primUpperBound - primLowerBound);
                 auto currentOctreeNode = octreeRoot;
 
-                CS499R_ASSERT(primOctreeDepth <= currentOctreeNode->mSizeLog);
-
-                if (primOctreeDepth < -30)
-                {
-                    continue;
-                }
-
                 // seek the correct node who should contain this primitive
-                while (currentOctreeNode->mSizeLog != primOctreeDepth)
+                for (;;)
                 {
+                    auto const currentNodeSize = currentOctreeNode->size();
+
+                    if (currentNodeSize * 0.5f < primBiggestDimSize)
+                    {
+                        break;
+                    }
+
+                    CS499R_ASSERT(abs(primCenter.x - currentOctreeNode->mCenter.x) <= currentNodeSize);
+                    CS499R_ASSERT(abs(primCenter.y - currentOctreeNode->mCenter.y) <= currentNodeSize);
+                    CS499R_ASSERT(abs(primCenter.z - currentOctreeNode->mCenter.z) <= currentNodeSize);
+
                     auto const subNodeCoord = size3_t(
                         size_t(primCenter.x > currentOctreeNode->mCenter.x),
                         size_t(primCenter.y > currentOctreeNode->mCenter.y),
@@ -225,6 +234,20 @@ namespace CS499R
                     }
 
                     currentOctreeNode = currentOctreeNode->mChildren[subNodeId];
+                }
+
+                {
+                    auto const currentNodeSize = currentOctreeNode->size();
+
+                    CS499R_ASSERT(primBiggestDimSize >= currentNodeSize * 0.5f);
+                    CS499R_ASSERT(primBiggestDimSize <= currentNodeSize);
+
+                    CS499R_ASSERT(primLowerBound.x >= currentOctreeNode->mCenter.x - currentNodeSize);
+                    CS499R_ASSERT(primLowerBound.y >= currentOctreeNode->mCenter.y - currentNodeSize);
+                    CS499R_ASSERT(primLowerBound.z >= currentOctreeNode->mCenter.z - currentNodeSize);
+                    CS499R_ASSERT(primUpperBound.x <= currentOctreeNode->mCenter.x + currentNodeSize);
+                    CS499R_ASSERT(primUpperBound.y <= currentOctreeNode->mCenter.y + currentNodeSize);
+                    CS499R_ASSERT(primUpperBound.z <= currentOctreeNode->mCenter.z + currentNodeSize);
                 }
 
                 currentOctreeNode->mPrimitiveIds.push_back(primId);
