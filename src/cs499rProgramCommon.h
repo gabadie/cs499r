@@ -233,27 +233,17 @@ mesh_octree_intersection(
     {
         nodeStack[0] = 0;
         subNodeIdStack[0] = 0;
-        nodeInfosStack[0] = (float32x4_t)(
-            0.0f, 0.0f, 0.0f, meshInstance->mesh.vertexUpperBound.w
-        );
-
-        nodeInfosStack[0].xyz -= sampleCx->rayMeshOrigin;
+        nodeInfosStack[0].xyz = -sampleCx->rayMeshOrigin;
+        nodeInfosStack[0].w = meshInstance->mesh.vertexUpperBound.w;
     }
 
-    while (nodeStackSize)
+    while (1)
     {
-        uint32_t const subNodeId = subNodeIdStack[nodeStackSize - 1]++;
-
-        if (subNodeId == kOctreeNodeSubdivisonCount)
-        {
-            // going up
-            nodeStackSize--;
-            continue;
-        }
+        uint32_t const subNodeId = subNodeIdStack[nodeStackSize - 1];
 
         __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
 
-        if (subNodeId == 0)
+        if (subNodeId == kOctreeNodeSubdivisonCount)
         {
             uint32_t const primEnd = node->primFirst + node->primCount;
 
@@ -261,7 +251,18 @@ mesh_octree_intersection(
             {
                 primitive_intersection(sampleCx, meshPrimitives + primId);
             }
+
+            if (nodeStackSize == 1)
+            {
+                return;
+            }
+
+            // going up
+            nodeStackSize--;
+            continue;
         }
+
+        subNodeIdStack[nodeStackSize - 1] = subNodeId + 1;
 
         if (node->subNodeOffsets[subNodeId] == 0)
         {
