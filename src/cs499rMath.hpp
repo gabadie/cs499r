@@ -432,6 +432,53 @@ namespace CS499R
     }
 
 
+    // ------------------------------------------------------------------------- ABS
+    template <typename T>
+    inline
+    T
+    abs(T const v)
+    {
+        return max(v, -v);
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    abs(vec2<T> const & v)
+    {
+        return vec2<T>(
+            abs(v.x),
+            abs(v.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    abs(vec3<T> const & v)
+    {
+        return vec3<T>(
+            abs(v.x),
+            abs(v.y),
+            abs(v.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    abs(vec4<T> const & v)
+    {
+        return vec4<T>(
+            abs(v.x),
+            abs(v.y),
+            abs(v.z),
+            abs(v.w)
+        );
+    }
+
+
+
 
     // ------------------------------------------------------------------------- CROSS PRODUCT
     template <typename T>
