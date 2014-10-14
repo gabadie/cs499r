@@ -7,6 +7,8 @@
 namespace
 {
 
+    size_t const kOctreeMinPrimitivePerLeaf = 2;
+
     /*
      * Temporary octree struct for SceneMesh::buildFromMesh()
      */
@@ -105,6 +107,75 @@ namespace
             }
         }
 
+        bool
+        isLeaf() const
+        {
+            for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
+            {
+                if (mChildren[i] != nullptr)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        size_t
+        nodeCount() const
+        {
+            size_t nodeCount = 1;
+
+            for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
+            {
+                if (mChildren[i] != nullptr)
+                {
+                    nodeCount += mChildren[i]->nodeCount();
+                }
+            }
+
+            return nodeCount;
+        }
+
+        size_t
+        prune()
+        {
+            size_t prunedNodeCount = 0;
+
+            for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
+            {
+                if (mChildren[i] == nullptr)
+                {
+                    continue;
+                }
+
+                prunedNodeCount += mChildren[i]->prune();
+
+                if (!mChildren[i]->isLeaf())
+                {
+                    continue;
+                }
+
+                if (mChildren[i]->mPrimitiveIds.size() > kOctreeMinPrimitivePerLeaf)
+                {
+                    continue;
+                }
+
+                for (auto primId : mChildren[i]->mPrimitiveIds)
+                {
+                    mPrimitiveIds.push_back(primId);
+                }
+
+                delete mChildren[i];
+
+                mChildren[i] = nullptr;
+
+                prunedNodeCount++;
+            }
+
+            return prunedNodeCount;
+        }
+
 
         // --------------------------------------------------------------------- IDLE
 
@@ -173,7 +244,6 @@ namespace CS499R
         auto const octreeBoxSize = float32_t(pow(2.0f, octreeBoxSizeLog));
 
         OctreeNode * const octreeRoot = new OctreeNode(octreeBoxSize * 0.5f + lowerBound, octreeBoxSizeLog);
-        size_t octreeNodeCount = 1;
         size_t primCount = 0;
 
         { // build up mesh's octree
@@ -229,8 +299,6 @@ namespace CS499R
                             subNodeCenter,
                             subNodeSizeLog
                         );
-
-                        octreeNodeCount++;
                     }
 
                     currentOctreeNode = currentOctreeNode->mChildren[subNodeId];
@@ -255,10 +323,14 @@ namespace CS499R
             }
         }
 
+        { // prunes leaf that are to small
+            octreeRoot->prune();
+        }
+
         { // inits scene mesh's members
             mPrimitiveCount = primCount;
             mPrimitiveArray = alloc<common_primitive_t>(mPrimitiveCount);
-            mOctreeNodeCount = octreeNodeCount;
+            mOctreeNodeCount = octreeRoot->nodeCount();
             mOctreeNodeArray = alloc<common_mesh_octree_node_t>(mOctreeNodeCount);
             mCenterPosition = -lowerBound;
             mVertexUpperBound = upperBound - lowerBound;
