@@ -11,7 +11,7 @@ inline
 void
 camera_first_ray(
     sample_context_t * const sampleCx,
-    __global common_shot_context_t const * shotCx,
+    __global common_render_context_t const * shotCx,
     uint32x2_t const pixelCoord,
     uint32x2_t const pixelSubpixelCoord
 )

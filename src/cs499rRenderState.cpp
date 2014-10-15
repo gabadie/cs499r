@@ -151,7 +151,7 @@ namespace CS499R
             CS499R_ASSERT((kickoffTileSize % coherencyTileSize) == 0);
         }
 
-        common_coherency_context_t templateCtx;
+        common_render_context_t templateCtx;
 
         { // init render context template
             auto const aspectRatio = float32_t(mRenderTarget->width()) / float32_t(mRenderTarget->height());
@@ -176,7 +176,7 @@ namespace CS499R
                 log2(templateCtx.render.coherencyTilePerKickoffTileBorder);
         }
 
-        auto const kickoffCtxCircularArray = alloc<common_coherency_context_t>(kickoffTileCount * kHostAheadCommandCount);
+        auto const kickoffCtxCircularArray = alloc<common_render_context_t>(kickoffTileCount * kHostAheadCommandCount);
         auto const kickoffCtxManagers = alloc<kickoff_ctx_manager_t>(kickoffTileCount);
 
         // init render context circular pass 0
@@ -271,7 +271,7 @@ namespace CS499R
 
                         error = clEnqueueWriteBuffer(
                             cmdQueue, kickoffCtxManager->buffers[currentCircularPassId], CL_FALSE,
-                            0, sizeof(common_coherency_context_t), kickoffCtx,
+                            0, sizeof(common_render_context_t), kickoffCtx,
                             0, nullptr,
                             &currentPassEvent->bufferWriteDone
                         );
@@ -394,7 +394,7 @@ namespace CS499R
         size_t const samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
 
         float const aspectRatio = float(mRenderTarget->width()) / float(mRenderTarget->height());
-        common_shot_context_t shotContext;
+        common_render_context_t shotContext;
 
         { // init shot context
             camera->exportToShotCamera(&shotContext.camera, aspectRatio);

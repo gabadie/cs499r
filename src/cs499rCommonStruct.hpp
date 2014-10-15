@@ -146,7 +146,7 @@ namespace CS499R
 
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
-    } common_coherency_render_t;
+    } common_render_t;
 
     typedef
     struct __attribute__((aligned(16), packed)) common_coherency_context_s
@@ -158,10 +158,8 @@ namespace CS499R
         __attribute__((aligned(16))) common_scene_t scene;
 
         // the shot's render info
-        __attribute__((aligned(16))) common_coherency_render_t render;
-    } common_coherency_context_t;
-
-    typedef common_coherency_context_t common_shot_context_t;
+        __attribute__((aligned(16))) common_render_t render;
+    } common_render_context_t;
 
 #ifndef __CS499R_OPENCL_FILE
 } // namespace CS499R

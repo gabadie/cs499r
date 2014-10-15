@@ -57,7 +57,7 @@ path_tracer_rebound(
  */
 __kernel void
 kernel_path_tracer_main(
-    __global common_coherency_context_t const * coherencyCx,
+    __global common_render_context_t const * coherencyCx,
     __global common_mesh_instance_t const * meshInstances,
     __global common_mesh_octree_node_t const * meshOctreeNodes,
     __global common_primitive_t const * primitives,
