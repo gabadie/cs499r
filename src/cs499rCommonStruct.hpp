@@ -113,7 +113,7 @@ namespace CS499R
         __attribute__((aligned(16))) float32x3_t focusBasisV;
     } common_camera_t;
 
-    typedef struct common_shot_context_s
+    typedef struct common_shot_debug_context_s
     {
         // the shot's camera informations
         __attribute__((aligned(16))) common_camera_t camera;
@@ -127,7 +127,12 @@ namespace CS499R
         // the max id of mesh instances in the scene
         __attribute__((aligned(16))) uint32_t meshInstanceMaxId;
 
-    } common_shot_context_t;
+        // the max id of mesh instances in the scene
+        __attribute__((aligned(16))) uint32_t sampleOffset;
+
+    } common_shot_debug_context_t;
+
+    typedef common_shot_debug_context_t common_shot_context_t;
 
 #ifndef __CS499R_OPENCL_FILE
 } // namespace CS499R

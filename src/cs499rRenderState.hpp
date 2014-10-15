@@ -59,6 +59,12 @@ namespace CS499R
         bool
         validateParams() const;
 
+        void
+        shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling);
+
+        void
+        shotSceneDebug(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling);
+
     };
 
 }

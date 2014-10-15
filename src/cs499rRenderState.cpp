@@ -15,6 +15,53 @@ namespace CS499R
     void
     RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
     {
+        if (mRayAlgorithm == kRayAlgorithmPathTracer)
+        {
+            //shotSceneCoherency(sceneBuffer, camera, outProfiling);
+            shotSceneDebug(sceneBuffer, camera, outProfiling);
+        }
+        else
+        {
+            shotSceneDebug(sceneBuffer, camera, outProfiling);
+        }
+    }
+
+    RenderState::RenderState()
+    {
+        mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
+        mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
+        mRayAlgorithm = kRayAlgorithmPathTracer;
+        mRenderTarget = nullptr;
+
+        CS499R_ASSERT(validateParams());
+    }
+
+    RenderState::~RenderState()
+    {
+
+    }
+
+    bool
+    RenderState::validateParams() const
+    {
+        CS499R_ASSERT(isPow2(mPixelBorderSubdivisions));
+        CS499R_ASSERT(isPow2(mSamplesPerSubdivisions));
+        CS499R_ASSERT(mRayAlgorithm < kRayAlgorithmCount);
+
+        return true;
+    }
+
+    void
+    RenderState::shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
+    {
+        (void) sceneBuffer;
+        (void) camera;
+        (void) outProfiling;
+    }
+
+    void
+    RenderState::shotSceneDebug(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
+    {
         CS499R_ASSERT(sceneBuffer != nullptr);
         CS499R_ASSERT(camera != nullptr);
         CS499R_ASSERT(validateParams());
@@ -149,29 +196,5 @@ namespace CS499R
         CS499R_ASSERT_NO_CL_ERROR(error);
     }
 
-    RenderState::RenderState()
-    {
-        mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
-        mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
-        mRayAlgorithm = kRayAlgorithmPathTracer;
-        mRenderTarget = nullptr;
-
-        CS499R_ASSERT(validateParams());
-    }
-
-    RenderState::~RenderState()
-    {
-
-    }
-
-    bool
-    RenderState::validateParams() const
-    {
-        CS499R_ASSERT(isPow2(mPixelBorderSubdivisions));
-        CS499R_ASSERT(isPow2(mSamplesPerSubdivisions));
-        CS499R_ASSERT(mRayAlgorithm < kRayAlgorithmCount);
-
-        return true;
-    }
 
 }
