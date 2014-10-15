@@ -639,6 +639,26 @@ namespace CS499R
  * We are preprocessing code for OpenCL...
  */
 
+typedef char int8_t;
+typedef char2 int8x2_t;
+typedef char3 int8x3_t;
+typedef char4 int8x4_t;
+
+typedef uchar uint8_t;
+typedef uchar2 uint8x2_t;
+typedef uchar3 uint8x3_t;
+typedef uchar4 uint8x4_t;
+
+typedef short int16_t;
+typedef short2 int16x2_t;
+typedef short3 int16x3_t;
+typedef short4 int16x4_t;
+
+typedef ushort uint16_t;
+typedef ushort2 uint16x2_t;
+typedef ushort3 uint16x3_t;
+typedef ushort4 uint16x4_t;
+
 typedef int int32_t;
 typedef int2 int32x2_t;
 typedef int3 int32x3_t;
