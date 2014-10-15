@@ -28,7 +28,7 @@ scene_intersection(
     /*
      * i = 1 because we skip over the anonymous mesh instance
      */
-    for (uint32_t i = 1; i < shotCx->meshInstanceMaxId; i++)
+    for (uint32_t i = 1; i < shotCx->scene.meshInstanceMaxId; i++)
     {
         sampleCx->boundMeshInstance = meshInstances + i;
 

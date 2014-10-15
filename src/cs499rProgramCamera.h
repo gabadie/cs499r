@@ -18,11 +18,11 @@ camera_first_ray(
 {
     float32x2_t const subpixelCoord = (float32x2_t)(pixelCoord.x, pixelCoord.y) +
             (1.0f + 2.0f * (float32x2_t)(pixelSubpixelCoord.x, pixelSubpixelCoord.y)) *
-            (0.5f / (float32_t) shotCx->render.z);
+            (0.5f / (float32_t) shotCx->render.subpixelPerPixelBorder);
 
     float32x2_t areaCoord;
-    areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.x);
-    areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.y);
+    areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.resolution.x);
+    areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.resolution.y);
     areaCoord = areaCoord * 2.0f - 1.0f;
 
     float32x3_t rayFocusPoint = (

@@ -59,6 +59,18 @@ namespace CS499R
         bool
         validateParams() const;
 
+        /*
+         * Render targets operations
+         */
+        void
+        clearRenderTarget();
+
+        void
+        multiplyRenderTarget(float32_t multiplyFactor);
+
+        /*
+         * Shots algorithms
+         */
         void
         shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling);
 

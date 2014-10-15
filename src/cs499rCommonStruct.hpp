@@ -113,26 +113,55 @@ namespace CS499R
         __attribute__((aligned(16))) float32x3_t focusBasisV;
     } common_camera_t;
 
-    typedef struct common_shot_debug_context_s
+    typedef
+    struct __attribute__((aligned(16), packed)) common_scene_s
     {
-        // the shot's camera informations
-        __attribute__((aligned(16))) common_camera_t camera;
-
-        // render dimensions
-        //      x is the image's width in pixels
-        //      y is the image's height in pixels
-        //      z is the image's subdivisions per pixels border
-        __attribute__((aligned(16))) uint32x3_t render;
-
         // the max id of mesh instances in the scene
         __attribute__((aligned(16))) uint32_t meshInstanceMaxId;
 
-        // the max id of mesh instances in the scene
-        __attribute__((aligned(16))) uint32_t sampleOffset;
+    } common_scene_t;
 
-    } common_shot_debug_context_t;
+    typedef
+    struct __attribute__((aligned(16), packed)) common_coherency_render_s
+    {
+        // the render's resolution
+        __attribute__((aligned(16))) uint32x2_t resolution;
 
-    typedef common_shot_debug_context_t common_shot_context_t;
+        // the render's subpixel count per pixel border
+        __attribute__((aligned(16))) uint32_t subpixelPerPixelBorder;
+
+        // the tile infos
+        __attribute__((aligned(16))) uint32x2_t kickoffTilePos;
+
+        // coherency and kickoff tiles' constants
+        __attribute__((aligned(16))) uint32_t kickoffTileSize;
+        __attribute__((aligned(16))) uint32_t kickoffTileSizeLog;
+        __attribute__((aligned(16))) uint32_t coherencyTileSize;
+        __attribute__((aligned(16))) uint32_t coherencyTileSizeLog;
+        __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorder;
+        __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorderLog;
+
+        // the kickoff's random seed offset
+        __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;
+
+        // the subpixel pos in the pixel
+        __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
+    } common_coherency_render_t;
+
+    typedef
+    struct __attribute__((aligned(16), packed)) common_coherency_context_s
+    {
+        // the shot's camera
+        __attribute__((aligned(16))) common_camera_t camera;
+
+        // the shot's scene
+        __attribute__((aligned(16))) common_scene_t scene;
+
+        // the shot's render info
+        __attribute__((aligned(16))) common_coherency_render_t render;
+    } common_coherency_context_t;
+
+    typedef common_coherency_context_t common_shot_context_t;
 
 #ifndef __CS499R_OPENCL_FILE
 } // namespace CS499R

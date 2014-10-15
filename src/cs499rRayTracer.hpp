@@ -28,6 +28,16 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- ENUMS
+
+        enum PrivateProgram
+        {
+            kProgramTragetMultiply = kRayAlgorithmCount,
+
+            kProgramCount
+        };
+
+
         // --------------------------------------------------------------------- STRUCTS
 
         /*
@@ -54,7 +64,7 @@ namespace CS499R
         cl_command_queue mCmdQueue;
 
         // the ray tracing kernels
-        Program mProgram[kRayAlgorithmCount];
+        Program mProgram[kProgramCount];
 
 
         // --------------------------------------------------------------------- METHODES

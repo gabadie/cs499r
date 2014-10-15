@@ -49,17 +49,19 @@ namespace CS499R
     {
         cl_int error = 0;
 
-        char const * programCodes[kRayAlgorithmCount] = {
+        char const * programCodes[kProgramCount] = {
             kCS499RProgramPathTracer,
-            kCS499RProgramDebugNormal
+            kCS499RProgramDebugNormal,
+            kCS499RProgramTargetMultiply
         };
 
-        char const * const programKernelNameArray[kRayAlgorithmCount] = {
+        char const * const programKernelNameArray[kProgramCount] = {
             "kernel_path_tracer_main",
             "kernel_debug_normal",
+            "kernel_main",
         };
 
-        for (size_t programId = 0; programId < kRayAlgorithmCount; programId++)
+        for (size_t programId = 0; programId < kProgramCount; programId++)
         { // initialize program
             mProgram[programId].program = clCreateProgramWithSource(
                 mContext,

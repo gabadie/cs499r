@@ -1,5 +1,5 @@
 
-#ifdef _H_CS499R_CONFIG
+#ifndef _H_CS499R_CONFIG
 #define _H_CS499R_CONFIG
 
 /*

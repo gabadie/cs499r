@@ -15,18 +15,17 @@ kernel_debug_normal(
     __global float32_t * renderTarget
 )
 {
-    uint32_t const pixelBorderSubpixelCount = shotCx->render.z;
     uint32x2_t const pixelCoord = (uint32x2_t)(
-        get_global_id(0) / pixelBorderSubpixelCount,
-        get_global_id(1) / pixelBorderSubpixelCount
+        get_global_id(0),
+        get_global_id(1)
     );
 
-    if (pixelCoord.x >= shotCx->render.x || pixelCoord.y >= shotCx->render.y)
+    if (pixelCoord.x >= shotCx->render.resolution.x || pixelCoord.y >= shotCx->render.resolution.y)
     {
         return;
     }
 
-    uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(get_local_id(0), get_local_id(1));
+    uint32x2_t const pixelSubpixelCoord = (uint32x2_t)(0, 0);
 
     sample_context_t sampleCx;
 
@@ -50,7 +49,7 @@ kernel_debug_normal(
     }
 #endif
 
-    uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.x;
+    uint32_t const pixelId = pixelCoord.x + pixelCoord.y * shotCx->render.resolution.x;
 
     __global float32_t * pixelTarget = renderTarget + pixelId * 3;
 
