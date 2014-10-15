@@ -91,8 +91,8 @@ kernel_path_tracer_main(
     { // set up random seed
         uint32_t const subpixelId = (
             (
-                (pixelCoord.x & 0x3F) +
-                (pixelCoord.y & 0x3F) * 0x3F
+                (pixelCoord.x & 0x7F) +
+                (pixelCoord.y & 0x7F) * 0x7F
             ) * pixelSubpixelCount +
             pixelSubpixelId
         );
