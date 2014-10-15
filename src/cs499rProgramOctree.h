@@ -51,5 +51,15 @@ octree_sub_node_order(float32x3_t rayDirection)
     return kOctreeSubNodeAccessOrder[directctionId];
 }
 
+inline
+float32x4_t
+octree_sub_node_infos(float32x4_t const nodeInfos, uint32_t const subNodeId)
+{
+    return (
+        nodeInfos.w * kOctreeSubnodeInfoOffset[subNodeId] +
+        nodeInfos
+    );
+}
+
 
 #endif // _CLH_CS499R_PROGRAM_OCTREE

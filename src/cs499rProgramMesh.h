@@ -75,10 +75,7 @@ mesh_octree_intersection(
         }
 
         float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
-        float32x4_t const subNodeInfos = (
-            nodeInfos.w * kOctreeSubnodeInfoOffset[subNodeId] +
-            nodeInfos
-        );
+        float32x4_t const subNodeInfos = octree_sub_node_infos(nodeInfos, subNodeId);
 
         if (!box_intersection(sampleCx, subNodeInfos.xyz - subNodeInfos.w, subNodeInfos.xyz + 3.0f * subNodeInfos.w))
         {
