@@ -10,6 +10,7 @@
 
 // ----------------------------------------------------------------------------- CS499R's utils
 
+#include "cs499rConfig.h"
 #include "cs499rMath.hpp"
 #include "cs499rUtils.hpp"
 #include "cs499rMemory.hpp"

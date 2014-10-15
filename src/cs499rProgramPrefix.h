@@ -4,6 +4,7 @@
 
 #define __CS499R_OPENCL_FILE
 
+#include "cs499rConfig.h"
 #include "cs499rCommonStruct.hpp"
 
 #ifndef __CS499R_OPENCL_PREPROCESSOR
