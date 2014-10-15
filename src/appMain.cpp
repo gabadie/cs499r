@@ -41,6 +41,8 @@ main(int argc, char const * const * argv)
 
     App::buildSceneMeshes(scene);
 
+    std::cout << "Rendering..." << std::endl;
+
     {
         CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);
         CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
