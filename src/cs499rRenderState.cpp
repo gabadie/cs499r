@@ -108,11 +108,18 @@ namespace CS499R
     void
     RenderState::shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
     {
+        size_t const kHostAheadCommandCount = 10;
+
+        struct kickoff_events_t
+        {
+            cl_event bufferWriteDone;
+            cl_event kickoffDone;
+        };
+
         struct kickoff_ctx_manager_t
         {
-            cl_mem buffer;
-            cl_event bufferWriteEvent;
-            cl_event previousKickoffEvent;
+            cl_mem buffers[kHostAheadCommandCount];
+            kickoff_events_t events[kHostAheadCommandCount];
         };
 
         size_t const kThreadsPerTilesTarget = 2048 * 8;
@@ -146,7 +153,7 @@ namespace CS499R
 
         common_coherency_context_t templateCtx;
 
-        { // init shot context
+        { // init render context template
             auto const aspectRatio = float32_t(mRenderTarget->width()) / float32_t(mRenderTarget->height());
 
             camera->exportToShotCamera(&templateCtx.camera, aspectRatio);
@@ -169,28 +176,47 @@ namespace CS499R
                 log2(templateCtx.render.coherencyTilePerKickoffTileBorder);
         }
 
-        auto const kickoffCtxArray = alloc<common_coherency_context_t>(kickoffTileCount);
+        auto const kickoffCtxCircularArray = alloc<common_coherency_context_t>(kickoffTileCount * kHostAheadCommandCount);
         auto const kickoffCtxManagers = alloc<kickoff_ctx_manager_t>(kickoffTileCount);
 
+        // init render context circular pass 0
         for (size_t kickoffTileIdY = 0; kickoffTileIdY < kickoffTileGrid.y; kickoffTileIdY++)
         {
             for (size_t kickoffTileIdX = 0; kickoffTileIdX < kickoffTileGrid.x; kickoffTileIdX++)
             {
                 size_t const kickoffTileId = kickoffTileIdX + kickoffTileIdY * kickoffTileGrid.x;
-                auto const kickoffCtx = kickoffCtxArray + kickoffTileId;
+                auto const kickoffCtx = kickoffCtxCircularArray + kickoffTileId;
 
                 memcpy(kickoffCtx, &templateCtx, sizeof(templateCtx));
 
                 kickoffCtx->render.kickoffTilePos.x = kickoffTileSize * kickoffTileIdX;
                 kickoffCtx->render.kickoffTilePos.y = kickoffTileSize * kickoffTileIdY;
 
-                kickoffCtxManagers[kickoffTileId].buffer = clCreateBuffer(context,
-                    CL_MEM_READ_ONLY,
-                    sizeof(templateCtx), nullptr,
-                    &error
-                );
+                for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
+                {
+                    kickoffCtxManagers[kickoffTileId].buffers[circularPassId] = clCreateBuffer(context,
+                        CL_MEM_READ_ONLY,
+                        sizeof(templateCtx), nullptr,
+                        &error
+                    );
+                }
 
                 CS499R_ASSERT_NO_CL_ERROR(error);
+            }
+        }
+
+        // clones the render context circular pass 0 into others
+        for (size_t circularPassId = 1; circularPassId < kHostAheadCommandCount; circularPassId++)
+        {
+            auto const kickoffCtxArray = kickoffCtxCircularArray + kickoffTileCount * circularPassId;
+
+            for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+            {
+                memcpy(
+                    kickoffCtxArray + kickoffTileId,
+                    kickoffCtxCircularArray + kickoffTileId,
+                    sizeof(templateCtx)
+                );
             }
         }
 
@@ -213,6 +239,9 @@ namespace CS499R
             kernelStart = timestamp();
         }
 
+        size_t passId = 0;
+        size_t const passCount = mSamplesPerSubdivisions * mPixelBorderSubdivisions * mPixelBorderSubdivisions;
+
         // render loops
         for (size_t sampleId = 0; sampleId < mSamplesPerSubdivisions; sampleId++)
         {
@@ -220,13 +249,17 @@ namespace CS499R
             {
                 for (size_t subPixelX = 0; subPixelX < mPixelBorderSubdivisions; subPixelX++)
                 {
-                    bool const firstKickoff = (sampleId | subPixelX | subPixelY) == 0;
+                    size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
-                    // send buffers
+                    auto const kickoffCtxArray = kickoffCtxCircularArray + kickoffTileCount * currentCircularPassId;
+
+                    // upload render context buffers for this pass
                     for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
                     {
                         auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
                         auto const kickoffCtx = kickoffCtxArray + kickoffTileId;
+
+                        auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
                         kickoffCtx->render.kickoffTileRandomSeedOffset = 20 * (
                             sampleId + mSamplesPerSubdivisions * (
@@ -236,69 +269,78 @@ namespace CS499R
                         kickoffCtx->render.pixelSubpixelPos.x = subPixelX;
                         kickoffCtx->render.pixelSubpixelPos.y = subPixelY;
 
-                        if (firstKickoff)
-                        {
-                            error = clEnqueueWriteBuffer(
-                                cmdQueue, kickoffCtxManager->buffer, CL_FALSE,
-                                0, sizeof(common_coherency_context_t), kickoffCtxArray + kickoffTileId,
-                                0, nullptr,
-                                &kickoffCtxManager->bufferWriteEvent
-                            );
-
-                            CS499R_ASSERT_NO_CL_ERROR(error);
-                        }
-                        else
-                        {
-                            error = clEnqueueWriteBuffer(
-                                cmdQueue, kickoffCtxManager->buffer, CL_FALSE,
-                                0, sizeof(common_coherency_context_t), kickoffCtxArray + kickoffTileId,
-                                1, &kickoffCtxManager->previousKickoffEvent,
-                                &kickoffCtxManager->bufferWriteEvent
-                            );
-
-                            CS499R_ASSERT_NO_CL_ERROR(error);
-
-                            error = clReleaseEvent(kickoffCtxManager->previousKickoffEvent);
-                            CS499R_ASSERT_NO_CL_ERROR(error);
-                        }
-                    }
-
-                    // kickoff
-                    for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
-                    {
-                        auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
-
-                        error = clSetKernelArg(kernel, 0, sizeof(cl_mem), &kickoffCtxManager->buffer);
-                        CS499R_ASSERT_NO_CL_ERROR(error);
-
-                        error = clEnqueueNDRangeKernel(
-                            cmdQueue, kernel,
-                            1, nullptr, &kickoffTileGlobalSize, &kickoffTileLocalSize,
-                            1, &kickoffCtxManager->bufferWriteEvent,
-                            &kickoffCtxManager->previousKickoffEvent
+                        error = clEnqueueWriteBuffer(
+                            cmdQueue, kickoffCtxManager->buffers[currentCircularPassId], CL_FALSE,
+                            0, sizeof(common_coherency_context_t), kickoffCtx,
+                            0, nullptr,
+                            &currentPassEvent->bufferWriteDone
                         );
 
                         CS499R_ASSERT_NO_CL_ERROR(error);
                     }
 
-                    // wait for buffer writes done
+                    // kickoff this pass
                     for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
                     {
                         auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                        auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        error = clWaitForEvents(1, &kickoffCtxManager->bufferWriteEvent);
-                        CS499R_ASSERT_NO_CL_ERROR(error);
+                        error |= clSetKernelArg(
+                            kernel, 0,
+                            sizeof(cl_mem), &kickoffCtxManager->buffers[currentCircularPassId]
+                        );
+                        error |= clEnqueueNDRangeKernel(
+                            cmdQueue, kernel,
+                            1, nullptr, &kickoffTileGlobalSize, &kickoffTileLocalSize,
+                            1, &currentPassEvent->bufferWriteDone,
+                            &currentPassEvent->kickoffDone
+                        );
 
-                        error = clReleaseEvent(kickoffCtxManager->bufferWriteEvent);
                         CS499R_ASSERT_NO_CL_ERROR(error);
+                    }
+
+                    passId++;
+
+                    if (passId >= kHostAheadCommandCount && passId != passCount)
+                    {
+                        size_t const nextCircularPassId = passId % kHostAheadCommandCount;
+
+                        for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+                        {
+                            auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                            auto const nextPassEvent = kickoffCtxManager->events + nextCircularPassId;
+
+                            error |= clWaitForEvents(1, &nextPassEvent->bufferWriteDone);
+                            error |= clWaitForEvents(1, &nextPassEvent->kickoffDone);
+                            error |= clReleaseEvent(nextPassEvent->bufferWriteDone);
+                            error |= clReleaseEvent(nextPassEvent->kickoffDone);
+
+                            CS499R_ASSERT_NO_CL_ERROR(error);
+                        }
                     }
                 }
             }
         }
 
+        // wait all remaining passes
+        for (size_t circularPassId = 0; circularPassId < min(passId, kHostAheadCommandCount); circularPassId++)
+        {
+            for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+            {
+                auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                auto const circularPassEvent = kickoffCtxManager->events + circularPassId;
+
+                error |= clWaitForEvents(1, &circularPassEvent->bufferWriteDone);
+                error |= clWaitForEvents(1, &circularPassEvent->kickoffDone);
+                error |= clReleaseEvent(circularPassEvent->bufferWriteDone);
+                error |= clReleaseEvent(circularPassEvent->kickoffDone);
+
+                CS499R_ASSERT_NO_CL_ERROR(error);
+            }
+        }
+
         if (outProfiling)
         {
-            clFinish(cmdQueue);
             kernelEnd = timestamp();
         }
 
@@ -315,14 +357,14 @@ namespace CS499R
             {
                 auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
 
-                error = clReleaseEvent(kickoffCtxManager->previousKickoffEvent);
-                CS499R_ASSERT_NO_CL_ERROR(error);
-
-                error = clReleaseMemObject(kickoffCtxManager->buffer);
-                CS499R_ASSERT_NO_CL_ERROR(error);
+                for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
+                {
+                    error = clReleaseMemObject(kickoffCtxManager->buffers[circularPassId]);
+                    CS499R_ASSERT_NO_CL_ERROR(error);
+                }
             }
 
-            free(kickoffCtxArray);
+            free(kickoffCtxCircularArray);
             free(kickoffCtxManagers);
         }
 
