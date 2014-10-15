@@ -4,7 +4,7 @@
 
 // ----------------------------------------------------------------------------- CONSTANTES
 
-__constant float32_t kRecursionCount = 4;
+__constant float32_t kRecursionCount = 9;
 __constant float32_t kRandomPerRecursion = 2;
 
 
