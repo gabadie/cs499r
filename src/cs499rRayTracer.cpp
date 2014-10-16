@@ -102,7 +102,7 @@ namespace CS499R
 
             mProgram[programId].kernel = clCreateKernel(
                 mProgram[programId].program,
-                programKernelNameArray[programId],
+                "kernel_main",
                 &error
             );
 
