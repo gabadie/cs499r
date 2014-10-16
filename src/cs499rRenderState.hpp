@@ -22,6 +22,9 @@ namespace CS499R
         // number of samples per pixel subdivisions
         size_t mSamplesPerSubdivisions;
 
+        // number of samples ray recursion per sample > 0
+        size_t mRecursionPerSample;
+
         // the ray tracer algorithm to use
         RayAlgorithm mRayAlgorithm;
 
@@ -42,6 +45,7 @@ namespace CS499R
 
         static size_t const kDefaultPixelBorderSubdivisions = 4;
         static size_t const kDefaultSamplesPerSubdivisions = 32;
+        static size_t const kDefaultRecursionPerSample = 9;
 
 
         // --------------------------------------------------------------------- IDLE

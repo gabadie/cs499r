@@ -16,8 +16,8 @@ namespace CS499R
         // CPU duration
         timestamp_t mCPUDuration;
 
-        // Ray shot
-        uint64_t mSamples;
+        // Rays shot
+        uint64_t mRays;
     };
 
 }

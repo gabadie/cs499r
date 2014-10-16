@@ -31,6 +31,7 @@ namespace CS499R
     {
         mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;
         mSamplesPerSubdivisions = kDefaultSamplesPerSubdivisions;
+        mRecursionPerSample = kDefaultRecursionPerSample;
         mRayAlgorithm = kRayAlgorithmPathTracer;
         mRenderTarget = nullptr;
 
@@ -47,6 +48,7 @@ namespace CS499R
     {
         CS499R_ASSERT(isPow2(mPixelBorderSubdivisions));
         CS499R_ASSERT(isPow2(mSamplesPerSubdivisions));
+        CS499R_ASSERT(mRecursionPerSample >= 1);
         CS499R_ASSERT(mRayAlgorithm < kRayAlgorithmCount);
 
         return true;
@@ -102,6 +104,9 @@ namespace CS499R
     RenderState::shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
     {
         size_t const kHostAheadCommandCount = 10;
+        size_t const kMaxKickoffSampleIteration = 32;
+        size_t const kPathTracerRandomPerRay = 2;
+        size_t const kThreadsPerTilesTarget = 2048 * 8;
 
         struct kickoff_events_t
         {
@@ -114,8 +119,6 @@ namespace CS499R
             cl_mem buffers[kHostAheadCommandCount];
             kickoff_events_t events[kHostAheadCommandCount];
         };
-
-        size_t const kThreadsPerTilesTarget = 2048 * 8;
 
         auto const rayTracer = sceneBuffer->mRayTracer;
 
@@ -130,6 +133,14 @@ namespace CS499R
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
         size_t const samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
+        size_t const recursionPerSample = debugKernel ? 1 : mRecursionPerSample;
+
+        size_t const pixelSubdivisions = pixelBorderSubdivisions * pixelBorderSubdivisions;
+        size_t const pixelSampleCount = pixelSubdivisions * samplesPerSubdivisions;
+        size_t const pixelRayCount = pixelSampleCount * recursionPerSample;
+
+        size_t const kickoffSampleIterationCount = min(samplesPerSubdivisions, kMaxKickoffSampleIteration);
+        size_t const kickoffInvocationCount = samplesPerSubdivisions / kickoffSampleIterationCount;
 
         size_t const coherencyTileSize = 8;
         size_t const kickoffTileSize = sqrt(kThreadsPerTilesTarget);
@@ -171,6 +182,9 @@ namespace CS499R
             );
             templateCtx.render.coherencyTilePerKickoffTileBorderLog =
                 log2(templateCtx.render.coherencyTilePerKickoffTileBorder);
+
+            templateCtx.render.kickoffSampleIterationCount = kickoffSampleIterationCount;
+            templateCtx.render.kickoffSampleRecursionCount = recursionPerSample - 1;
         }
 
         auto const kickoffCtxCircularArray = alloc<common_render_context_t>(kickoffTileCount * kHostAheadCommandCount);
@@ -237,10 +251,10 @@ namespace CS499R
         }
 
         size_t passId = 0;
-        size_t const passCount = samplesPerSubdivisions * pixelBorderSubdivisions * pixelBorderSubdivisions;
+        size_t const passCount = kickoffInvocationCount * pixelSubdivisions;
 
         // render loops
-        for (size_t sampleId = 0; sampleId < samplesPerSubdivisions; sampleId++)
+        for (size_t invocationId = 0; invocationId < kickoffInvocationCount; invocationId++)
         {
             for (size_t subPixelY = 0; subPixelY < pixelBorderSubdivisions; subPixelY++)
             {
@@ -258,11 +272,11 @@ namespace CS499R
 
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        kickoffCtx->render.kickoffTileRandomSeedOffset = 20 * (
-                            sampleId + samplesPerSubdivisions * (
-                                subPixelY * pixelBorderSubdivisions + subPixelX
-                            )
-                        ); // TODO
+                        kickoffCtx->render.kickoffTileRandomSeedOffset = kPathTracerRandomPerRay * recursionPerSample * (
+                            invocationId * pixelSubdivisions +
+                            subPixelY * pixelBorderSubdivisions +
+                            subPixelX
+                        );
                         kickoffCtx->render.pixelSubpixelPos.x = subPixelX;
                         kickoffCtx->render.pixelSubpixelPos.y = subPixelY;
 
@@ -319,8 +333,10 @@ namespace CS499R
             }
         }
 
+        CS499R_ASSERT(passId == passCount);
+
         // wait all remaining passes
-        for (size_t circularPassId = 0; circularPassId < min(passId, kHostAheadCommandCount); circularPassId++)
+        for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
         {
             for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
             {
@@ -342,7 +358,7 @@ namespace CS499R
         }
 
         { // render target multiplication
-            float32_t const multiplyFactor = 1.0f / float32_t(passCount);
+            float32_t const multiplyFactor = 1.0f / float32_t(pixelSampleCount);
 
             multiplyRenderTarget(multiplyFactor);
         }
@@ -366,7 +382,7 @@ namespace CS499R
         if (outProfiling)
         {
             outProfiling->mCPUDuration = kernelEnd - kernelStart;
-            outProfiling->mSamples = mRenderTarget->width() * mRenderTarget->height() * passCount;
+            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() * pixelRayCount;
         }
     }
 

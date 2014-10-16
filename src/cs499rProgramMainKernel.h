@@ -62,23 +62,29 @@ kernel_main(
      * Here is the path tracer's code
      */
     { // set up random seed
-        sampleCx.randomSeed = kickoffTileCoherencyTileId * (kRecursionCount * kRandomPerRecursion);
-        sampleCx.randomSeed += coherencyCx->render.kickoffTileRandomSeedOffset;
+        sampleCx.randomSeed = (
+            coherencyCx->render.kickoffTileRandomSeedOffset
+        );
     }
 
-    camera_first_ray(&sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
-    scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+    float32x3_t sampleColor = (float32x3_t)(0.0f, 0.0f, 0.0f);
 
-    float32x3_t sampleColor = sampleCx.rayInterMeshInstance->emitColor;
-    float32x3_t sampleColorMultiply = sampleCx.rayInterMeshInstance->diffuseColor;
-
-    for (uint32_t i = 0; i < kRecursionCount; i++)
+    for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleIterationCount; i++)
     {
-        path_tracer_rebound(&sampleCx);
+        camera_first_ray(&sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
         scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
-        sampleColor += sampleCx.rayInterMeshInstance->emitColor * sampleColorMultiply;
-        sampleColorMultiply *= sampleCx.rayInterMeshInstance->diffuseColor;
+        sampleColor += sampleCx.rayInterMeshInstance->emitColor;
+        float32x3_t sampleColorMultiply = sampleCx.rayInterMeshInstance->diffuseColor;
+
+        for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleRecursionCount; i++)
+        {
+            path_tracer_rebound(&sampleCx);
+            scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+
+            sampleColor += sampleCx.rayInterMeshInstance->emitColor * sampleColorMultiply;
+            sampleColorMultiply *= sampleCx.rayInterMeshInstance->diffuseColor;
+        }
     }
 
 

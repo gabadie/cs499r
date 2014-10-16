@@ -7,12 +7,6 @@
 #include "cs499rProgramUtils.h"
 
 
-// ----------------------------------------------------------------------------- CONSTANTES
-
-__constant float32_t kRecursionCount = 9;
-__constant float32_t kRandomPerRecursion = 2;
-
-
 // ----------------------------------------------------------------------------- FUNCTIONS
 
 inline

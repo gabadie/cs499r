@@ -141,8 +141,12 @@ namespace CS499R
         __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorder;
         __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorderLog;
 
-        // the kickoff's random seed offset
+        // the kickoff's random seed factor
         __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;
+
+        // the kickoff's random seed offset
+        __attribute__((aligned(16))) uint32_t kickoffSampleIterationCount;
+        __attribute__((aligned(16))) uint32_t kickoffSampleRecursionCount;
 
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;

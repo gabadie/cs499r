@@ -63,10 +63,10 @@ main(int argc, char const * const * argv)
     std::cout << std::endl;
 
     std::cout << "Output:" << std::endl;
-    std::cout << "    Total Samples:            " << renderProfiling.mSamples << std::endl;
+    std::cout << "    Total Rays:               " << renderProfiling.mRays << std::endl;
     std::cout << "    CPU duration:             " << renderProfiling.mCPUDuration << " us" << std::endl;
-    std::cout << "    CPU duration per samples: " <<
-        double(renderProfiling.mCPUDuration) / double(renderProfiling.mSamples) << " us" << std::endl;
+    std::cout << "    CPU duration per ray:     " <<
+        double(renderProfiling.mCPUDuration) / double(renderProfiling.mRays) << " us" << std::endl;
     std::cout << std::endl;
 
     return 0;
