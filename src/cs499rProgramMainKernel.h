@@ -19,8 +19,8 @@ kernel_pixel_pos_cpt(
 
     // the coherency tile pos in the kick of tile
     uint32x2_t const kickoffTileCoherencyTilePos = (uint32x2_t)(
-        kickoffTileCoherencyTileId & (coherencyCx->render.coherencyTilePerKickoffTileBorder.value - 1),
-        kickoffTileCoherencyTileId >> coherencyCx->render.coherencyTilePerKickoffTileBorder.log
+        kickoffTileCoherencyTileId & (coherencyCx->render.cbt.coherencyTilePerKickoffTileBorder.value - 1),
+        kickoffTileCoherencyTileId >> coherencyCx->render.cbt.coherencyTilePerKickoffTileBorder.log
     );
 
     // the thread id in the coherency tile
@@ -34,13 +34,13 @@ kernel_pixel_pos_cpt(
 
     // the pixel pos in the coherency tile
     uint32x2_t const coherencyTilePixelPos = (uint32x2_t)(
-        coherencyTilePixelId & (coherencyCx->render.coherencyTileSize.value - 1),
-        coherencyTilePixelId >> coherencyCx->render.coherencyTileSize.log
+        coherencyTilePixelId & (coherencyCx->render.cbt.coherencyTileSize.value - 1),
+        coherencyTilePixelId >> coherencyCx->render.cbt.coherencyTileSize.log
     );
 
     // the pixel pos in the kickoff tile
     uint32x2_t const kickoffTilePixelPos = (
-        kickoffTileCoherencyTilePos * coherencyCx->render.coherencyTileSize.value +
+        kickoffTileCoherencyTilePos * coherencyCx->render.cbt.coherencyTileSize.value +
         coherencyTilePixelPos
     );
 

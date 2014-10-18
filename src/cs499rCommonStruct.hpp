@@ -139,6 +139,15 @@ namespace CS499R
     } common_pow_t;
 
     typedef
+    struct __attribute__((aligned(8), packed)) common_cbt_s
+    {
+        // coherency and kickoff tiles' constants
+        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
+        __attribute__((aligned(16))) common_pow_t coherencyTileSize;
+        __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
+    } common_cbt_t;
+
+    typedef
     struct __attribute__((aligned(16), packed)) common_coherency_render_s
     {
         // the render's resolution
@@ -150,23 +159,21 @@ namespace CS499R
         // the tile infos
         __attribute__((aligned(16))) uint32x2_t kickoffTilePos;
 
-        // warp size constants
-        __attribute__((aligned(16))) common_pow_t warpSize;
-
-        // coherency and kickoff tiles' constants
-        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
-        __attribute__((aligned(16))) common_pow_t coherencyTileSize;
-        __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
-
-        // the kickoff's random seed factor
-        __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;
-
         // the kickoff's random seed offset
         __attribute__((aligned(16))) uint32_t kickoffSampleIterationCount;
         __attribute__((aligned(16))) uint32_t kickoffSampleRecursionCount;
 
+        // the kickoff's random seed factor
+        __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;
+
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
+
+        // warp size constants
+        __attribute__((aligned(16))) common_pow_t warpSize;
+
+        // CBT algorithm input
+        __attribute__((aligned(16))) common_cbt_t cbt;
     } common_render_t;
 
     typedef

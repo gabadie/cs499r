@@ -183,14 +183,16 @@ namespace CS499R
 
             templateCtx.render.warpSize = warpSize;
 
-            templateCtx.render.kickoffTileSize = kickoffTileSize;
-            templateCtx.render.coherencyTileSize = coherencyTileSize;
-            templateCtx.render.coherencyTilePerKickoffTileBorder = (
-                kickoffTileSize / coherencyTileSize
-            );
-
             templateCtx.render.kickoffSampleIterationCount = kickoffSampleIterationCount;
             templateCtx.render.kickoffSampleRecursionCount = recursionPerSample - 1;
+        }
+
+        { // render context's CBT init
+            templateCtx.render.cbt.kickoffTileSize = kickoffTileSize;
+            templateCtx.render.cbt.coherencyTileSize = coherencyTileSize;
+            templateCtx.render.cbt.coherencyTilePerKickoffTileBorder = (
+                kickoffTileSize / coherencyTileSize
+            );
         }
 
         auto const kickoffCtxCircularArray = alloc<common_render_context_t>(kickoffTileCount * kHostAheadCommandCount);
