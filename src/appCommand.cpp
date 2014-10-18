@@ -61,6 +61,23 @@ namespace App
             return 1;
         }
 
+
+
+        std::cout << std::endl;
+        std::cout << "Platform:" << std::endl;
+
+        clGetPlatformInfo(platform, CL_PLATFORM_NAME, sizeof(tmpBuffer), tmpBuffer, NULL);
+        std::cout << "    CL_PLATFORM_NAME: " << tmpBuffer << std::endl;
+
+        clGetPlatformInfo(platform, CL_PLATFORM_VENDOR, sizeof(tmpBuffer), tmpBuffer, NULL);
+        std::cout << "    CL_PLATFORM_VENDOR: " << tmpBuffer << std::endl;
+
+        clGetPlatformInfo(platform, CL_PLATFORM_PROFILE, sizeof(tmpBuffer), tmpBuffer, NULL);
+        std::cout << "    CL_PLATFORM_PROFILE: " << tmpBuffer << std::endl;
+
+        clGetPlatformInfo(platform, CL_PLATFORM_VERSION, sizeof(tmpBuffer), tmpBuffer, NULL);
+        std::cout << "    CL_PLATFORM_VERSION: " << tmpBuffer << std::endl;
+
         std::cout << std::endl;
 
         clGetDeviceInfo(*deviceId, CL_DEVICE_NAME, sizeof(tmpBuffer), tmpBuffer, NULL);
