@@ -122,6 +122,23 @@ namespace CS499R
     } common_scene_t;
 
     typedef
+    struct __attribute__((aligned(8), packed)) common_pow_s
+    {
+        uint32_t value;
+        uint32_t log;
+
+#ifdef __cplusplus
+        inline
+        void
+        operator = (uint32_t x)
+        {
+            value = x;
+            log = ::log2(x);
+        }
+#endif
+    } common_pow_t;
+
+    typedef
     struct __attribute__((aligned(16), packed)) common_coherency_render_s
     {
         // the render's resolution
@@ -134,16 +151,12 @@ namespace CS499R
         __attribute__((aligned(16))) uint32x2_t kickoffTilePos;
 
         // warp size constants
-        __attribute__((aligned(16))) uint32_t warpSize;
-        __attribute__((aligned(16))) uint32_t warpSizeLog;
+        __attribute__((aligned(16))) common_pow_t warpSize;
 
         // coherency and kickoff tiles' constants
-        __attribute__((aligned(16))) uint32_t kickoffTileSize;
-        __attribute__((aligned(16))) uint32_t kickoffTileSizeLog;
-        __attribute__((aligned(16))) uint32_t coherencyTileSize;
-        __attribute__((aligned(16))) uint32_t coherencyTileSizeLog;
-        __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorder;
-        __attribute__((aligned(16))) uint32_t coherencyTilePerKickoffTileBorderLog;
+        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
+        __attribute__((aligned(16))) common_pow_t coherencyTileSize;
+        __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
 
         // the kickoff's random seed factor
         __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;

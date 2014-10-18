@@ -137,7 +137,6 @@ namespace CS499R
             sizeof(warpSize), &warpSize, nullptr
         );
         CS499R_ASSERT_NO_CL_ERROR(error);
-        show(warpSize);
 
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
@@ -161,8 +160,6 @@ namespace CS499R
         );
         size_t const kickoffTileCount = kickoffTileGrid.x * kickoffTileGrid.y;
 
-        CS499R_ASSERT(kickoffTileLocalSize == 64);
-
         { // validation
             CS499R_ASSERT((kickoffTileGlobalSize % kickoffTileLocalSize) == 0);
 
@@ -185,17 +182,12 @@ namespace CS499R
             templateCtx.render.subpixelPerPixelBorder = pixelBorderSubdivisions;
 
             templateCtx.render.warpSize = warpSize;
-            templateCtx.render.warpSizeLog = log2(warpSize);
 
             templateCtx.render.kickoffTileSize = kickoffTileSize;
-            templateCtx.render.kickoffTileSizeLog = log2(kickoffTileSize);
             templateCtx.render.coherencyTileSize = coherencyTileSize;
-            templateCtx.render.coherencyTileSizeLog = log2(coherencyTileSize);
             templateCtx.render.coherencyTilePerKickoffTileBorder = (
                 kickoffTileSize / coherencyTileSize
             );
-            templateCtx.render.coherencyTilePerKickoffTileBorderLog =
-                log2(templateCtx.render.coherencyTilePerKickoffTileBorder);
 
             templateCtx.render.kickoffSampleIterationCount = kickoffSampleIterationCount;
             templateCtx.render.kickoffSampleRecursionCount = recursionPerSample - 1;
