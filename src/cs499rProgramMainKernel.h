@@ -5,16 +5,10 @@
 #include "cs499rProgramCommon.h"
 
 
-/*
- * Path tracer's main entry point
- */
-__kernel void
-kernel_main(
-    __global common_render_context_t const * coherencyCx,
-    __global common_mesh_instance_t const * meshInstances,
-    __global common_mesh_octree_node_t const * meshOctreeNodes,
-    __global common_primitive_t const * primitives,
-    __global float32_t * renderTarget
+inline
+uint32x2_t
+kernel_pixel_pos_cpt(
+    __global common_render_context_t const * coherencyCx
 )
 {
     // the coherency tile id in the kick of tile
@@ -48,7 +42,23 @@ kernel_main(
     );
 
     // the pixel pos
-    uint32x2_t const pixelPos = kickoffTilePixelPos + coherencyCx->render.kickoffTilePos;
+    return kickoffTilePixelPos + coherencyCx->render.kickoffTilePos;
+}
+
+/*
+ * Path tracer's main entry point
+ */
+__kernel void
+kernel_main(
+    __global common_render_context_t const * coherencyCx,
+    __global common_mesh_instance_t const * meshInstances,
+    __global common_mesh_octree_node_t const * meshOctreeNodes,
+    __global common_primitive_t const * primitives,
+    __global float32_t * renderTarget
+)
+{
+    // the pixel pos
+    uint32x2_t const pixelPos = kernel_pixel_pos_cpt(coherencyCx);
 
     if (pixelPos.x >= coherencyCx->render.resolution.x || pixelPos.y >= coherencyCx->render.resolution.y)
     {
