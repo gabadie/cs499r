@@ -529,6 +529,25 @@ namespace CS499R
         return v * (1.0f / length(v));
     }
 
+
+    // ------------------------------------------------------------------------- NORMALIZE
+    template <typename T>
+    inline
+    T
+    ceilPow2(T x)
+    {
+        return T(1 << size_t(ceil(log2(double(x)))));
+    }
+
+    template <typename T>
+    inline
+    T
+    ceilSquarePow2(T x)
+    {
+        T y = ceilPow2(sqrt(double(x)));
+        return y * y;
+    }
+
 }
 
 // ----------------------------------------------------------------------------- OPENCL COMPATIBILITY

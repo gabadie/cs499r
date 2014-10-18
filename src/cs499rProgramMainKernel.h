@@ -5,6 +5,9 @@
 #include "cs499rProgramCommon.h"
 
 
+/*
+ * Coherent Path Tracing's pixel position calculation
+ */
 inline
 uint32x2_t
 kernel_pixel_pos_cpt(
@@ -24,7 +27,7 @@ kernel_pixel_pos_cpt(
     uint32_t const coherencyTileThreadId = get_local_id(0);
 
     // the warp id in the coherency tile
-    uint32_t const coherencyTileWarpId = coherencyTileThreadId / kCS499RGpuWarpSize;
+    uint32_t const coherencyTileWarpId = coherencyTileThreadId >> coherencyCx->render.warpSizeLog;
 
     // the pixel id in the coherency tile
     uint32_t const coherencyTilePixelId = coherencyTileThreadId;

@@ -130,6 +130,15 @@ namespace CS499R
         cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
         cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
+        size_t warpSize = 1;
+
+        error =  clGetKernelWorkGroupInfo(
+            kernel, rayTracer->mDeviceId, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+            sizeof(warpSize), &warpSize, nullptr
+        );
+        CS499R_ASSERT_NO_CL_ERROR(error);
+        show(warpSize);
+
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
         size_t const samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
@@ -145,12 +154,14 @@ namespace CS499R
         size_t const coherencyTileSize = 8;
         size_t const kickoffTileSize = sqrt(kThreadsPerTilesTarget);
         size_t const kickoffTileGlobalSize = kickoffTileSize * kickoffTileSize;
-        size_t const kickoffTileLocalSize = kCS499RGpuWarpSize * 2;
+        size_t const kickoffTileLocalSize = ceilSquarePow2(warpSize);
         size2_t const kickoffTileGrid = size2_t(
             (mRenderTarget->width() + kickoffTileSize - 1) / kickoffTileSize,
             (mRenderTarget->height() + kickoffTileSize - 1) / kickoffTileSize
         );
         size_t const kickoffTileCount = kickoffTileGrid.x * kickoffTileGrid.y;
+
+        CS499R_ASSERT(kickoffTileLocalSize == 64);
 
         { // validation
             CS499R_ASSERT((kickoffTileGlobalSize % kickoffTileLocalSize) == 0);
@@ -172,6 +183,9 @@ namespace CS499R
             templateCtx.render.resolution.x = mRenderTarget->width();
             templateCtx.render.resolution.y = mRenderTarget->height();
             templateCtx.render.subpixelPerPixelBorder = pixelBorderSubdivisions;
+
+            templateCtx.render.warpSize = warpSize;
+            templateCtx.render.warpSizeLog = log2(warpSize);
 
             templateCtx.render.kickoffTileSize = kickoffTileSize;
             templateCtx.render.kickoffTileSizeLog = log2(kickoffTileSize);

@@ -133,6 +133,10 @@ namespace CS499R
         // the tile infos
         __attribute__((aligned(16))) uint32x2_t kickoffTilePos;
 
+        // warp size constants
+        __attribute__((aligned(16))) uint32_t warpSize;
+        __attribute__((aligned(16))) uint32_t warpSizeLog;
+
         // coherency and kickoff tiles' constants
         __attribute__((aligned(16))) uint32_t kickoffTileSize;
         __attribute__((aligned(16))) uint32_t kickoffTileSizeLog;
