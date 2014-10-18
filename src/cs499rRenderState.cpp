@@ -8,9 +8,6 @@
 #include "cs499rScene.hpp"
 #include "cs499rSceneBuffer.hpp"
 
-#include <iostream>
-#define show(x) \
-    std::cout << #x << " = " << x << "\n"
 
 namespace CS499R
 {
@@ -24,7 +21,14 @@ namespace CS499R
         CS499R_ASSERT(mRenderTarget != nullptr);
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
-        shotSceneCoherency(sceneBuffer, camera, outProfiling);
+        shot_ctx_t shotCtx;
+        common_render_context_t templateCtx;
+
+        shotInit(&shotCtx);
+        shotInitTemplateCtx(&shotCtx, sceneBuffer, camera, &templateCtx);
+        shotInitCircularCtx(&shotCtx, &templateCtx);
+        shotKickoff(&shotCtx, sceneBuffer, outProfiling);
+        shotFree(&shotCtx);
     }
 
     RenderState::RenderState()
@@ -101,121 +105,118 @@ namespace CS499R
     }
 
     void
-    RenderState::shotSceneCoherency(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
+    RenderState::shotInit(shot_ctx_t * ctx) const
     {
-        size_t const kHostAheadCommandCount = 10;
-        size_t const kMaxKickoffSampleIteration = 32;
-        size_t const kPathTracerRandomPerRay = 2;
-        size_t const kThreadsPerTilesTarget = 2048 * 8;
+        { // fetch OpenCL constants
+            auto const rayTracer = mRenderTarget->mRayTracer;
+            cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
-        struct kickoff_events_t
-        {
-            cl_event bufferWriteDone;
-            cl_event kickoffDone;
-        };
+            cl_int error =  clGetKernelWorkGroupInfo(
+                kernel, rayTracer->mDeviceId, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
+                sizeof(ctx->warpSize), &ctx->warpSize, nullptr
+            );
 
-        struct kickoff_ctx_manager_t
-        {
-            cl_mem buffers[kHostAheadCommandCount];
-            kickoff_events_t events[kHostAheadCommandCount];
-        };
-
-        auto const rayTracer = sceneBuffer->mRayTracer;
-
-        timestamp_t kernelStart;
-        timestamp_t kernelEnd;
-
-        cl_int error = 0;
-        cl_context const context = rayTracer->mContext;
-        cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
-        cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
-
-        size_t warpSize = 1;
-
-        error =  clGetKernelWorkGroupInfo(
-            kernel, rayTracer->mDeviceId, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-            sizeof(warpSize), &warpSize, nullptr
-        );
-        CS499R_ASSERT_NO_CL_ERROR(error);
+            CS499R_ASSERT_NO_CL_ERROR(error);
+        }
 
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
-        size_t const pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
-        size_t const samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
-        size_t const recursionPerSample = debugKernel ? 1 : mRecursionPerSample;
+        ctx->pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
+        ctx->samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
+        ctx->recursionPerSample = debugKernel ? 1 : mRecursionPerSample;
 
-        size_t const pixelSubdivisions = pixelBorderSubdivisions * pixelBorderSubdivisions;
-        size_t const pixelSampleCount = pixelSubdivisions * samplesPerSubdivisions;
-        size_t const pixelRayCount = pixelSampleCount * recursionPerSample;
+        ctx->pixelSubdivisions = ctx->pixelBorderSubdivisions * ctx->pixelBorderSubdivisions;
+        ctx->pixelSampleCount = ctx->pixelSubdivisions * ctx->samplesPerSubdivisions;
+        ctx->pixelRayCount = ctx->pixelSampleCount * ctx->recursionPerSample;
 
-        size_t const kickoffSampleIterationCount = min(samplesPerSubdivisions, kMaxKickoffSampleIteration);
-        size_t const kickoffInvocationCount = samplesPerSubdivisions / kickoffSampleIterationCount;
+        ctx->kickoffSampleIterationCount = min(ctx->samplesPerSubdivisions, kMaxKickoffSampleIteration);
+        ctx->kickoffInvocationCount =ctx-> samplesPerSubdivisions / ctx->kickoffSampleIterationCount;
 
-        size_t const coherencyTileSize = 8;
-        size_t const kickoffTileSize = sqrt(kThreadsPerTilesTarget);
-        size_t const kickoffTileGlobalSize = kickoffTileSize * kickoffTileSize;
-        size_t const kickoffTileLocalSize = ceilSquarePow2(warpSize);
-        size2_t const kickoffTileGrid = size2_t(
-            (mRenderTarget->width() + kickoffTileSize - 1) / kickoffTileSize,
-            (mRenderTarget->height() + kickoffTileSize - 1) / kickoffTileSize
+        ctx->kickoffTileSize = sqrt(kThreadsPerTilesTarget);
+        ctx->kickoffTileGlobalSize = ctx->kickoffTileSize * ctx->kickoffTileSize;
+        ctx->kickoffTileLocalSize = ceilSquarePow2(ctx->warpSize);
+        ctx->coherencyTileSize = sqrt(ctx->kickoffTileLocalSize);
+        ctx->kickoffTileGrid = size2_t(
+            (mRenderTarget->width() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
+            (mRenderTarget->height() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
         );
-        size_t const kickoffTileCount = kickoffTileGrid.x * kickoffTileGrid.y;
+        ctx->kickoffTileCount = ctx->kickoffTileGrid.x * ctx->kickoffTileGrid.y;
 
         { // validation
-            CS499R_ASSERT((kickoffTileGlobalSize % kickoffTileLocalSize) == 0);
+            CS499R_ASSERT((ctx->kickoffTileGlobalSize % ctx->kickoffTileLocalSize) == 0);
 
-            CS499R_ASSERT((kickoffTileLocalSize % coherencyTileSize) == 0);
-            CS499R_ASSERT((kickoffTileSize % coherencyTileSize) == 0);
+            CS499R_ASSERT((ctx->kickoffTileLocalSize % ctx->coherencyTileSize) == 0);
+            CS499R_ASSERT((ctx->kickoffTileSize % ctx->coherencyTileSize) == 0);
         }
 
-        common_render_context_t templateCtx;
+        { // memory allocations
+            ctx->kickoffCtxCircularArray = alloc<common_render_context_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
+            ctx->kickoffCtxManagers = alloc<kickoff_ctx_manager_t>(ctx->kickoffTileCount);
+        }
+    }
 
-        { // init render context template
+    void
+    RenderState::shotInitTemplateCtx(
+        shot_ctx_t const * ctx,
+        SceneBuffer const * sceneBuffer,
+        Camera const * camera,
+        common_render_context_t * templateCtx
+    ) const
+    {
+        { // init the camera
             auto const aspectRatio = float32_t(mRenderTarget->width()) / float32_t(mRenderTarget->height());
 
-            camera->exportToShotCamera(&templateCtx.camera, aspectRatio);
-
-            // +1 because of the anonymous mesh
-            templateCtx.scene.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
-
-            templateCtx.render.resolution.x = mRenderTarget->width();
-            templateCtx.render.resolution.y = mRenderTarget->height();
-            templateCtx.render.subpixelPerPixelBorder = pixelBorderSubdivisions;
-
-            templateCtx.render.warpSize = warpSize;
-
-            templateCtx.render.kickoffSampleIterationCount = kickoffSampleIterationCount;
-            templateCtx.render.kickoffSampleRecursionCount = recursionPerSample - 1;
+            camera->exportToShotCamera(&templateCtx->camera, aspectRatio);
         }
+
+        // +1 because of the anonymous mesh
+        templateCtx->scene.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
+
+        // init render
+        templateCtx->render.resolution.x = mRenderTarget->width();
+        templateCtx->render.resolution.y = mRenderTarget->height();
+        templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
+
+        templateCtx->render.warpSize = ctx->warpSize;
+
+        templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount;
+        templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample - 1;
 
         { // render context's CBT init
-            templateCtx.render.cbt.kickoffTileSize = kickoffTileSize;
-            templateCtx.render.cbt.coherencyTileSize = coherencyTileSize;
-            templateCtx.render.cbt.coherencyTilePerKickoffTileBorder = (
-                kickoffTileSize / coherencyTileSize
+            templateCtx->render.cbt.kickoffTileSize = ctx->kickoffTileSize;
+            templateCtx->render.cbt.coherencyTileSize = ctx->coherencyTileSize;
+            templateCtx->render.cbt.coherencyTilePerKickoffTileBorder = (
+                ctx->kickoffTileSize / ctx->coherencyTileSize
             );
         }
+    }
 
-        auto const kickoffCtxCircularArray = alloc<common_render_context_t>(kickoffTileCount * kHostAheadCommandCount);
-        auto const kickoffCtxManagers = alloc<kickoff_ctx_manager_t>(kickoffTileCount);
+    void
+    RenderState::shotInitCircularCtx(
+        shot_ctx_t const * ctx,
+        common_render_context_t const * templateCtx
+    ) const
+    {
+        cl_int error = 0;
+        cl_context const context = mRenderTarget->mRayTracer->mContext;
 
         // init render context circular pass 0
-        for (size_t kickoffTileIdY = 0; kickoffTileIdY < kickoffTileGrid.y; kickoffTileIdY++)
+        for (size_t kickoffTileIdY = 0; kickoffTileIdY < ctx->kickoffTileGrid.y; kickoffTileIdY++)
         {
-            for (size_t kickoffTileIdX = 0; kickoffTileIdX < kickoffTileGrid.x; kickoffTileIdX++)
+            for (size_t kickoffTileIdX = 0; kickoffTileIdX < ctx->kickoffTileGrid.x; kickoffTileIdX++)
             {
-                size_t const kickoffTileId = kickoffTileIdX + kickoffTileIdY * kickoffTileGrid.x;
-                auto const kickoffCtx = kickoffCtxCircularArray + kickoffTileId;
+                size_t const kickoffTileId = kickoffTileIdX + kickoffTileIdY * ctx->kickoffTileGrid.x;
+                auto const kickoffCtx = ctx->kickoffCtxCircularArray + kickoffTileId;
 
-                memcpy(kickoffCtx, &templateCtx, sizeof(templateCtx));
+                memcpy(kickoffCtx, templateCtx, sizeof(*templateCtx));
 
-                kickoffCtx->render.kickoffTilePos.x = kickoffTileSize * kickoffTileIdX;
-                kickoffCtx->render.kickoffTilePos.y = kickoffTileSize * kickoffTileIdY;
+                kickoffCtx->render.kickoffTilePos.x = ctx->kickoffTileSize * kickoffTileIdX;
+                kickoffCtx->render.kickoffTilePos.y = ctx->kickoffTileSize * kickoffTileIdY;
 
                 for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
                 {
-                    kickoffCtxManagers[kickoffTileId].buffers[circularPassId] = clCreateBuffer(context,
+                    ctx->kickoffCtxManagers[kickoffTileId].buffers[circularPassId] = clCreateBuffer(context,
                         CL_MEM_READ_ONLY,
-                        sizeof(templateCtx), nullptr,
+                        sizeof(*templateCtx), nullptr,
                         &error
                     );
                 }
@@ -227,17 +228,30 @@ namespace CS499R
         // clones the render context circular pass 0 into others
         for (size_t circularPassId = 1; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            auto const kickoffCtxArray = kickoffCtxCircularArray + kickoffTileCount * circularPassId;
+            auto const kickoffCtxArray = ctx->kickoffCtxCircularArray + ctx->kickoffTileCount * circularPassId;
 
-            for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
             {
                 memcpy(
                     kickoffCtxArray + kickoffTileId,
-                    kickoffCtxCircularArray + kickoffTileId,
-                    sizeof(templateCtx)
+                    ctx->kickoffCtxCircularArray + kickoffTileId,
+                    sizeof(*templateCtx)
                 );
             }
         }
+    }
+
+    void
+    RenderState::shotKickoff(shot_ctx_t const * ctx, SceneBuffer const * sceneBuffer, RenderProfiling * outProfiling)
+    {
+        auto const rayTracer = sceneBuffer->mRayTracer;
+
+        timestamp_t kernelStart;
+        timestamp_t kernelEnd;
+
+        cl_int error = 0;
+        cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
+        cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
         { // kernel arguments
             error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.meshInstances);
@@ -259,30 +273,30 @@ namespace CS499R
         }
 
         size_t passId = 0;
-        size_t const passCount = kickoffInvocationCount * pixelSubdivisions;
+        size_t const passCount = ctx->kickoffInvocationCount * ctx->pixelSubdivisions;
 
         // render loops
-        for (size_t invocationId = 0; invocationId < kickoffInvocationCount; invocationId++)
+        for (size_t invocationId = 0; invocationId < ctx->kickoffInvocationCount; invocationId++)
         {
-            for (size_t subPixelY = 0; subPixelY < pixelBorderSubdivisions; subPixelY++)
+            for (size_t subPixelY = 0; subPixelY < ctx->pixelBorderSubdivisions; subPixelY++)
             {
-                for (size_t subPixelX = 0; subPixelX < pixelBorderSubdivisions; subPixelX++)
+                for (size_t subPixelX = 0; subPixelX < ctx->pixelBorderSubdivisions; subPixelX++)
                 {
                     size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
-                    auto const kickoffCtxArray = kickoffCtxCircularArray + kickoffTileCount * currentCircularPassId;
+                    auto const kickoffCtxArray = ctx->kickoffCtxCircularArray + ctx->kickoffTileCount * currentCircularPassId;
 
                     // upload render context buffers for this pass
-                    for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
                     {
-                        auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                         auto const kickoffCtx = kickoffCtxArray + kickoffTileId;
 
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        kickoffCtx->render.kickoffTileRandomSeedOffset = kPathTracerRandomPerRay * recursionPerSample * (
-                            invocationId * pixelSubdivisions +
-                            subPixelY * pixelBorderSubdivisions +
+                        kickoffCtx->render.kickoffTileRandomSeedOffset = kPathTracerRandomPerRay * ctx->recursionPerSample * (
+                            invocationId * ctx->pixelSubdivisions +
+                            subPixelY * ctx->pixelBorderSubdivisions +
                             subPixelX
                         );
                         kickoffCtx->render.pixelSubpixelPos.x = subPixelX;
@@ -299,9 +313,9 @@ namespace CS499R
                     }
 
                     // kickoff this pass
-                    for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
                     {
-                        auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
                         error |= clSetKernelArg(
@@ -310,7 +324,7 @@ namespace CS499R
                         );
                         error |= clEnqueueNDRangeKernel(
                             cmdQueue, kernel,
-                            1, nullptr, &kickoffTileGlobalSize, &kickoffTileLocalSize,
+                            1, nullptr, &ctx->kickoffTileGlobalSize, &ctx->kickoffTileLocalSize,
                             1, &currentPassEvent->bufferWriteDone,
                             &currentPassEvent->kickoffDone
                         );
@@ -324,9 +338,9 @@ namespace CS499R
                     {
                         size_t const nextCircularPassId = passId % kHostAheadCommandCount;
 
-                        for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+                        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
                         {
-                            auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                            auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                             auto const nextPassEvent = kickoffCtxManager->events + nextCircularPassId;
 
                             error |= clWaitForEvents(1, &nextPassEvent->bufferWriteDone);
@@ -346,9 +360,9 @@ namespace CS499R
         // wait all remaining passes
         for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
         {
-            for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
             {
-                auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
+                auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                 auto const circularPassEvent = kickoffCtxManager->events + circularPassId;
 
                 error |= clWaitForEvents(1, &circularPassEvent->bufferWriteDone);
@@ -363,35 +377,42 @@ namespace CS499R
         if (outProfiling)
         {
             kernelEnd = timestamp();
+
+            outProfiling->mCPUDuration = kernelEnd - kernelStart;
+            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() * ctx->pixelRayCount;
         }
 
         { // render target multiplication
-            float32_t const multiplyFactor = 1.0f / float32_t(pixelSampleCount);
+            float32_t const multiplyFactor = 1.0f / float32_t(ctx->pixelSampleCount);
 
             multiplyRenderTarget(multiplyFactor);
         }
-
-        { // memory releases
-            for (size_t kickoffTileId = 0; kickoffTileId < kickoffTileCount; kickoffTileId++)
-            {
-                auto const kickoffCtxManager = kickoffCtxManagers + kickoffTileId;
-
-                for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
-                {
-                    error = clReleaseMemObject(kickoffCtxManager->buffers[circularPassId]);
-                    CS499R_ASSERT_NO_CL_ERROR(error);
-                }
-            }
-
-            free(kickoffCtxCircularArray);
-            free(kickoffCtxManagers);
-        }
-
-        if (outProfiling)
-        {
-            outProfiling->mCPUDuration = kernelEnd - kernelStart;
-            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() * pixelRayCount;
-        }
     }
+
+    void
+    RenderState::shotFree(shot_ctx_t const * ctx) const
+    {
+        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+        {
+            auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
+
+            for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
+            {
+                cl_int error = clReleaseMemObject(kickoffCtxManager->buffers[circularPassId]);
+                CS499R_ASSERT_NO_CL_ERROR(error);
+            }
+        }
+
+        free(ctx->kickoffCtxCircularArray);
+        free(ctx->kickoffCtxManagers);
+    }
+
+    // ------------------------------------------------------------------------- NASTY C++ WORK AROUNDS
+
+    size_t const RenderState::kHostAheadCommandCount;
+    size_t const RenderState::kMaxKickoffSampleIteration;
+    size_t const RenderState::kPathTracerRandomPerRay;
+    size_t const RenderState::kThreadsPerTilesTarget;
+
 
 }
