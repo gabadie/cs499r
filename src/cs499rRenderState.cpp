@@ -190,12 +190,12 @@ namespace CS499R
         templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample;
 
         { // render context's CBT init
-            templateCtx->render.cbt.kickoffTileSize = ctx->kickoffTileSize;
-            templateCtx->render.cbt.coherencyTileSize = ctx->coherencyTileSize;
-            templateCtx->render.cbt.coherencyTilePerKickoffTileBorder = (
+            templateCtx->render.cpt.kickoffTileSize = ctx->kickoffTileSize;
+            templateCtx->render.cpt.coherencyTileSize = ctx->coherencyTileSize;
+            templateCtx->render.cpt.coherencyTilePerKickoffTileBorder = (
                 ctx->kickoffTileSize / ctx->coherencyTileSize
             );
-            templateCtx->render.cbt.groupPerCoherencyTile = (
+            templateCtx->render.cpt.groupPerCoherencyTile = (
                 (ctx->coherencyTileSize * ctx->coherencyTileSize) /
                 ctx->kickoffTileLocalSize
             );
@@ -206,8 +206,8 @@ namespace CS499R
              * power of two, we will split the coherency tile in two.
              */
             CS499R_ASSERT(
-                templateCtx->render.cbt.groupPerCoherencyTile.value == 1 ||
-                templateCtx->render.cbt.groupPerCoherencyTile.value == 2
+                templateCtx->render.cpt.groupPerCoherencyTile.value == 1 ||
+                templateCtx->render.cpt.groupPerCoherencyTile.value == 2
             );
         }
 

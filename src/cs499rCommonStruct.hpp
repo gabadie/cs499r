@@ -139,14 +139,14 @@ namespace CS499R
     } common_pow_t;
 
     typedef
-    struct __attribute__((aligned(8), packed)) common_cbt_s
+    struct __attribute__((aligned(8), packed)) common_cpt_s
     {
         // coherency and kickoff tiles' constants
         __attribute__((aligned(16))) common_pow_t kickoffTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
         __attribute__((aligned(16))) common_pow_t groupPerCoherencyTile;
-    } common_cbt_t;
+    } common_cpt_t;
 
     typedef
     struct __attribute__((aligned(8), packed)) common_icpt_s
@@ -180,7 +180,7 @@ namespace CS499R
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
 
         // CBT algorithm input
-        __attribute__((aligned(16))) common_cbt_t cbt;
+        __attribute__((aligned(16))) common_cpt_t cpt;
 
         // ICBT
         __attribute__((aligned(16))) common_icpt_t icpt;
