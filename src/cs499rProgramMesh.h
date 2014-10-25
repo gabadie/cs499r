@@ -93,14 +93,11 @@ mesh_octree_intersection(
 
 inline
 void
-mesh_instance_intersection(
-    sample_context_t * sampleCx,
-    __global common_mesh_octree_node_t const * meshOctreeNodes,
-    __global common_primitive_t const * primitives
+mesh_instance_prepare_frame(
+    sample_context_t * const sampleCx,
+    __global common_mesh_instance_t const * const meshInstance
 )
 {
-    __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
-
     sampleCx->rayMeshOrigin = (
         meshInstance->sceneMeshMatrix.x * sampleCx->raySceneOrigin.x +
         meshInstance->sceneMeshMatrix.y * sampleCx->raySceneOrigin.y +
@@ -115,6 +112,19 @@ mesh_instance_intersection(
     );
 
     sampleCx->rayMeshDirectionInverted = 1.0f / sampleCx->rayMeshDirection;
+}
+
+inline
+void
+mesh_instance_intersection(
+    sample_context_t * sampleCx,
+    __global common_mesh_octree_node_t const * meshOctreeNodes,
+    __global common_primitive_t const * primitives
+)
+{
+    __global common_mesh_instance_t const * const meshInstance = sampleCx->boundMeshInstance;
+
+    mesh_instance_prepare_frame(sampleCx, meshInstance);
 
 #ifndef _CL_NO_BOUNDING_BOX_CHECKING
     {
