@@ -154,6 +154,7 @@ namespace CS499R
 
             CS499R_ASSERT((ctx->kickoffTileLocalSize % ctx->coherencyTileSize) == 0);
             CS499R_ASSERT((ctx->kickoffTileLocalSize % warpSize) == 0);
+            CS499R_ASSERT(ctx->kickoffTileLocalSize <= CS499R_MAX_GROUP_SIZE);
             CS499R_ASSERT((ctx->kickoffTileSize % ctx->coherencyTileSize) == 0);
         }
 
