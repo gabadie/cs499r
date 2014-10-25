@@ -62,6 +62,7 @@ namespace CS499R
         static size_t const kMaxKickoffSampleIteration = 32;
         static size_t const kPathTracerRandomPerRay = 2;
         static size_t const kThreadsPerTilesTarget = 2048 * 8;
+        static size_t const kWarpSizefactor = 2;
 
 
         // --------------------------------------------------------------------- METHODES
@@ -98,8 +99,6 @@ namespace CS499R
 
         struct shot_ctx_t
         {
-            size_t warpSize = 1;
-
             size_t pixelBorderSubdivisions;
             size_t samplesPerSubdivisions;
             size_t recursionPerSample;

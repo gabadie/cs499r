@@ -107,13 +107,15 @@ namespace CS499R
     void
     RenderState::shotInit(shot_ctx_t * ctx) const
     {
+        size_t warpSize;
+
         { // fetch OpenCL constants
             auto const rayTracer = mRenderTarget->mRayTracer;
             cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
             cl_int error =  clGetKernelWorkGroupInfo(
                 kernel, rayTracer->mDeviceId, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE,
-                sizeof(ctx->warpSize), &ctx->warpSize, nullptr
+                sizeof(warpSize), &warpSize, nullptr
             );
 
             CS499R_ASSERT_NO_CL_ERROR(error);
@@ -133,8 +135,14 @@ namespace CS499R
 
         ctx->kickoffTileSize = sqrt(kThreadsPerTilesTarget);
         ctx->kickoffTileGlobalSize = ctx->kickoffTileSize * ctx->kickoffTileSize;
-        ctx->kickoffTileLocalSize = ceilSquarePow2(ctx->warpSize);
-        ctx->coherencyTileSize = sqrt(ctx->kickoffTileLocalSize);
+
+        /*
+         * We multiply here between the local size and warp size so that we
+         * don't overload the warp scheduler. Also, might not want to multiply
+         * to much, because it will also decrease the warp coherency
+         */
+        ctx->kickoffTileLocalSize = warpSize * kWarpSizefactor;
+        ctx->coherencyTileSize = sqrt(ceilSquarePow2(ctx->kickoffTileLocalSize));
         ctx->kickoffTileGrid = size2_t(
             (mRenderTarget->width() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
             (mRenderTarget->height() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
@@ -145,6 +153,7 @@ namespace CS499R
             CS499R_ASSERT((ctx->kickoffTileGlobalSize % ctx->kickoffTileLocalSize) == 0);
 
             CS499R_ASSERT((ctx->kickoffTileLocalSize % ctx->coherencyTileSize) == 0);
+            CS499R_ASSERT((ctx->kickoffTileLocalSize % warpSize) == 0);
             CS499R_ASSERT((ctx->kickoffTileSize % ctx->coherencyTileSize) == 0);
         }
 
@@ -176,8 +185,6 @@ namespace CS499R
         templateCtx->render.resolution.y = mRenderTarget->height();
         templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
 
-        templateCtx->render.warpSize = ctx->warpSize;
-
         templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount;
         templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample - 1;
 
@@ -186,6 +193,20 @@ namespace CS499R
             templateCtx->render.cbt.coherencyTileSize = ctx->coherencyTileSize;
             templateCtx->render.cbt.coherencyTilePerKickoffTileBorder = (
                 ctx->kickoffTileSize / ctx->coherencyTileSize
+            );
+            templateCtx->render.cbt.groupPerCoherencyTile = (
+                (ctx->coherencyTileSize * ctx->coherencyTileSize) /
+                ctx->kickoffTileLocalSize
+            );
+
+            /*
+             * Depending on the warp size, we might have cases where the local
+             * size might not be a square number. But since it will always be
+             * power of two, we will split the coherency tile in two.
+             */
+            CS499R_ASSERT(
+                templateCtx->render.cbt.groupPerCoherencyTile.value == 1 ||
+                templateCtx->render.cbt.groupPerCoherencyTile.value == 2
             );
         }
     }
@@ -413,6 +434,7 @@ namespace CS499R
     size_t const RenderState::kMaxKickoffSampleIteration;
     size_t const RenderState::kPathTracerRandomPerRay;
     size_t const RenderState::kThreadsPerTilesTarget;
+    size_t const RenderState::kWarpSizefactor;
 
 
 }

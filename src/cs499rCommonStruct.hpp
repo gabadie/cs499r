@@ -145,6 +145,7 @@ namespace CS499R
         __attribute__((aligned(16))) common_pow_t kickoffTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
+        __attribute__((aligned(16))) common_pow_t groupPerCoherencyTile;
     } common_cbt_t;
 
     typedef
@@ -168,9 +169,6 @@ namespace CS499R
 
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
-
-        // warp size constants
-        __attribute__((aligned(16))) common_pow_t warpSize;
 
         // CBT algorithm input
         __attribute__((aligned(16))) common_cbt_t cbt;

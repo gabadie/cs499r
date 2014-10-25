@@ -6,16 +6,38 @@
 
 
 /*
- * Coherent Path Tracing's pixel position calculation
+ * Coherent path tracing algorithm coherent tiles
+ *
+ *
+ *      |    kickoff tile   |
+ *           (0,1)
+ *  --   -------------------   --  --
+ *      |                   |
+ *      |    kickoff tile   | kickoff tile
+ *      |    (0,0)          | (1,0)
+ *      |                   |
+ *      |                   |
+ *      |     coherency     |
+ *      |---- tile (0, 0)   |
+ *      |    |              |
+ *      |    |              |
+ *  --   -------------------   --  --
+ *
+ *      |                   |
+ */
+
+/*
+ * Tiled Coherent Path Tracing
  */
 inline
 uint32x2_t
-kernel_pixel_pos_cpt(
-    __global common_render_context_t const * coherencyCx
+kernel_pixel_pos_tiled_cpt(
+    __global common_render_context_t const * const coherencyCx,
+    sample_context_t * const sampleCx
 )
 {
     // the coherency tile id in the kick of tile
-    uint32_t const kickoffTileCoherencyTileId = get_group_id(0);
+    uint32_t const kickoffTileCoherencyTileId = get_group_id(0) >> coherencyCx->render.cbt.groupPerCoherencyTile.log;
 
     // the coherency tile pos in the kick of tile
     uint32x2_t const kickoffTileCoherencyTilePos = (uint32x2_t)(
@@ -24,10 +46,10 @@ kernel_pixel_pos_cpt(
     );
 
     // the thread id in the coherency tile
-    uint32_t const coherencyTileThreadId = get_local_id(0);
+    uint32_t const coherencyTileGroupId = get_group_id(0) & (coherencyCx->render.cbt.groupPerCoherencyTile.value - 1);
 
-    // the warp id in the coherency tile
-    uint32_t const coherencyTileWarpId = coherencyTileThreadId >> coherencyCx->render.warpSize.log;
+    // the thread id in the coherency tile
+    uint32_t const coherencyTileThreadId = get_local_id(0) + get_local_size(0) * coherencyTileGroupId;
 
     // the pixel id in the coherency tile
     uint32_t const coherencyTilePixelId = coherencyTileThreadId;
@@ -43,6 +65,12 @@ kernel_pixel_pos_cpt(
         kickoffTileCoherencyTilePos * coherencyCx->render.cbt.coherencyTileSize.value +
         coherencyTilePixelPos
     );
+
+    { // set up random seed
+        sampleCx->randomSeed = (
+            coherencyCx->render.kickoffTileRandomSeedOffset
+        );
+    }
 
     // the pixel pos
     return kickoffTilePixelPos + coherencyCx->render.kickoffTilePos;
@@ -60,26 +88,20 @@ kernel_main(
     __global float32_t * renderTarget
 )
 {
+    sample_context_t sampleCx;
+
     // the pixel pos
-    uint32x2_t const pixelPos = kernel_pixel_pos_cpt(coherencyCx);
+    uint32x2_t const pixelPos = kernel_pixel_pos_tiled_cpt(coherencyCx, &sampleCx);
 
     if (pixelPos.x >= coherencyCx->render.resolution.x || pixelPos.y >= coherencyCx->render.resolution.y)
     {
         return;
     }
 
-    sample_context_t sampleCx;
-
 #if defined(_CL_PROGRAM_PATH_TRACER)
     /*
      * Here is the path tracer's code
      */
-    { // set up random seed
-        sampleCx.randomSeed = (
-            coherencyCx->render.kickoffTileRandomSeedOffset
-        );
-    }
-
     float32x3_t sampleColor = (float32x3_t)(0.0f, 0.0f, 0.0f);
 
     for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleIterationCount; i++)
