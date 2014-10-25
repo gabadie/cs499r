@@ -11,6 +11,19 @@
 // ----------------------------------------------------------------------------- FUNCTIONS
 
 inline
+uint32_t
+mesh_boundingbox_intersection(
+    sample_context_t * const sampleCx,
+    __global common_mesh_instance_t const * const meshInstance
+)
+{
+    float32x3_t const OE = -sampleCx->rayMeshOrigin;
+    float32x3_t const OG = OE + meshInstance->mesh.vertexUpperBound.xyz;
+
+    return box_intersection(sampleCx, OE, OG);
+}
+
+inline
 void
 mesh_octree_intersection(
     sample_context_t * const sampleCx,
@@ -127,18 +140,9 @@ mesh_instance_intersection(
     mesh_instance_prepare_frame(sampleCx, meshInstance);
 
 #ifndef _CL_NO_BOUNDING_BOX_CHECKING
+    if (!mesh_boundingbox_intersection(sampleCx, meshInstance))
     {
-        float32x3_t const OE = -sampleCx->rayMeshOrigin;
-        float32x3_t const OG = OE + meshInstance->mesh.vertexUpperBound.xyz;
-
-        if (!box_intersection(sampleCx, OE, OG))
-        {
-            /*
-             * The ray has no intersection with this mesh instance's bounding
-             * box, so we skip it right away.
-             */
-            return;
-        }
+        return;
     }
 #endif // _CL_NO_BOUNDING_BOX_CHECKING
 
