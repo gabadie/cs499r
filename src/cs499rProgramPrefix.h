@@ -13,6 +13,12 @@
 #define __global
 #define __local
 #define __private
+#define get_local_id(x) 0
+#define get_local_size(x) 0
+#define get_group_id(x) 0
+#define get_group_size(x) 0
+#define get_global_id(x) 0
+#define get_global_size(x) 0
 #endif
 
 
