@@ -9,6 +9,7 @@
 
 // the latin hyper cube size
 __constant uint32_t const kLatinHypercubeSize = 16;
+__constant uint32_t const kLatinHypercubeSizeLog = 4;
 
 /*
  * The orthogonal latin hypercube A can be generated from B (kLatinHypercubeBiject)
@@ -34,6 +35,12 @@ __constant uint8_t const kLatinHypercubeBiject[kLatinHypercubeSize * kLatinHyper
     5,  14,  3,  11,  12,  10,  2,  7,  4,  13,  0,  9,  6,  1,  15,  8,
     14,  5,  11,  3,  7,  2,  10,  12,  13,  4,  9,  0,  15,  8,  6,  1,
 };
+
+/*
+ * Returns the position <x> of symbole <i> at line <y> in the latin hypercube
+ */
+#define latin_hypercube_x_pos(i, y) \
+    kLatinHypercubeBiject[kLatinHypercubeSize * (i) + (y)]
 
 
 // ----------------------------------------------------------------------------- FUNCTIONS
