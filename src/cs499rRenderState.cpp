@@ -187,7 +187,7 @@ namespace CS499R
         templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
 
         templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount;
-        templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample - 1;
+        templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample;
 
         { // render context's CBT init
             templateCtx->render.cbt.kickoffTileSize = ctx->kickoffTileSize;
@@ -208,6 +208,19 @@ namespace CS499R
             CS499R_ASSERT(
                 templateCtx->render.cbt.groupPerCoherencyTile.value == 1 ||
                 templateCtx->render.cbt.groupPerCoherencyTile.value == 2
+            );
+        }
+
+        { // render context's ICPT init
+            size_t const kCoherencyTileSize = 16;
+
+            templateCtx->render.icpt.kickoffTileSize = ctx->kickoffTileSize;
+            templateCtx->render.icpt.coherencyTilePerKickoffTileBorder = (
+                ctx->kickoffTileSize / kCoherencyTileSize
+            );
+            templateCtx->render.icpt.groupPerCoherencyTile = (
+                (kCoherencyTileSize * kCoherencyTileSize) /
+                ctx->kickoffTileLocalSize
             );
         }
     }
@@ -316,11 +329,12 @@ namespace CS499R
 
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        kickoffCtx->render.kickoffTileRandomSeedOffset = kPathTracerRandomPerRay * ctx->recursionPerSample * (
+                        kickoffCtx->render.passId = (
                             invocationId * ctx->pixelSubdivisions +
                             subPixelY * ctx->pixelBorderSubdivisions +
                             subPixelX
                         );
+
                         kickoffCtx->render.pixelSubpixelPos.x = subPixelX;
                         kickoffCtx->render.pixelSubpixelPos.y = subPixelY;
 
@@ -433,7 +447,6 @@ namespace CS499R
 
     size_t const RenderState::kHostAheadCommandCount;
     size_t const RenderState::kMaxKickoffSampleIteration;
-    size_t const RenderState::kPathTracerRandomPerRay;
     size_t const RenderState::kThreadsPerTilesTarget;
     size_t const RenderState::kWarpSizefactor;
 

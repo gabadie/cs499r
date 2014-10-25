@@ -149,6 +149,15 @@ namespace CS499R
     } common_cbt_t;
 
     typedef
+    struct __attribute__((aligned(8), packed)) common_icpt_s
+    {
+        // interleaved coherency and kickoff tiles' constants
+        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
+        __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
+        __attribute__((aligned(16))) common_pow_t groupPerCoherencyTile;
+    } common_icpt_t;
+
+    typedef
     struct __attribute__((aligned(16), packed)) common_coherency_render_s
     {
         // the render's resolution
@@ -164,14 +173,17 @@ namespace CS499R
         __attribute__((aligned(16))) uint32_t kickoffSampleIterationCount;
         __attribute__((aligned(16))) uint32_t kickoffSampleRecursionCount;
 
-        // the kickoff's random seed factor
-        __attribute__((aligned(16))) uint32_t kickoffTileRandomSeedOffset;
+        // the kickoff's sample group id
+        __attribute__((aligned(16))) uint32_t passId;
 
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;
 
         // CBT algorithm input
         __attribute__((aligned(16))) common_cbt_t cbt;
+
+        // ICBT
+        __attribute__((aligned(16))) common_icpt_t icpt;
     } common_render_t;
 
     typedef

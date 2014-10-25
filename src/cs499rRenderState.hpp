@@ -60,7 +60,6 @@ namespace CS499R
 
         static size_t const kHostAheadCommandCount = 10;
         static size_t const kMaxKickoffSampleIteration = 32;
-        static size_t const kPathTracerRandomPerRay = 2;
         static size_t const kThreadsPerTilesTarget = 2048 * 8;
         static size_t const kWarpSizefactor = 2;
 

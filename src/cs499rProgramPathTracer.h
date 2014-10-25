@@ -9,6 +9,8 @@
 
 // ----------------------------------------------------------------------------- FUNCTIONS
 
+#define kPathTracerRandomPerRay 2
+
 inline
 void
 path_tracer_rebound(
