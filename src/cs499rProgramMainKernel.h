@@ -88,10 +88,11 @@ kernel_main(
     __global float32_t * renderTarget
 )
 {
-    sample_context_t sampleCx;
+    sample_context_t sampleCxArray[1];// CS499R_MAX_GROUP_SIZE
+    sample_context_t * const sampleCx = sampleCxArray;
 
     // the pixel pos
-    uint32x2_t const pixelPos = kernel_pixel_pos_tiled_cpt(coherencyCx, &sampleCx);
+    uint32x2_t const pixelPos = kernel_pixel_pos_tiled_cpt(coherencyCx, sampleCx);
 
     if (pixelPos.x >= coherencyCx->render.resolution.x || pixelPos.y >= coherencyCx->render.resolution.y)
     {
@@ -106,19 +107,19 @@ kernel_main(
 
     for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleIterationCount; i++)
     {
-        camera_first_ray(&sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
-        scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+        camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+        scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
-        sampleColor += sampleCx.rayInterMeshInstance->emitColor;
-        float32x3_t sampleColorMultiply = sampleCx.rayInterMeshInstance->diffuseColor;
+        sampleColor += sampleCx->rayInterMeshInstance->emitColor;
+        float32x3_t sampleColorMultiply = sampleCx->rayInterMeshInstance->diffuseColor;
 
         for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleRecursionCount; i++)
         {
-            path_tracer_rebound(&sampleCx);
-            scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+            path_tracer_rebound(sampleCx);
+            scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
-            sampleColor += sampleCx.rayInterMeshInstance->emitColor * sampleColorMultiply;
-            sampleColorMultiply *= sampleCx.rayInterMeshInstance->diffuseColor;
+            sampleColor += sampleCx->rayInterMeshInstance->emitColor * sampleColorMultiply;
+            sampleColorMultiply *= sampleCx->rayInterMeshInstance->diffuseColor;
         }
     }
 
@@ -127,12 +128,12 @@ kernel_main(
     /*
      * Here is the normal debuger ray tracer's code
      */
-    camera_first_ray(&sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
-    scene_intersection(&sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+    camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+    scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
-    __global common_mesh_instance_t const * const meshInstance = sampleCx.rayInterMeshInstance;
+    __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
 
-    float32x3_t const meshNormal = sampleCx.rayInterMeshNormal;
+    float32x3_t const meshNormal = sampleCx->rayInterMeshNormal;
     float32x3_t const sceneNormal = (
         meshInstance->meshSceneMatrix.x * meshNormal.x +
         meshInstance->meshSceneMatrix.y * meshNormal.y +
