@@ -6,6 +6,14 @@
  * Caution: this file will be also included in OpenCL programs' preprocessor
  */
 
+
+/*
+ * Enables mesh's back face culling
+ */
+#ifndef CS499R_CONFIG_ENABLE_BACKFACE_CULLING
+# define CS499R_CONFIG_ENABLE_BACKFACE_CULLING 1
+#endif
+
 /*
  * Enables mesh's bounding box checking
  */

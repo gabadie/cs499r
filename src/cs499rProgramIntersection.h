@@ -50,9 +50,18 @@ primitive_intersection(
 )
 {
     float32x3_t const normal = (float32x3_t)(primitive->v0.w, primitive->e0.w, primitive->e1.w);
+    float32_t const normalDotRay = dot(sampleCx->rayMeshDirection, normal);
+
+#if CS499R_CONFIG_ENABLE_BACKFACE_CULLING
+    if (normalDotRay > 0.0f)
+    {
+        return;
+    }
+
+#endif
+
     float32x3_t const vAO = sampleCx->rayMeshOrigin - primitive->v0.xyz;
     float32_t const OH = dot(vAO, normal);
-    float32_t const normalDotRay = dot(sampleCx->rayMeshDirection, normal);
     float32_t const rayInterDistance = - OH / normalDotRay;
 
     if (isless(rayInterDistance, kEPSILONE) || isgreaterequal(rayInterDistance, sampleCx->rayInterDistance))
