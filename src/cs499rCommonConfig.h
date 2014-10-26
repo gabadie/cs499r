@@ -13,6 +13,13 @@
 # define CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX 1
 #endif
 
+/*
+ * Enables mesh's octree
+ */
+#ifndef CS499R_CONFIG_ENABLE_MESH_OCTREE
+# define CS499R_CONFIG_ENABLE_MESH_OCTREE 1
+#endif
+
 
 /*
  * Enables the octree node's children access order

@@ -150,7 +150,15 @@ mesh_instance_intersection(
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
     __global common_mesh_octree_node_t const * const meshRootNode = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
 
-#ifdef _CL_NO_OCTREE_RAY_TARCING
+#if CS499R_CONFIG_ENABLE_MESH_OCTREE
+    mesh_octree_intersection(
+        sampleCx,
+        meshInstance,
+        meshPrimitives,
+        meshRootNode
+    );
+
+#else
     uint32_t const nodeCount = meshInstance->mesh.octreeNodeCount;
 
     for (uint32_t nodeId = 0; nodeId < nodeCount; nodeId++)
@@ -163,14 +171,8 @@ mesh_instance_intersection(
             primitive_intersection(sampleCx, meshPrimitives + primId);
         }
     }
-#else // _CL_NO_OCTREE_RAY_TARCING
-    mesh_octree_intersection(
-        sampleCx,
-        meshInstance,
-        meshPrimitives,
-        meshRootNode
-    );
-#endif // _CL_NO_OCTREE_RAY_TARCING
+
+#endif // CS499R_CONFIG_ENABLE_MESH_OCTREE
 }
 
 
