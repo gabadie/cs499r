@@ -31,6 +31,7 @@ namespace CS499R
     class Octree;
     class OctreeNode;
     class RayTracer;
+    class RenderShotCtx;
     class RenderState;
     class RenderTarget;
     class Scene;

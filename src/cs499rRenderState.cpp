@@ -3,6 +3,7 @@
 #include "cs499rCamera.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rRenderProfiling.hpp"
+#include "cs499rRenderShotCtx.hpp"
 #include "cs499rRenderState.hpp"
 #include "cs499rRenderTarget.hpp"
 #include "cs499rScene.hpp"
@@ -21,7 +22,7 @@ namespace CS499R
         CS499R_ASSERT(mRenderTarget != nullptr);
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
-        shot_ctx_t shotCtx;
+        RenderShotCtx shotCtx;
         common_render_context_t templateCtx;
 
         shotInit(&shotCtx);
@@ -105,7 +106,7 @@ namespace CS499R
     }
 
     void
-    RenderState::shotInit(shot_ctx_t * ctx) const
+    RenderState::shotInit(RenderShotCtx * ctx) const
     {
         size_t warpSize;
 
@@ -160,13 +161,13 @@ namespace CS499R
 
         { // memory allocations
             ctx->kickoffCtxCircularArray = alloc<common_render_context_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
-            ctx->kickoffCtxManagers = alloc<kickoff_ctx_manager_t>(ctx->kickoffTileCount);
+            ctx->kickoffCtxManagers = alloc<RenderShotCtx::kickoff_ctx_manager_t>(ctx->kickoffTileCount);
         }
     }
 
     void
     RenderState::shotInitTemplateCtx(
-        shot_ctx_t const * ctx,
+        RenderShotCtx const * ctx,
         SceneBuffer const * sceneBuffer,
         Camera const * camera,
         common_render_context_t * templateCtx
@@ -228,7 +229,7 @@ namespace CS499R
 
     void
     RenderState::shotInitCircularCtx(
-        shot_ctx_t const * ctx,
+        RenderShotCtx const * ctx,
         common_render_context_t const * templateCtx
     ) const
     {
@@ -278,7 +279,7 @@ namespace CS499R
     }
 
     void
-    RenderState::shotKickoff(shot_ctx_t const * ctx, SceneBuffer const * sceneBuffer, RenderProfiling * outProfiling)
+    RenderState::shotKickoff(RenderShotCtx const * ctx, SceneBuffer const * sceneBuffer, RenderProfiling * outProfiling)
     {
         auto const rayTracer = sceneBuffer->mRayTracer;
 
@@ -427,7 +428,7 @@ namespace CS499R
     }
 
     void
-    RenderState::shotFree(shot_ctx_t const * ctx) const
+    RenderState::shotFree(RenderShotCtx const * ctx) const
     {
         for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
         {
@@ -446,7 +447,6 @@ namespace CS499R
 
     // ------------------------------------------------------------------------- NASTY C++ WORK AROUNDS
 
-    size_t const RenderState::kHostAheadCommandCount;
     size_t const RenderState::kMaxKickoffSampleIteration;
     size_t const RenderState::kThreadsPerTilesTarget;
     size_t const RenderState::kWarpSizefactor;
