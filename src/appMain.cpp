@@ -38,37 +38,21 @@ main(int argc, char const * const * argv)
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
-    CS499R::RenderProfiling renderProfiling;
+    CS499R::RenderTerminalTracker terminalTracker;
 
     App::buildSceneMeshes(scene);
-
-    std::cout << "Input:" << std::endl;
-    std::cout << "    Render width:             " << imageWidth << " px" << std::endl;
-    std::cout << "    Render height:            " << imageHeight << " px" << std::endl;
-    std::cout << "    Sub-pixels:               " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
-    std::cout << "    Sample per sub-pixels:    " << renderState.mSamplesPerSubdivisions << std::endl;
-    std::cout << std::endl;
-    std::cout << "Rendering..." << std::endl;
 
     {
         CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);
         CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
 
         renderState.mRenderTarget = &renderTarget;
-        renderState.shotScene(&sceneBuffer, &camera, &renderProfiling);
+        renderState.shotScene(&sceneBuffer, &camera, &terminalTracker);
 
         renderTarget.download(&image);
     }
 
     image.saveToFile("render.gitignore.png");
-
-    std::cout << std::endl;
-    std::cout << "Output:" << std::endl;
-    std::cout << "    Total Rays:               " << renderProfiling.mRays << std::endl;
-    std::cout << "    CPU duration:             " << renderProfiling.mCPUDuration << " us" << std::endl;
-    std::cout << "    CPU duration per ray:     " <<
-        double(renderProfiling.mCPUDuration) / double(renderProfiling.mRays) << " us" << std::endl;
-    std::cout << std::endl;
 
     return 0;
 }

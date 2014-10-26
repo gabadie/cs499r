@@ -39,7 +39,7 @@ namespace CS499R
          * Shots the scene from the camera into the render target
          */
         void
-        shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling = nullptr);
+        shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderAbstractTracker * renderTracker);
 
 
         // --------------------------------------------------------------------- CONSTS
@@ -106,7 +106,7 @@ namespace CS499R
         shotKickoff(
             RenderShotCtx const * ctx,
             SceneBuffer const * sceneBuffer,
-            RenderProfiling * outProfiling
+            RenderAbstractTracker * renderTracker
         );
 
         void

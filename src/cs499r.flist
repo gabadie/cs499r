@@ -15,6 +15,7 @@ cs499rRayTracer.cpp
 cs499rRayTracerProgram.cpp
 cs499rRenderState.cpp
 cs499rRenderTarget.cpp
+cs499rRenderTerminalTracker.cpp
 cs499rScene.cpp
 cs499rSceneBuffer.cpp
 cs499rSceneMesh.cpp

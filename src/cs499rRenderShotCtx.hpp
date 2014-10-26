@@ -18,6 +18,7 @@ namespace CS499R
     public:
         // --------------------------------------------------------------------- MEMBERS
 
+        size2_t renderResolution;
         size_t pixelBorderSubdivisions;
         size_t samplesPerSubdivisions;
         size_t recursionPerSample;
@@ -67,4 +68,4 @@ namespace CS499R
 
 }
 
-#endif // _H_CS499R_SCENE
+#endif // _H_CS499R_RENDERSHOTCTX

@@ -2,7 +2,7 @@
 #include "cs499rBenchmark.hpp"
 #include "cs499rCamera.hpp"
 #include "cs499rRayTracer.hpp"
-#include "cs499rRenderProfiling.hpp"
+#include "cs499rRenderAbstractTracker.hpp"
 #include "cs499rRenderShotCtx.hpp"
 #include "cs499rRenderState.hpp"
 #include "cs499rRenderTarget.hpp"
@@ -14,10 +14,11 @@ namespace CS499R
 {
 
     void
-    RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderProfiling * outProfiling)
+    RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderAbstractTracker * renderTracker)
     {
         CS499R_ASSERT(sceneBuffer != nullptr);
         CS499R_ASSERT(camera != nullptr);
+        CS499R_ASSERT(renderTracker != nullptr);
         CS499R_ASSERT(validateParams());
         CS499R_ASSERT(mRenderTarget != nullptr);
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
@@ -26,10 +27,15 @@ namespace CS499R
         common_render_context_t templateCtx;
 
         shotInit(&shotCtx);
+
+        renderTracker->eventShotStart(&shotCtx);
+
         shotInitTemplateCtx(&shotCtx, sceneBuffer, camera, &templateCtx);
         shotInitCircularCtx(&shotCtx, &templateCtx);
-        shotKickoff(&shotCtx, sceneBuffer, outProfiling);
+        shotKickoff(&shotCtx, sceneBuffer, renderTracker);
         shotFree(&shotCtx);
+
+        renderTracker->eventShotEnd();
     }
 
     RenderState::RenderState()
@@ -122,6 +128,9 @@ namespace CS499R
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
+        ctx->renderResolution.x = mRenderTarget->width();
+        ctx->renderResolution.y = mRenderTarget->height();
+
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         ctx->pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
         ctx->samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
@@ -145,8 +154,8 @@ namespace CS499R
         ctx->kickoffTileLocalSize = warpSize * kWarpSizefactor;
         ctx->coherencyTileSize = sqrt(ceilSquarePow2(ctx->kickoffTileLocalSize));
         ctx->kickoffTileGrid = size2_t(
-            (mRenderTarget->width() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
-            (mRenderTarget->height() + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
+            (ctx->renderResolution.x + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
+            (ctx->renderResolution.y + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
         );
         ctx->kickoffTileCount = ctx->kickoffTileGrid.x * ctx->kickoffTileGrid.y;
 
@@ -279,12 +288,9 @@ namespace CS499R
     }
 
     void
-    RenderState::shotKickoff(RenderShotCtx const * ctx, SceneBuffer const * sceneBuffer, RenderProfiling * outProfiling)
+    RenderState::shotKickoff(RenderShotCtx const * ctx, SceneBuffer const * sceneBuffer, RenderAbstractTracker * renderTracker)
     {
         auto const rayTracer = sceneBuffer->mRayTracer;
-
-        timestamp_t kernelStart;
-        timestamp_t kernelEnd;
 
         cl_int error = 0;
         cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
@@ -303,14 +309,13 @@ namespace CS499R
             clearRenderTarget();
         }
 
-        if (outProfiling)
-        {
-            clFinish(cmdQueue);
-            kernelStart = timestamp();
-        }
-
         size_t passId = 0;
         size_t const passCount = ctx->kickoffInvocationCount * ctx->pixelSubdivisions;
+
+        size_t progressId = 1;
+        size_t const progressCount = passCount;
+
+        renderTracker->eventShotProgress(0, progressCount);
 
         // render loops
         for (size_t invocationId = 0; invocationId < ctx->kickoffInvocationCount; invocationId++)
@@ -388,6 +393,9 @@ namespace CS499R
 
                             CS499R_ASSERT_NO_CL_ERROR(error);
                         }
+
+                        renderTracker->eventShotProgress(progressId, progressCount);
+                        progressId++;
                     }
                 }
             }
@@ -410,14 +418,9 @@ namespace CS499R
 
                 CS499R_ASSERT_NO_CL_ERROR(error);
             }
-        }
 
-        if (outProfiling)
-        {
-            kernelEnd = timestamp();
-
-            outProfiling->mCPUDuration = kernelEnd - kernelStart;
-            outProfiling->mRays = mRenderTarget->width() * mRenderTarget->height() * ctx->pixelRayCount;
+            renderTracker->eventShotProgress(progressId, progressCount);
+            progressId++;
         }
 
         { // render target multiplication

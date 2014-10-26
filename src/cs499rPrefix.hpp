@@ -23,17 +23,17 @@
 namespace CS499R
 {
 
-    struct RenderProfiling;
-
     class Camera;
     class Image;
     class Mesh;
     class Octree;
     class OctreeNode;
     class RayTracer;
+    class RenderAbstractTracker;
     class RenderShotCtx;
     class RenderState;
     class RenderTarget;
+    class RenderTerminalTracker;
     class Scene;
     class SceneBuffer;
     class SceneMesh;
