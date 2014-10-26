@@ -44,20 +44,21 @@ mesh_octree_intersection(
         nodeInfosStack[0].w = meshInstance->mesh.vertexUpperBound.w;
     }
 
-//#define _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
-#ifndef _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
+#if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
     uint32_t const subNodeAccessOrder = octree_sub_node_order(sampleCx->rayMeshDirection);
-#endif // _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
+#endif
 
     while (1)
     {
         uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackSize - 1];
 
-#ifndef _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
+#if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
         uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
-#else // _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
+
+#else
         uint32_t const subNodeId = subNodeAccessId;
-#endif // _CL_NO_MESH_OCTREE_SUBNODE_REORDERING
+
+#endif
 
         __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
 

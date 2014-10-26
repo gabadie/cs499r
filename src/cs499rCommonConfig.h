@@ -7,6 +7,14 @@
  */
 
 /*
+ * Enables the octree node's children access order
+ */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
+# define CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING 1
+#endif
+
+
+/*
  * Configures the pixels gathering strategy per warp
  */
 #define CS499R_CONFIG_PIXELPOS_DUMMY 0
@@ -16,5 +24,6 @@
 #ifndef CS499R_CONFIG_PIXELPOS
 # define CS499R_CONFIG_PIXELPOS CS499R_CONFIG_PIXELPOS_ICPT
 #endif
+
 
 #endif // _H_CS499R_COMMON_CONFIG
