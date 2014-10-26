@@ -85,7 +85,6 @@ namespace
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
                 commonNode->subNodeCount = 0;
 #endif
-                commonNode->subNodeMask = 0x00;
             }
 
             // export sub offsets
@@ -106,7 +105,6 @@ namespace
                 commonNode->subNodeCount ++;
                 CS499R_ASSERT(commonNode->subNodeCount <= CS499R_ARRAY_SIZE(mChildren));
 #endif
-                commonNode->subNodeMask |= 1 << i;
 
                 subNode->generateCommonOctree(
                     outPrimNewIds,

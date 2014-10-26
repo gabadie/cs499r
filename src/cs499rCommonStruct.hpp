@@ -50,9 +50,6 @@ namespace CS499R
 
         // node's primitives count
         __attribute__((aligned(4))) uint32_t primCount;
-
-        // node's subnode mask
-        __attribute__((aligned(4))) uint8_t subNodeMask;
     } common_octree_node_t;
 
     typedef

@@ -80,7 +80,7 @@ mesh_octree_intersection(
 #endif
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-        if (subNodeAccessId >= node->subNodeCount)
+        if (subNodeAccessId == node->subNodeCount)
 
 #else
         if (subNodeAccessId == kOctreeNodeSubdivisonCount)
@@ -106,7 +106,7 @@ mesh_octree_intersection(
 
         subNodeAccessStack[nodeStackSize - 1] = subNodeAccessId + 1;
 
-#if 1 // TODO: !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+#if 1 // TODO: !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS causes a GPU abort
         if (node->subNodeOffsets[subNodeId] == 0)
         {
             continue;
@@ -124,21 +124,7 @@ mesh_octree_intersection(
         // going down
         nodeStack[nodeStackSize] = node->subNodeOffsets[subNodeId];
         nodeInfosStack[nodeStackSize] = subNodeInfos;
-
-#if CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK && !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-        /*
-         * If there is no children, then set subNodeAccessId directly to
-         * kOctreeNodeSubdivisonCount == 8 so that we don't loop 8 times
-         */
-        subNodeAccessStack[nodeStackSize] = (
-            kOctreeNodeSubdivisonCount *
-            (node->subNodeMask == 0)
-        );
-
-#else
         subNodeAccessStack[nodeStackSize] = 0;
-
-#endif
 
         nodeStackSize++;
     }
