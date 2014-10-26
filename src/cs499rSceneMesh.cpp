@@ -82,6 +82,7 @@ namespace
             { // export
                 commonNode->primFirst = primOffset;
                 commonNode->primCount = mPrimitiveIds.size();
+                commonNode->subNodeMask = 0x00;
             }
 
             // export sub offsets
@@ -98,6 +99,7 @@ namespace
                 auto const subNodeId = cursors[0];
 
                 commonNode->subNodeOffsets[i] = subNodeId;
+                commonNode->subNodeMask |= 1 << i;
 
                 subNode->generateCommonOctree(
                     outPrimNewIds,

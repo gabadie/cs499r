@@ -20,6 +20,12 @@
 # define CS499R_CONFIG_ENABLE_MESH_OCTREE 1
 #endif
 
+/*
+ * Enables the octree node's children mask to quickly detect leaf nodes
+ */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK
+# define CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK 1
+#endif
 
 /*
  * Enables the octree node's children access order

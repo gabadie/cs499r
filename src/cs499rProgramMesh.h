@@ -98,8 +98,22 @@ mesh_octree_intersection(
 
         // going down
         nodeStack[nodeStackSize] = node->subNodeOffsets[subNodeId];
-        subNodeAccessStack[nodeStackSize] = 0;
         nodeInfosStack[nodeStackSize] = subNodeInfos;
+
+#if CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK
+        /*
+         * If there is no children, then set subNodeAccessId directly to
+         * kOctreeNodeSubdivisonCount == 8 so that we don't loop 8 times
+         */
+        subNodeAccessStack[nodeStackSize] = (
+            kOctreeNodeSubdivisonCount *
+            (node->subNodeMask == 0)
+        );
+
+#else
+        subNodeAccessStack[nodeStackSize] = 0;
+
+#endif
 
         nodeStackSize++;
     }
