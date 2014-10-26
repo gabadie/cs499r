@@ -10,7 +10,7 @@
 /*
  * The stat output's factor
  */
-#define CS499R_CONFIG_RAY_STATS_FACTOR 0.0005f
+#define CS499R_CONFIG_RAY_STATS_FACTOR 0.001f
 
 /*
  * Stats on primitive_intersection() calls

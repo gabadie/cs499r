@@ -29,6 +29,17 @@
 #endif
 
 /*
+ * Enables octree node's children access lists
+ *
+ *  This optimisation list all available subnodes in a node. This has the
+ *  ability to reduce the conditions serialisation caused by testing if a
+ *  subnode i exists when browsing an octree.
+ */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+# define CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS 1
+#endif
+
+/*
  * Enables the octree node's children mask to quickly detect leaf nodes
  */
 #ifndef CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK

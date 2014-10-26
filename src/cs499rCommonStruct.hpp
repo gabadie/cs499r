@@ -35,16 +35,24 @@ namespace CS499R
     common_octree_node_s
     {
         // mesh's first primitive
-        uint32_t subNodeOffsets[8];
+        __attribute__((aligned(4))) uint32_t subNodeOffsets[8];
 
-        // node's first primitive within the mesh's primitives' array
-        uint32_t primFirst;
-
-        // node's primitives count
-        uint32_t primCount;
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+        // sub node access lists
+        __attribute__((aligned(4))) uint32_t subNodeAccessLists[8];
 
         // node's subnode mask
-        uint8_t subNodeMask;
+        __attribute__((aligned(4))) uint8_t subNodeCount;
+#endif
+
+        // node's first primitive within the mesh's primitives' array
+        __attribute__((aligned(4))) uint32_t primFirst;
+
+        // node's primitives count
+        __attribute__((aligned(4))) uint32_t primCount;
+
+        // node's subnode mask
+        __attribute__((aligned(4))) uint8_t subNodeMask;
     } common_octree_node_t;
 
     typedef

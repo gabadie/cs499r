@@ -44,8 +44,16 @@ mesh_octree_intersection(
         nodeInfosStack[0].w = meshInstance->mesh.vertexUpperBound.w;
     }
 
-#if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+    uint32_t const directionId = octree_direction_id(sampleCx->rayMeshDirection);
+
+# if !CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
+#  error "CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS requires CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING"
+# endif
+
+#elif CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
     uint32_t const subNodeAccessOrder = octree_sub_node_order(sampleCx->rayMeshDirection);
+
 #endif
 
     while (1)
@@ -56,6 +64,13 @@ mesh_octree_intersection(
 
         uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackSize - 1];
 
+        __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
+
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+        uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
+        //uint32_t const subNodeAccessOrder = kOctreeSubNodeAccessOrder[directionId];
+#endif
+
 #if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
         uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
 
@@ -64,9 +79,13 @@ mesh_octree_intersection(
 
 #endif
 
-        __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+        if (subNodeAccessId >= node->subNodeCount)
 
+#else
         if (subNodeAccessId == kOctreeNodeSubdivisonCount)
+
+#endif
         {
             uint32_t const primEnd = node->primFirst + node->primCount;
 
@@ -87,10 +106,12 @@ mesh_octree_intersection(
 
         subNodeAccessStack[nodeStackSize - 1] = subNodeAccessId + 1;
 
+#if 1 // TODO: !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
         if (node->subNodeOffsets[subNodeId] == 0)
         {
             continue;
         }
+#endif
 
         float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
         float32x4_t const subNodeInfos = octree_sub_node_infos(nodeInfos, subNodeId);
@@ -104,7 +125,7 @@ mesh_octree_intersection(
         nodeStack[nodeStackSize] = node->subNodeOffsets[subNodeId];
         nodeInfosStack[nodeStackSize] = subNodeInfos;
 
-#if CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK
+#if CS499R_CONFIG_ENABLE_OCTREE_CHILDREN_MASK && !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
         /*
          * If there is no children, then set subNodeAccessId directly to
          * kOctreeNodeSubdivisonCount == 8 so that we don't loop 8 times

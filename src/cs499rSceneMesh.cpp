@@ -82,6 +82,9 @@ namespace
             { // export
                 commonNode->primFirst = primOffset;
                 commonNode->primCount = mPrimitiveIds.size();
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+                commonNode->subNodeCount = 0;
+#endif
                 commonNode->subNodeMask = 0x00;
             }
 
@@ -99,6 +102,10 @@ namespace
                 auto const subNodeId = cursors[0];
 
                 commonNode->subNodeOffsets[i] = subNodeId;
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+                commonNode->subNodeCount ++;
+                CS499R_ASSERT(commonNode->subNodeCount <= CS499R_ARRAY_SIZE(mChildren));
+#endif
                 commonNode->subNodeMask |= 1 << i;
 
                 subNode->generateCommonOctree(
@@ -107,6 +114,35 @@ namespace
                     cursors
                 );
             }
+
+#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+            /*
+             * generate common node' access lists depending on the direction
+             */
+            for (size_t directionId = 0; directionId < CS499R_ARRAY_SIZE(mChildren); directionId++)
+            {
+                uint32_t accessCount = 0;
+                uint32_t accessList = 0x0;
+
+                for (size_t nodeAccessId = 0; nodeAccessId < CS499R_ARRAY_SIZE(mChildren); nodeAccessId++)
+                {
+                    uint32_t nodeId = directionId ^ nodeAccessId;
+                    CS499R_ASSERT(nodeId < CS499R_ARRAY_SIZE(mChildren));
+
+                    if (mChildren[nodeId] == nullptr)
+                    {
+                        continue;
+                    }
+
+                    accessList |= nodeId << (4 * accessCount);
+                    accessCount++;
+                }
+
+                CS499R_ASSERT(accessCount == commonNode->subNodeCount);
+                commonNode->subNodeAccessLists[directionId] = accessList;
+            }
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
         }
 
         bool

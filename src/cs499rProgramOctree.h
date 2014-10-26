@@ -40,15 +40,22 @@ __constant uint32_t const kOctreeSubNodeAccessOrder[] = {
 
 inline
 uint32_t
-octree_sub_node_order(float32x3_t rayDirection)
+octree_direction_id(float32x3_t const rayDirection)
 {
-    uint32_t const directctionId = (
+    return (
         (uint32_t)(rayDirection.x >= 0.0f) |
         ((uint32_t)(rayDirection.y >= 0.0f) << 1) |
         ((uint32_t)(rayDirection.z >= 0.0f) << 2)
     );
+}
 
-    return kOctreeSubNodeAccessOrder[directctionId];
+inline
+uint32_t
+octree_sub_node_order(float32x3_t const rayDirection)
+{
+    uint32_t const directionId = octree_direction_id(rayDirection);
+
+    return kOctreeSubNodeAccessOrder[directionId];
 }
 
 inline
