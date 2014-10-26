@@ -28,6 +28,8 @@ namespace CS499R
     class Camera;
     class Image;
     class Mesh;
+    class Octree;
+    class OctreeNode;
     class RayTracer;
     class RenderState;
     class RenderTarget;

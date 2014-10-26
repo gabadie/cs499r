@@ -9,6 +9,8 @@ cs499rCLUtils.cpp
 cs499rImage.cpp
 cs499rImagePNG.cpp
 cs499rMesh.cpp
+cs499rOctree.cpp
+cs499rOctreeNode.cpp
 cs499rRayTracer.cpp
 cs499rRayTracerProgram.cpp
 cs499rRenderState.cpp
