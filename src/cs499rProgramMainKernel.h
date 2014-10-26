@@ -42,7 +42,7 @@
  */
 inline
 uint32x2_t
-kernel_pixel_pos_tiled_cpt(
+kernel_pixel_pos_cpt(
     __global common_render_context_t const * const coherencyCx,
     sample_context_t * const sampleCx
 )
@@ -94,7 +94,7 @@ kernel_pixel_pos_tiled_cpt(
  */
 inline
 uint32x2_t
-kernel_pixel_pos_tiled_icpt(
+kernel_pixel_pos_icpt(
     __global common_render_context_t const * const coherencyCx,
     sample_context_t * const sampleCx
 )
@@ -168,11 +168,19 @@ kernel_main(
     sample_context_t sampleCxArray[1];// CS499R_MAX_GROUP_SIZE
     sample_context_t * const sampleCx = sampleCxArray;
 
-#if defined(_CL_PROGRAM_CPT)
-    uint32x2_t const pixelPos = kernel_pixel_pos_tiled_cpt(coherencyCx, sampleCx);
-#else // defined(_CL_PROGRAM_CPT)
-    uint32x2_t const pixelPos = kernel_pixel_pos_tiled_icpt(coherencyCx, sampleCx);
-#endif // defined(_CL_PROGRAM_CPT)
+#if CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_CPT
+    uint32x2_t const pixelPos = kernel_pixel_pos_cpt(coherencyCx, sampleCx);
+
+#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_ICPT
+    uint32x2_t const pixelPos = kernel_pixel_pos_icpt(coherencyCx, sampleCx);
+
+#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_DUMMY
+# error "invalid CS499R_CONFIG_PIXELPOS_DUMMY not implemented yet"
+
+#else
+# error "invalid CS499R_CONFIG_PIXELPOS"
+
+#endif // CS499R_CONFIG_PIXELPOS
 
     if (pixelPos.x >= coherencyCx->render.resolution.x || pixelPos.y >= coherencyCx->render.resolution.y)
     {
