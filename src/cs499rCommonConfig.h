@@ -7,6 +7,14 @@
  */
 
 /*
+ * Enables mesh's bounding box checking
+ */
+#ifndef CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
+# define CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX 1
+#endif
+
+
+/*
  * Enables the octree node's children access order
  */
 #ifndef CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING

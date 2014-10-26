@@ -140,12 +140,12 @@ mesh_instance_intersection(
 
     mesh_instance_prepare_frame(sampleCx, meshInstance);
 
-#ifndef _CL_NO_BOUNDING_BOX_CHECKING
+#if CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
     if (!mesh_boundingbox_intersection(sampleCx, meshInstance))
     {
         return;
     }
-#endif // _CL_NO_BOUNDING_BOX_CHECKING
+#endif
 
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
     __global common_mesh_octree_node_t const * const meshRootNode = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
