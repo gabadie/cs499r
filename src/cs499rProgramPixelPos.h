@@ -6,7 +6,46 @@
 
 
 /*
- * Coherent path tracing algorithm coherent tiles
+ * Dummy pixel pos coherency
+ */
+inline
+uint32x2_t
+kernel_pixel_pos_dummy(
+    __global common_render_context_t const * const coherencyCx,
+    sample_context_t * const sampleCx
+)
+{
+    // the pixel pos in the kickoff tile
+    uint32x2_t const kickoffTilePixelPos = (uint32x2_t)(
+        get_global_id(0) & (coherencyCx->render.kickoffTileSize.value - 1),
+        get_global_id(0) >> coherencyCx->render.kickoffTileSize.log
+    );
+
+    // the pixel pos
+    uint32x2_t const pixelPos = kickoffTilePixelPos + coherencyCx->render.kickoffTilePos;
+
+    { // set up random seed
+        uint32_t const subPixelId = (
+            (
+                (pixelPos.x & 0x7F) +
+                (pixelPos.y & 0x7F) * 0x7F
+            ) * coherencyCx->render.passCount +
+            coherencyCx->render.passId
+        );
+
+        sampleCx->randomSeed = (
+            kPathTracerRandomPerRay *
+            coherencyCx->render.kickoffSampleRecursionCount *
+            coherencyCx->render.kickoffSampleIterationCount *
+            subPixelId
+        ) % 1436283;
+    }
+
+    return pixelPos;
+}
+
+/*
+ * Coherent path tracing algorithm's coherent tiles
  *
  *
  *      |    kickoff tile   |

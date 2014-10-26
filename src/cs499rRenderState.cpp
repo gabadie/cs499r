@@ -186,11 +186,13 @@ namespace CS499R
         templateCtx->render.resolution.y = mRenderTarget->height();
         templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
 
+        templateCtx->render.passCount = ctx->pixelSubdivisions * ctx->kickoffInvocationCount;
+
+        templateCtx->render.kickoffTileSize = ctx->kickoffTileSize;
         templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount;
         templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample;
 
         { // render context's CBT init
-            templateCtx->render.cpt.kickoffTileSize = ctx->kickoffTileSize;
             templateCtx->render.cpt.coherencyTileSize = ctx->coherencyTileSize;
             templateCtx->render.cpt.coherencyTilePerKickoffTileBorder = (
                 ctx->kickoffTileSize / ctx->coherencyTileSize
@@ -214,7 +216,6 @@ namespace CS499R
         { // render context's ICPT init
             size_t const kCoherencyTileSize = 16;
 
-            templateCtx->render.icpt.kickoffTileSize = ctx->kickoffTileSize;
             templateCtx->render.icpt.coherencyTilePerKickoffTileBorder = (
                 ctx->kickoffTileSize / kCoherencyTileSize
             );

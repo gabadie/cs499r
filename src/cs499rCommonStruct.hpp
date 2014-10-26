@@ -142,7 +142,6 @@ namespace CS499R
     struct __attribute__((aligned(8), packed)) common_cpt_s
     {
         // coherency and kickoff tiles' constants
-        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
         __attribute__((aligned(16))) common_pow_t groupPerCoherencyTile;
@@ -152,7 +151,6 @@ namespace CS499R
     struct __attribute__((aligned(8), packed)) common_icpt_s
     {
         // interleaved coherency and kickoff tiles' constants
-        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
         __attribute__((aligned(16))) common_pow_t coherencyTilePerKickoffTileBorder;
         __attribute__((aligned(16))) common_pow_t groupPerCoherencyTile;
     } common_icpt_t;
@@ -168,6 +166,7 @@ namespace CS499R
 
         // the tile infos
         __attribute__((aligned(16))) uint32x2_t kickoffTilePos;
+        __attribute__((aligned(16))) common_pow_t kickoffTileSize;
 
         // the kickoff's random seed offset
         __attribute__((aligned(16))) uint32_t kickoffSampleIterationCount;
@@ -175,6 +174,9 @@ namespace CS499R
 
         // the kickoff's sample group id
         __attribute__((aligned(16))) uint32_t passId;
+
+        // the kickoff's sample group id
+        __attribute__((aligned(16))) uint32_t passCount;
 
         // the subpixel pos in the pixel
         __attribute__((aligned(16))) uint32x2_t pixelSubpixelPos;

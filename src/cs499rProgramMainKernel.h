@@ -38,7 +38,7 @@ kernel_main(
     uint32x2_t const pixelPos = kernel_pixel_pos_icpt(coherencyCx, sampleCx);
 
 #elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_DUMMY
-# error "invalid CS499R_CONFIG_PIXELPOS_DUMMY not implemented yet"
+    uint32x2_t const pixelPos = kernel_pixel_pos_dummy(coherencyCx, sampleCx);
 
 #else
 # error "invalid CS499R_CONFIG_PIXELPOS"
