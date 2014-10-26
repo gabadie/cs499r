@@ -94,6 +94,42 @@ kernel_main(
     float32x3_t sampleColor = sceneNormal * 0.5f + 0.5f;
 
 
+#elif defined(_CL_PROGRAM_RAY_STATS)
+    /*
+     * Here is the ray stats code
+     */
+# ifndef CS499R_CONFIG_RAY_STATS_FACTOR
+#  error "need #define CS499R_CONFIG_RAY_STATS_FACTOR"
+# endif
+
+    sampleCx->stats = 0;
+
+    camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+    scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+
+    __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
+
+    float32x3_t const meshNormal = sampleCx->rayInterMeshNormal;
+    float32x3_t const sceneNormal = (
+        meshInstance->meshSceneMatrix.x * meshNormal.x +
+        meshInstance->meshSceneMatrix.y * meshNormal.y +
+        meshInstance->meshSceneMatrix.z * meshNormal.z
+    );
+
+    float32x3_t sampleNormal = clamp(sceneNormal * 0.25f + 0.25f, 0.0f, 0.5f);
+    float32_t sampleNormalBW = 0.33f * (sampleNormal.x + sampleNormal.y + sampleNormal.z);
+
+    float32_t statValue = (
+        CS499R_CONFIG_RAY_STATS_FACTOR *
+        (float32_t)(sampleCx->stats)
+    );
+    float32x3_t sampleColor = (float32x3_t)(
+        sampleNormalBW + statValue,
+        sampleNormalBW,
+        sampleNormalBW
+    );
+
+
 #endif
 
 #ifdef _CL_DEBUG

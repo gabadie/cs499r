@@ -50,6 +50,10 @@ mesh_octree_intersection(
 
     while (1)
     {
+#ifdef CS499R_STATS_MESH_OCTREE_LOOPS
+        sampleCx->stats++;
+#endif
+
         uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackSize - 1];
 
 #if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING

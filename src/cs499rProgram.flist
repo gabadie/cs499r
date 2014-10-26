@@ -6,4 +6,5 @@
 
 cs499rProgramPathTracer.cl
 cs499rProgramDebugNormal.cl
+cs499rProgramRayStats.cl
 cs499rProgramTargetMultiply.cl

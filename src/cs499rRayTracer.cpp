@@ -52,6 +52,7 @@ namespace CS499R
         char const * programCodes[kProgramCount] = {
             kCS499RProgramPathTracer,
             kCS499RProgramDebugNormal,
+            kCS499RProgramRayStats,
             kCS499RProgramTargetMultiply
         };
 

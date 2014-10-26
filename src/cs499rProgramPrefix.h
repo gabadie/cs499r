@@ -7,6 +7,7 @@
 #include "cs499rCommonConfig.h"
 #include "cs499rCommonConsts.h"
 #include "cs499rCommonStruct.hpp"
+#include "cs499rProgramRayStats.h"
 
 #ifndef __CS499R_OPENCL_PREPROCESSOR
 #define __constant

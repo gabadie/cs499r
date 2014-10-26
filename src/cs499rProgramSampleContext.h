@@ -44,6 +44,11 @@ __private struct sample_context_s
     float32x3_t pixelColor;
 #endif
 
+#ifdef _CL_PROGRAM_RAY_STATS
+    // the sample's stats
+    uint32_t stats;
+#endif
+
 } sample_context_t;
 
 
