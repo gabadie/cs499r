@@ -36,6 +36,12 @@ namespace CS499R
         // --------------------------------------------------------------------- METHODES
 
         /*
+         * Downscale to the current render target
+         */
+        void
+        downscale(RenderTarget const * srcRenderTarget);
+
+        /*
          * Shots the scene from the camera into the render target
          */
         void
@@ -77,6 +83,26 @@ namespace CS499R
         void
         clearRenderTarget();
 
+        /*
+         * Downscale to the current render target
+         */
+        void
+        downscale(
+            RenderTarget * destRenderTarget,
+            RenderTarget const * srcRenderTarget,
+            size2_t srcPos,
+            size2_t srcSize,
+            size2_t destPos,
+            size2_t destSize,
+            float32_t multiplyFactor = 1.0f,
+            cl_uint eventWaitListSize = 0,
+            cl_event const * eventWaitList = nullptr,
+            cl_event * event = nullptr
+        );
+
+        /*
+         * Multiplies the current render target
+         */
         void
         multiplyRenderTarget(float32_t multiplyFactor);
 

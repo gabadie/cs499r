@@ -12,6 +12,22 @@
 
 namespace CS499R
 {
+    void
+    RenderState::downscale(RenderTarget const * srcRenderTarget)
+    {
+        CS499R_ASSERT(mRenderTarget != nullptr);
+        CS499R_ASSERT(srcRenderTarget != nullptr);
+        CS499R_ASSERT(mRenderTarget != srcRenderTarget);
+
+        downscale(
+            mRenderTarget,
+            srcRenderTarget,
+            size2_t(0),
+            srcRenderTarget->resolution(),
+            size2_t(0),
+            mRenderTarget->resolution()
+        );
+    }
 
     void
     RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderAbstractTracker * renderTracker)
@@ -79,6 +95,68 @@ namespace CS499R
             0, nullptr, nullptr
         );
 
+        CS499R_ASSERT_NO_CL_ERROR(error);
+    }
+
+    void
+    RenderState::downscale(
+        RenderTarget * const destRenderTarget,
+        RenderTarget const * const srcRenderTarget,
+        size2_t const srcPos,
+        size2_t const srcSize,
+        size2_t const destPos,
+        size2_t const destSize,
+        float32_t const multiplyFactor,
+        cl_uint const eventWaitListSize,
+        cl_event const * const eventWaitList,
+        cl_event * const event
+    )
+    {
+        CS499R_ASSERT(destRenderTarget != nullptr);
+        CS499R_ASSERT(srcRenderTarget != nullptr);
+        CS499R_ASSERT(destRenderTarget != srcRenderTarget);
+        CS499R_ASSERT((srcSize.x % destSize.x) == 0);
+        CS499R_ASSERT((srcSize.y % destSize.y) == 0);
+        CS499R_ASSERT((srcSize.x / destSize.x) == (srcSize.y / destSize.y));
+
+        common_downscale_context_t ctx;
+
+        ctx.srcResolution.x = srcRenderTarget->width();
+        ctx.srcResolution.y = srcRenderTarget->height();
+        ctx.srcTilePos.x = srcPos.x;
+        ctx.srcTilePos.y = srcPos.y;
+        ctx.srcTileSize = srcSize.x;
+
+        ctx.destResolution.x = destRenderTarget->width();
+        ctx.destResolution.y = destRenderTarget->height();
+        ctx.destTilePos.x = destPos.x;
+        ctx.destTilePos.y = destPos.y;
+        ctx.destTileSize = destSize.x;
+        ctx.downscaleFactor = srcSize.x / destSize.x;
+
+        ctx.multiplyFactor = multiplyFactor / float32_t(ctx.downscaleFactor.value * ctx.downscaleFactor.value);
+
+        auto const rayTracer = mRenderTarget->mRayTracer;
+
+        cl_kernel const kernel = rayTracer->mProgram[RayTracer::kProgramTragetDownscale].kernel;
+        cl_int error = 0;
+
+        { // kernel arguments
+            error |= clSetKernelArg(kernel, 0, sizeof(ctx), &ctx);
+            error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &srcRenderTarget->mGpuBuffer);
+            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &destRenderTarget->mGpuBuffer);
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
+        }
+
+        size_t const globalCount = destSize.x * destSize.y;
+
+        error = clEnqueueNDRangeKernel(
+            rayTracer->mCmdQueue, kernel,
+            1, nullptr, &globalCount, nullptr,
+            eventWaitListSize, eventWaitList,
+            event
+        );
         CS499R_ASSERT_NO_CL_ERROR(error);
     }
 
@@ -447,6 +525,7 @@ namespace CS499R
         free(ctx->kickoffCtxCircularArray);
         free(ctx->kickoffCtxManagers);
     }
+
 
     // ------------------------------------------------------------------------- NASTY C++ WORK AROUNDS
 

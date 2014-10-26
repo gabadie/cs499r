@@ -53,13 +53,16 @@ namespace CS499R
             kCS499RProgramPathTracer,
             kCS499RProgramDebugNormal,
             kCS499RProgramRayStats,
+            kCS499RProgramDownscale,
             kCS499RProgramTargetMultiply
         };
 
         char const * const programKernelNameArray[kProgramCount] = {
-            "kernel_path_tracer_main",
-            "kernel_debug_normal",
-            "kernel_main",
+            "kCS499RProgramPathTracer",
+            "kCS499RProgramDebugNormal",
+            "kCS499RProgramRayStats",
+            "kCS499RProgramDownscale",
+            "kCS499RProgramTargetMultiply",
         };
 
         for (size_t programId = 0; programId < kProgramCount; programId++)

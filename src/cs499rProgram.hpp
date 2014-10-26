@@ -12,6 +12,7 @@
 extern char const * const kCS499RProgramPathTracer;
 extern char const * const kCS499RProgramDebugNormal;
 extern char const * const kCS499RProgramRayStats;
+extern char const * const kCS499RProgramDownscale;
 extern char const * const kCS499RProgramTargetMultiply;
 
 #endif // _H_CS499R_PROGRAM

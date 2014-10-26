@@ -212,6 +212,30 @@ namespace CS499R
         __attribute__((aligned(16))) common_render_t render;
     } common_render_context_t;
 
+    typedef
+    struct __attribute__((aligned(16), packed)) common_downscale_context_s
+    {
+        // the src render's resolution
+        __attribute__((aligned(16))) uint32x2_t srcResolution;
+
+        // the src tile infos
+        __attribute__((aligned(16))) uint32x2_t srcTilePos;
+        __attribute__((aligned(16))) common_pow_t srcTileSize;
+
+        // the dest render's resolution
+        __attribute__((aligned(16))) uint32x2_t destResolution;
+
+        // the dest tile infos
+        __attribute__((aligned(16))) uint32x2_t destTilePos;
+        __attribute__((aligned(16))) common_pow_t destTileSize;
+
+        // invocations parameters
+        __attribute__((aligned(16))) common_pow_t downscaleFactor;
+
+        // invocations parameters
+        __attribute__((aligned(16))) float32_t multiplyFactor;
+    } common_downscale_context_t;
+
 #ifndef __CS499R_OPENCL_FILE
 } // namespace CS499R
 #endif // __CS499R_OPENCL_FILE

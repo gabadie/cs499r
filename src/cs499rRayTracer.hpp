@@ -32,7 +32,8 @@ namespace CS499R
 
         enum PrivateProgram
         {
-            kProgramTragetMultiply = kRayAlgorithmCount,
+            kProgramTragetDownscale = kRayAlgorithmCount,
+            kProgramTragetMultiply,
 
             kProgramCount
         };
