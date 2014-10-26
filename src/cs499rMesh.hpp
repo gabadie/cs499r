@@ -2,7 +2,7 @@
 #ifndef _H_CS499R_MESH
 #define _H_CS499R_MESH
 
-#include "cs499rPrefix.hpp"
+#include "cs499rCommonStruct.hpp"
 
 
 namespace CS499R
@@ -47,6 +47,12 @@ namespace CS499R
         struct Primitive
         {
             float32x3_t vertex[3];
+
+            /*
+             * Exprts to common primitive
+             */
+            void
+            exportToCommonPrimitive(common_primitive_t * outCommonPrimitive, float32x3_t vertexOffset) const;
         };
 
 

@@ -152,4 +152,27 @@ namespace CS499R
         CS499R_ASSERT(mPrimitiveCount != 0);
     }
 
+    void
+    Mesh::Primitive::exportToCommonPrimitive(common_primitive_t * outCommonPrimitive, float32x3_t vertexOffset) const
+    {
+        float32x3_t const v0 = vertex[0] + vertexOffset;
+        float32x3_t const e0 = vertex[1] - vertex[0];
+        float32x3_t const e1 = vertex[2] - vertex[0];
+        float32x3_t const normal = normalize(cross(e0, e1));
+
+        float32_t const basisDot = dot(e0, e1);
+        float32x2_t const invSquareLenght = 1.0f / float32x2_t(dot(e0, e0), dot(e1, e1));
+        float32x2_t const invSquareLenghtBasisDot = basisDot * invSquareLenght;
+        float32_t const invDet = 1.0f / (1.0f - invSquareLenghtBasisDot.x * invSquareLenghtBasisDot.y);
+        float32x2_t const factorAIdot = invDet * invSquareLenght;
+
+        outCommonPrimitive->v0 = float32x4_t(v0.x, v0.y, v0.z, normal.x);
+        outCommonPrimitive->e0 = float32x4_t(e0.x, e0.y, e0.z, normal.y);
+        outCommonPrimitive->e1 = float32x4_t(e1.x, e1.y, e1.z, normal.z);
+        outCommonPrimitive->uvMatrix.x.x = factorAIdot.x;
+        outCommonPrimitive->uvMatrix.y.x = - factorAIdot.y * invSquareLenghtBasisDot.x;
+        outCommonPrimitive->uvMatrix.x.y = - factorAIdot.x * invSquareLenghtBasisDot.y;
+        outCommonPrimitive->uvMatrix.y.y = factorAIdot.y;
+    }
+
 }
