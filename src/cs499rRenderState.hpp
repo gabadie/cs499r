@@ -159,6 +159,17 @@ namespace CS499R
         ) const;
 
         void
+        shotKickoffRenderCtx(
+            RenderShotCtx const * ctx,
+            cl_command_queue cmdQueue,
+            cl_kernel kernel,
+            cl_mem renderCtxBuffer,
+            cl_uint eventWaitListSize,
+            cl_event const * eventWaitList ,
+            cl_event * event
+        ) const;
+
+        void
         shotWaitKickoffRenderCtx(
             RenderShotCtx::kickoff_events_t * events
         ) const;

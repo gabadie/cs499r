@@ -433,18 +433,13 @@ namespace CS499R
                         auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        error |= clSetKernelArg(
-                            kernel, 0,
-                            sizeof(cl_mem), &kickoffCtxManager->buffers[currentCircularPassId]
-                        );
-                        error |= clEnqueueNDRangeKernel(
+                        shotKickoffRenderCtx(
+                            ctx,
                             cmdQueue, kernel,
-                            1, nullptr, &ctx->kickoffTileGlobalSize, &ctx->kickoffTileLocalSize,
+                            kickoffCtxManager->buffers[currentCircularPassId],
                             1, &currentPassEvent->bufferWriteDone,
                             &currentPassEvent->kickoffDone
                         );
-
-                        CS499R_ASSERT_NO_CL_ERROR(error);
                     }
 
                     passId++;
@@ -516,6 +511,33 @@ namespace CS499R
         cl_int error = clEnqueueWriteBuffer(
             cmdQueue, renderCtxBuffer, CL_FALSE,
             0, sizeof(common_render_context_t), kickoffCtx,
+            eventWaitListSize, eventWaitList,
+            event
+        );
+
+        CS499R_ASSERT_NO_CL_ERROR(error);
+    }
+
+    void
+    RenderState::shotKickoffRenderCtx(
+        RenderShotCtx const * ctx,
+        cl_command_queue cmdQueue,
+        cl_kernel kernel,
+        cl_mem renderCtxBuffer,
+        cl_uint eventWaitListSize,
+        cl_event const * eventWaitList ,
+        cl_event * event
+    ) const
+    {
+        cl_int error = 0;
+
+        error |= clSetKernelArg(
+            kernel, 0,
+            sizeof(renderCtxBuffer), &renderCtxBuffer
+        );
+        error |= clEnqueueNDRangeKernel(
+            cmdQueue, kernel,
+            1, nullptr, &ctx->kickoffTileGlobalSize, &ctx->kickoffTileLocalSize,
             eventWaitListSize, eventWaitList,
             event
         );
