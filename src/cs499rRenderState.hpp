@@ -69,6 +69,16 @@ namespace CS499R
         static size_t const kWarpSizefactor = 2;
 
 
+        // --------------------------------------------------------------------- CONSTANTS
+
+        struct ShotIteration
+        {
+            size_t invocationId;
+            size_t kickoffTileId;
+            size2_t subPixel;
+        };
+
+
         // --------------------------------------------------------------------- METHODES
 
         /*
@@ -134,6 +144,18 @@ namespace CS499R
             SceneBuffer const * sceneBuffer,
             RenderAbstractTracker * renderTracker
         );
+
+        void
+        shotUpdateKickoffRenderCtx(
+            RenderShotCtx const * ctx,
+            ShotIteration const * shotIteration,
+            common_render_context_t * renderCtx,
+            cl_command_queue cmdQueue,
+            cl_mem renderCtxBuffer,
+            cl_uint eventWaitListSize,
+            cl_event const * eventWaitList ,
+            cl_event * event
+        ) const;
 
         void
         shotFree(RenderShotCtx const * ctx) const;

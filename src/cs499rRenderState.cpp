@@ -395,42 +395,36 @@ namespace CS499R
 
         renderTracker->eventShotProgress(0, progressCount);
 
+        ShotIteration it;
+
         // render loops
-        for (size_t invocationId = 0; invocationId < ctx->kickoffInvocationCount; invocationId++)
+        for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount; it.invocationId++)
         {
-            for (size_t subPixelY = 0; subPixelY < ctx->pixelBorderSubdivisions; subPixelY++)
+            for (it.subPixel.y = 0; it.subPixel.y < ctx->pixelBorderSubdivisions; it.subPixel.y++)
             {
-                for (size_t subPixelX = 0; subPixelX < ctx->pixelBorderSubdivisions; subPixelX++)
+                for (it.subPixel.x = 0; it.subPixel.x < ctx->pixelBorderSubdivisions; it.subPixel.x++)
                 {
                     size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
                     auto const kickoffCtxArray = ctx->kickoffCtxCircularArray + ctx->kickoffTileCount * currentCircularPassId;
 
                     // upload render context buffers for this pass
-                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
                     {
-                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
-                        auto const kickoffCtx = kickoffCtxArray + kickoffTileId;
+                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + it.kickoffTileId;
+                        auto const kickoffCtx = kickoffCtxArray + it.kickoffTileId;
 
                         auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
-                        kickoffCtx->render.passId = (
-                            invocationId * ctx->pixelSubdivisions +
-                            subPixelY * ctx->pixelBorderSubdivisions +
-                            subPixelX
-                        );
-
-                        kickoffCtx->render.pixelSubpixelPos.x = subPixelX;
-                        kickoffCtx->render.pixelSubpixelPos.y = subPixelY;
-
-                        error = clEnqueueWriteBuffer(
-                            cmdQueue, kickoffCtxManager->buffers[currentCircularPassId], CL_FALSE,
-                            0, sizeof(common_render_context_t), kickoffCtx,
+                        shotUpdateKickoffRenderCtx(
+                            ctx,
+                            &it,
+                            kickoffCtx,
+                            cmdQueue,
+                            kickoffCtxManager->buffers[currentCircularPassId],
                             0, nullptr,
                             &currentPassEvent->bufferWriteDone
                         );
-
-                        CS499R_ASSERT_NO_CL_ERROR(error);
                     }
 
                     // kickoff this pass
@@ -506,6 +500,37 @@ namespace CS499R
 
             multiplyRenderTarget(multiplyFactor);
         }
+    }
+
+    void
+    RenderState::shotUpdateKickoffRenderCtx(
+        RenderShotCtx const * ctx,
+        ShotIteration const * shotIteration,
+        common_render_context_t * kickoffCtx,
+        cl_command_queue cmdQueue,
+        cl_mem renderCtxBuffer,
+        cl_uint eventWaitListSize,
+        cl_event const * eventWaitList,
+        cl_event * event
+    ) const
+    {
+        kickoffCtx->render.passId = (
+            shotIteration->invocationId * ctx->pixelSubdivisions +
+            shotIteration->subPixel.y * ctx->pixelBorderSubdivisions +
+            shotIteration->subPixel.x
+        );
+
+        kickoffCtx->render.pixelSubpixelPos.x = shotIteration->subPixel.x;
+        kickoffCtx->render.pixelSubpixelPos.y = shotIteration->subPixel.y;
+
+        cl_int error = clEnqueueWriteBuffer(
+            cmdQueue, renderCtxBuffer, CL_FALSE,
+            0, sizeof(common_render_context_t), kickoffCtx,
+            eventWaitListSize, eventWaitList,
+            event
+        );
+
+        CS499R_ASSERT_NO_CL_ERROR(error);
     }
 
     void
