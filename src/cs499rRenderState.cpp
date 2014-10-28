@@ -458,12 +458,7 @@ namespace CS499R
                             auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                             auto const nextPassEvent = kickoffCtxManager->events + nextCircularPassId;
 
-                            error |= clWaitForEvents(1, &nextPassEvent->bufferWriteDone);
-                            error |= clWaitForEvents(1, &nextPassEvent->kickoffDone);
-                            error |= clReleaseEvent(nextPassEvent->bufferWriteDone);
-                            error |= clReleaseEvent(nextPassEvent->kickoffDone);
-
-                            CS499R_ASSERT_NO_CL_ERROR(error);
+                            shotWaitKickoffRenderCtx(nextPassEvent);
                         }
 
                         renderTracker->eventShotProgress(progressId, progressCount);
@@ -483,12 +478,7 @@ namespace CS499R
                 auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
                 auto const circularPassEvent = kickoffCtxManager->events + circularPassId;
 
-                error |= clWaitForEvents(1, &circularPassEvent->bufferWriteDone);
-                error |= clWaitForEvents(1, &circularPassEvent->kickoffDone);
-                error |= clReleaseEvent(circularPassEvent->bufferWriteDone);
-                error |= clReleaseEvent(circularPassEvent->kickoffDone);
-
-                CS499R_ASSERT_NO_CL_ERROR(error);
+                shotWaitKickoffRenderCtx(circularPassEvent);
             }
 
             renderTracker->eventShotProgress(progressId, progressCount);
@@ -529,6 +519,21 @@ namespace CS499R
             eventWaitListSize, eventWaitList,
             event
         );
+
+        CS499R_ASSERT_NO_CL_ERROR(error);
+    }
+
+    void
+    RenderState::shotWaitKickoffRenderCtx(
+        RenderShotCtx::kickoff_events_t * events
+    ) const
+    {
+        cl_int error = 0;
+
+        error |= clWaitForEvents(1, &events->bufferWriteDone);
+        error |= clWaitForEvents(1, &events->kickoffDone);
+        error |= clReleaseEvent(events->bufferWriteDone);
+        error |= clReleaseEvent(events->kickoffDone);
 
         CS499R_ASSERT_NO_CL_ERROR(error);
     }

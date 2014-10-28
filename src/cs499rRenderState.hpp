@@ -4,6 +4,7 @@
 
 #include "cs499rCommonStruct.hpp"
 #include "cs499rEnums.hpp"
+#include "cs499rRenderShotCtx.hpp"
 
 
 namespace CS499R
@@ -155,6 +156,11 @@ namespace CS499R
             cl_uint eventWaitListSize,
             cl_event const * eventWaitList ,
             cl_event * event
+        ) const;
+
+        void
+        shotWaitKickoffRenderCtx(
+            RenderShotCtx::kickoff_events_t * events
         ) const;
 
         void
