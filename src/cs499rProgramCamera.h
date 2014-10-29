@@ -21,8 +21,8 @@ camera_first_ray(
             (0.5f / (float32_t) shotCx->render.subpixelPerPixelBorder);
 
     float32x2_t areaCoord;
-    areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.resolution.x);
-    areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.resolution.y);
+    areaCoord.x = subpixelCoord.x / ((float32_t)shotCx->render.virtualTargetResolution.x);
+    areaCoord.y = subpixelCoord.y / ((float32_t)shotCx->render.virtualTargetResolution.y);
     areaCoord = areaCoord * 2.0f - 1.0f;
 
     float32x3_t rayFocusPoint = (

@@ -32,20 +32,23 @@ kernel_main(
     sample_context_t * const sampleCx = sampleCxArray;
 
 #if CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_CPT
-    uint32x2_t const pixelPos = kernel_pixel_pos_cpt(coherencyCx, sampleCx);
+    uint32x2_t const virtualPixelPos = kernel_pixel_pos_cpt(coherencyCx, sampleCx);
 
 #elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_ICPT
-    uint32x2_t const pixelPos = kernel_pixel_pos_icpt(coherencyCx, sampleCx);
+    uint32x2_t const virtualPixelPos = kernel_pixel_pos_icpt(coherencyCx, sampleCx);
 
 #elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_DUMMY
-    uint32x2_t const pixelPos = kernel_pixel_pos_dummy(coherencyCx, sampleCx);
+    uint32x2_t const virtualPixelPos = kernel_pixel_pos_dummy(coherencyCx, sampleCx);
 
 #else
 # error "invalid CS499R_CONFIG_PIXELPOS"
 
 #endif // CS499R_CONFIG_PIXELPOS
 
-    if (pixelPos.x >= coherencyCx->render.resolution.x || pixelPos.y >= coherencyCx->render.resolution.y)
+    if (
+        virtualPixelPos.x >= coherencyCx->render.virtualTargetResolution.x ||
+        virtualPixelPos.y >= coherencyCx->render.virtualTargetResolution.y
+    )
     {
         return;
     }
@@ -58,7 +61,7 @@ kernel_main(
 
     for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleIterationCount; i++)
     {
-        camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+        camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
         scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
         sampleColor += sampleCx->rayInterMeshInstance->emitColor;
@@ -79,7 +82,7 @@ kernel_main(
     /*
      * Here is the normal debuger ray tracer's code
      */
-    camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+    camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
     scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
     __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
@@ -104,7 +107,7 @@ kernel_main(
 
     sampleCx->stats = 0;
 
-    camera_first_ray(sampleCx, coherencyCx, pixelPos, coherencyCx->render.pixelSubpixelPos);
+    camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
     scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
 
     __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
@@ -139,11 +142,15 @@ kernel_main(
 #endif // _CL_DEBUG
 
     { // save sample color
-        uint32_t const pixelId = pixelPos.x + pixelPos.y * coherencyCx->render.resolution.x;
+        uint32x2_t const targetVirtualPixelPos = virtualPixelPos - coherencyCx->render.targetVirtualOffset;
+        uint32_t const targetVirtualPixelId = (
+            targetVirtualPixelPos.x +
+            targetVirtualPixelPos.y * coherencyCx->render.targetResolution.x
+        );
 
-        renderTarget[pixelId * 3 + 0] += sampleColor.x;
-        renderTarget[pixelId * 3 + 1] += sampleColor.y;
-        renderTarget[pixelId * 3 + 2] += sampleColor.z;
+        renderTarget[targetVirtualPixelId * 3 + 0] += sampleColor.x;
+        renderTarget[targetVirtualPixelId * 3 + 1] += sampleColor.y;
+        renderTarget[targetVirtualPixelId * 3 + 2] += sampleColor.z;
     }
 }
 

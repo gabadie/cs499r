@@ -169,8 +169,15 @@ namespace CS499R
     typedef
     struct __attribute__((aligned(16), packed)) common_coherency_render_s
     {
-        // the render's resolution
-        __attribute__((aligned(16))) uint32x2_t resolution;
+        // the current virtual render's resolution (no matter if we are
+        // rendering in a super tile or directly into the final target)
+        __attribute__((aligned(16))) uint32x2_t virtualTargetResolution;
+
+        // the render target's resolution
+        __attribute__((aligned(16))) uint32x2_t targetResolution;
+
+        // the render target's virtual offset in the virtual target (varying per super tile)
+        __attribute__((aligned(16))) uint32x2_t targetVirtualOffset;
 
         // the render's subpixel count per pixel border
         __attribute__((aligned(16))) uint32_t subpixelPerPixelBorder;

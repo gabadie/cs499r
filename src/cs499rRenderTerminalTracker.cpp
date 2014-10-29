@@ -14,11 +14,11 @@ namespace CS499R
     void
     RenderTerminalTracker::eventShotStart(RenderShotCtx const * ctx)
     {
-        mRayCount = ctx->renderResolution.x * ctx->renderResolution.y * ctx->pixelRayCount();
+        mRayCount = ctx->renderTargetResolution.x * ctx->renderTargetResolution.y * ctx->pixelRayCount();
 
         std::cout << "Input:" << std::endl;
-        std::cout << "    Render width:             " << ctx->renderResolution.x << " px" << std::endl;
-        std::cout << "    Render height:            " << ctx->renderResolution.y << " px" << std::endl;
+        std::cout << "    Render width:             " << ctx->renderTargetResolution.x << " px" << std::endl;
+        std::cout << "    Render height:            " << ctx->renderTargetResolution.y << " px" << std::endl;
         std::cout << "    Sub-pixels:               " << ctx->pixelSubdivisions() << std::endl;
         std::cout << "    Sample per sub-pixels:    " << ctx->samplesPerSubdivisions << std::endl;
         std::cout << "    Recursion per samples:    " << ctx->recursionPerSample << std::endl;

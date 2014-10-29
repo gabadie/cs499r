@@ -46,6 +46,17 @@
 # define CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING 1
 #endif
 
+/*
+ * Enables the super-sampling rendering
+ *
+ *  This optimisation renders per tile, but with a bigger resolution, so that
+ *  the CBT and ICBT coherency tiles' area is reduced. Then each tile are
+ *  downscaled on the final render target.
+ */
+#ifndef CS499R_CONFIG_ENABLE_SUPERSAMPLING
+# define CS499R_CONFIG_ENABLE_SUPERSAMPLING 0
+#endif
+
 
 /*
  * Configures the pixels gathering strategy per warp

@@ -259,11 +259,12 @@ namespace CS499R
 
     // ------------------------------------------------------------------------- ARITHMETICS
     template <typename T>
+    constexpr
     inline
     bool
     isPow2(T x)
     {
-        return (x - 1 & x) == 0;
+        return (((x - 1) & x) == 0) && (x != 0);
     }
 
 

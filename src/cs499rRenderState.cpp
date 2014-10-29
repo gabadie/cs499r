@@ -214,8 +214,7 @@ namespace CS499R
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
-        ctx->renderResolution.x = mRenderTarget->width();
-        ctx->renderResolution.y = mRenderTarget->height();
+        ctx->renderTargetResolution = mRenderTarget->resolution();
 
         bool const debugKernel = mRayAlgorithm != kRayAlgorithmPathTracer;
         ctx->pixelBorderSubdivisions = debugKernel ? 1 : mPixelBorderSubdivisions;
@@ -231,8 +230,8 @@ namespace CS499R
          */
         ctx->kickoffTileLocalSize = warpSize * kWarpSizefactor;
         ctx->kickoffTileGrid = size2_t(
-            (ctx->renderResolution.x + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
-            (ctx->renderResolution.y + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
+            (ctx->virtualTargetResolution().x + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
+            (ctx->virtualTargetResolution().y + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
         );
 
         { // validation
@@ -265,8 +264,11 @@ namespace CS499R
         templateCtx->scene.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
 
         // init render
-        templateCtx->render.resolution.x = mRenderTarget->width();
-        templateCtx->render.resolution.y = mRenderTarget->height();
+        templateCtx->render.targetResolution.x = mRenderTarget->width();
+        templateCtx->render.targetResolution.y = mRenderTarget->height();
+        templateCtx->render.targetVirtualOffset = 0;
+        templateCtx->render.virtualTargetResolution.x = ctx->virtualTargetResolution().x;
+        templateCtx->render.virtualTargetResolution.y = ctx->virtualTargetResolution().y;
         templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
 
         templateCtx->render.passCount = ctx->pixelSubdivisions() * ctx->kickoffInvocationCount();
