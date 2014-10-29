@@ -40,23 +40,34 @@ namespace CS499R
 
     private:
         // --------------------------------------------------------------------- STRUCTS
-        struct kickoff_events_t
+        struct kickoff_entry_t
         {
+            cl_mem buffer;
             cl_event bufferWriteDone;
             cl_event kickoffDone;
-        };
-
-        struct kickoff_ctx_manager_t
-        {
-            cl_mem buffers[kHostAheadCommandCount];
-            kickoff_events_t events[kHostAheadCommandCount];
         };
 
 
         // --------------------------------------------------------------------- MEMBERS
 
         common_render_context_t * kickoffCtxCircularArray;
-        kickoff_ctx_manager_t * kickoffCtxManagers;
+        kickoff_entry_t * kickoffEntries;
+
+
+        // --------------------------------------------------------------------- METHOD
+
+        /*
+         * Gets an entry from the stream pass ID and tile ID
+         */
+        inline
+        kickoff_entry_t *
+        kickoffEntry(size_t streamPassId, size_t tileId) const
+        {
+            CS499R_ASSERT(streamPassId <= kHostAheadCommandCount);
+            CS499R_ASSERT(tileId <= kickoffTileCount);
+
+            return kickoffEntries + streamPassId * kickoffTileCount + tileId;
+        }
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS

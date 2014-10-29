@@ -170,8 +170,8 @@ namespace CS499R
         ) const;
 
         void
-        shotWaitKickoffRenderCtx(
-            RenderShotCtx::kickoff_events_t * events
+        shotWaitKickoffEntry(
+            RenderShotCtx::kickoff_entry_t * entry
         ) const;
 
         void

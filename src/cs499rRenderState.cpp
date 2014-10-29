@@ -248,7 +248,7 @@ namespace CS499R
 
         { // memory allocations
             ctx->kickoffCtxCircularArray = alloc<common_render_context_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
-            ctx->kickoffCtxManagers = alloc<RenderShotCtx::kickoff_ctx_manager_t>(ctx->kickoffTileCount);
+            ctx->kickoffEntries = alloc<RenderShotCtx::kickoff_entry_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
         }
     }
 
@@ -338,7 +338,9 @@ namespace CS499R
 
                 for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
                 {
-                    ctx->kickoffCtxManagers[kickoffTileId].buffers[circularPassId] = clCreateBuffer(context,
+                    auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
+
+                    entry->buffer = clCreateBuffer(context,
                         CL_MEM_READ_ONLY,
                         sizeof(*templateCtx), nullptr,
                         &error
@@ -411,34 +413,31 @@ namespace CS499R
                     // upload render context buffers for this pass
                     for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
                     {
-                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + it.kickoffTileId;
+                        auto const entry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
                         auto const kickoffCtx = kickoffCtxArray + it.kickoffTileId;
-
-                        auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
 
                         shotUpdateKickoffRenderCtx(
                             ctx,
                             &it,
                             kickoffCtx,
                             cmdQueue,
-                            kickoffCtxManager->buffers[currentCircularPassId],
+                            entry->buffer,
                             0, nullptr,
-                            &currentPassEvent->bufferWriteDone
+                            &entry->bufferWriteDone
                         );
                     }
 
                     // kickoff this pass
                     for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
                     {
-                        auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
-                        auto const currentPassEvent = kickoffCtxManager->events + currentCircularPassId;
+                        auto const entry = ctx->kickoffEntry(currentCircularPassId, kickoffTileId);
 
                         shotKickoffRenderCtx(
                             ctx,
                             cmdQueue, kernel,
-                            kickoffCtxManager->buffers[currentCircularPassId],
-                            1, &currentPassEvent->bufferWriteDone,
-                            &currentPassEvent->kickoffDone
+                            entry->buffer,
+                            1, &entry->bufferWriteDone,
+                            &entry->kickoffDone
                         );
                     }
 
@@ -450,10 +449,9 @@ namespace CS499R
 
                         for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
                         {
-                            auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
-                            auto const nextPassEvent = kickoffCtxManager->events + nextCircularPassId;
+                            auto const entry = ctx->kickoffEntry(nextCircularPassId, kickoffTileId);
 
-                            shotWaitKickoffRenderCtx(nextPassEvent);
+                            shotWaitKickoffEntry(entry);
                         }
 
                         renderTracker->eventShotProgress(progressId, progressCount);
@@ -470,10 +468,9 @@ namespace CS499R
         {
             for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
             {
-                auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
-                auto const circularPassEvent = kickoffCtxManager->events + circularPassId;
+                auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
-                shotWaitKickoffRenderCtx(circularPassEvent);
+                shotWaitKickoffEntry(entry);
             }
 
             renderTracker->eventShotProgress(progressId, progressCount);
@@ -546,16 +543,16 @@ namespace CS499R
     }
 
     void
-    RenderState::shotWaitKickoffRenderCtx(
-        RenderShotCtx::kickoff_events_t * events
+    RenderState::shotWaitKickoffEntry(
+        RenderShotCtx::kickoff_entry_t * entry
     ) const
     {
         cl_int error = 0;
 
-        error |= clWaitForEvents(1, &events->bufferWriteDone);
-        error |= clWaitForEvents(1, &events->kickoffDone);
-        error |= clReleaseEvent(events->bufferWriteDone);
-        error |= clReleaseEvent(events->kickoffDone);
+        error |= clWaitForEvents(1, &entry->bufferWriteDone);
+        error |= clWaitForEvents(1, &entry->kickoffDone);
+        error |= clReleaseEvent(entry->bufferWriteDone);
+        error |= clReleaseEvent(entry->kickoffDone);
 
         CS499R_ASSERT_NO_CL_ERROR(error);
     }
@@ -563,19 +560,19 @@ namespace CS499R
     void
     RenderState::shotFree(RenderShotCtx const * ctx) const
     {
-        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+        for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            auto const kickoffCtxManager = ctx->kickoffCtxManagers + kickoffTileId;
-
-            for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
             {
-                cl_int error = clReleaseMemObject(kickoffCtxManager->buffers[circularPassId]);
+                auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
+
+                cl_int error = clReleaseMemObject(entry->buffer);
                 CS499R_ASSERT_NO_CL_ERROR(error);
             }
         }
 
         free(ctx->kickoffCtxCircularArray);
-        free(ctx->kickoffCtxManagers);
+        free(ctx->kickoffEntries);
     }
 
 
