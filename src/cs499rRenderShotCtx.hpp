@@ -42,7 +42,8 @@ namespace CS499R
         // --------------------------------------------------------------------- STRUCTS
         struct kickoff_entry_t
         {
-            cl_mem buffer;
+            common_render_context_t ctx;
+            cl_mem ctxBuffer;
             cl_event bufferWriteDone;
             cl_event kickoffDone;
         };
@@ -50,11 +51,20 @@ namespace CS499R
 
         // --------------------------------------------------------------------- MEMBERS
 
-        common_render_context_t * kickoffCtxCircularArray;
         kickoff_entry_t * kickoffEntries;
 
 
         // --------------------------------------------------------------------- METHOD
+
+        /*
+         * Allocs kickoff entries
+         */
+        inline
+        void
+        allocKickoffEntries()
+        {
+            kickoffEntries = alloc<kickoff_entry_t>(kickoffTileCount * kHostAheadCommandCount);
+        }
 
         /*
          * Gets an entry from the stream pass ID and tile ID
@@ -69,6 +79,21 @@ namespace CS499R
             return kickoffEntries + streamPassId * kickoffTileCount + tileId;
         }
 
+
+        // --------------------------------------------------------------------- IDLE
+
+        RenderShotCtx()
+        {
+            kickoffEntries = nullptr;
+        }
+
+        ~RenderShotCtx()
+        {
+            if (kickoffEntries != nullptr)
+            {
+                free(kickoffEntries);
+            }
+        }
 
         // --------------------------------------------------------------------- FRIENDSHIPS
 

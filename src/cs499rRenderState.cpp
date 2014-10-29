@@ -40,16 +40,24 @@ namespace CS499R
         CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
 
         RenderShotCtx shotCtx;
-        common_render_context_t templateCtx;
 
         shotInit(&shotCtx);
 
         renderTracker->eventShotStart(&shotCtx);
 
-        shotInitTemplateCtx(&shotCtx, sceneBuffer, camera, &templateCtx);
-        shotInitCircularCtx(&shotCtx, &templateCtx);
+        { // init
+            common_render_context_t templateCtx;
+
+            shotInitTemplateCtx(&shotCtx, sceneBuffer, camera, &templateCtx);
+            shotInitKickoffEntries(&shotCtx, &templateCtx);
+            shotAllocKickoffEntriesBuffer(&shotCtx);
+        }
+
+        // kick off
         shotKickoff(&shotCtx, sceneBuffer, renderTracker);
-        shotFree(&shotCtx);
+
+        // free
+        shotFreeKickoffEntriesBuffer(&shotCtx);
 
         renderTracker->eventShotEnd();
     }
@@ -247,8 +255,7 @@ namespace CS499R
         }
 
         { // memory allocations
-            ctx->kickoffCtxCircularArray = alloc<common_render_context_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
-            ctx->kickoffEntries = alloc<RenderShotCtx::kickoff_entry_t>(ctx->kickoffTileCount * kHostAheadCommandCount);
+            ctx->allocKickoffEntries();
         }
     }
 
@@ -315,54 +322,65 @@ namespace CS499R
     }
 
     void
-    RenderState::shotInitCircularCtx(
+    RenderState::shotInitKickoffEntries(
         RenderShotCtx const * ctx,
         common_render_context_t const * templateCtx
     ) const
     {
-        cl_int error = 0;
-        cl_context const context = mRenderTarget->mRayTracer->mContext;
-
         // init render context circular pass 0
         for (size_t kickoffTileIdY = 0; kickoffTileIdY < ctx->kickoffTileGrid.y; kickoffTileIdY++)
         {
             for (size_t kickoffTileIdX = 0; kickoffTileIdX < ctx->kickoffTileGrid.x; kickoffTileIdX++)
             {
                 size_t const kickoffTileId = kickoffTileIdX + kickoffTileIdY * ctx->kickoffTileGrid.x;
-                auto const kickoffCtx = ctx->kickoffCtxCircularArray + kickoffTileId;
 
-                memcpy(kickoffCtx, templateCtx, sizeof(*templateCtx));
+                auto const kickoffEntry = ctx->kickoffEntry(0, kickoffTileId);
 
-                kickoffCtx->render.kickoffTilePos.x = ctx->kickoffTileSize * kickoffTileIdX;
-                kickoffCtx->render.kickoffTilePos.y = ctx->kickoffTileSize * kickoffTileIdY;
+                memcpy(&kickoffEntry->ctx, templateCtx, sizeof(*templateCtx));
 
-                for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
-                {
-                    auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
-
-                    entry->buffer = clCreateBuffer(context,
-                        CL_MEM_READ_ONLY,
-                        sizeof(*templateCtx), nullptr,
-                        &error
-                    );
-                }
-
-                CS499R_ASSERT_NO_CL_ERROR(error);
+                kickoffEntry->ctx.render.kickoffTilePos.x = ctx->kickoffTileSize * kickoffTileIdX;
+                kickoffEntry->ctx.render.kickoffTilePos.y = ctx->kickoffTileSize * kickoffTileIdY;
             }
         }
 
         // clones the render context circular pass 0 into others
         for (size_t circularPassId = 1; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            auto const kickoffCtxArray = ctx->kickoffCtxCircularArray + ctx->kickoffTileCount * circularPassId;
-
             for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
             {
+                auto const kickoffEntrySrc = ctx->kickoffEntry(0, kickoffTileId);
+                auto const kickoffEntryDest = ctx->kickoffEntry(circularPassId, kickoffTileId);
+
                 memcpy(
-                    kickoffCtxArray + kickoffTileId,
-                    ctx->kickoffCtxCircularArray + kickoffTileId,
-                    sizeof(*templateCtx)
+                    &kickoffEntryDest->ctx,
+                    &kickoffEntrySrc->ctx,
+                    sizeof(kickoffEntryDest->ctx)
                 );
+            }
+        }
+    }
+
+    void
+    RenderState::shotAllocKickoffEntriesBuffer(
+        RenderShotCtx const * ctx
+    ) const
+    {
+        cl_int error = 0;
+        cl_context const context = mRenderTarget->mRayTracer->mContext;
+
+        for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
+        {
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+            {
+                auto const kickoffEntry = ctx->kickoffEntry(circularPassId, kickoffTileId);
+
+                kickoffEntry->ctxBuffer = clCreateBuffer(context,
+                    CL_MEM_READ_ONLY,
+                    sizeof(kickoffEntry->ctx), nullptr,
+                    &error
+                );
+
+                CS499R_ASSERT_NO_CL_ERROR(error);
             }
         }
     }
@@ -408,36 +426,33 @@ namespace CS499R
                 {
                     size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
-                    auto const kickoffCtxArray = ctx->kickoffCtxCircularArray + ctx->kickoffTileCount * currentCircularPassId;
-
                     // upload render context buffers for this pass
                     for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
                     {
-                        auto const entry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
-                        auto const kickoffCtx = kickoffCtxArray + it.kickoffTileId;
+                        auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
                         shotUpdateKickoffRenderCtx(
                             ctx,
                             &it,
-                            kickoffCtx,
+                            &kickoffEntry->ctx,
                             cmdQueue,
-                            entry->buffer,
+                            kickoffEntry->ctxBuffer,
                             0, nullptr,
-                            &entry->bufferWriteDone
+                            &kickoffEntry->bufferWriteDone
                         );
                     }
 
                     // kickoff this pass
-                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
                     {
-                        auto const entry = ctx->kickoffEntry(currentCircularPassId, kickoffTileId);
+                        auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
                         shotKickoffRenderCtx(
                             ctx,
                             cmdQueue, kernel,
-                            entry->buffer,
-                            1, &entry->bufferWriteDone,
-                            &entry->kickoffDone
+                            kickoffEntry->ctxBuffer,
+                            1, &kickoffEntry->bufferWriteDone,
+                            &kickoffEntry->kickoffDone
                         );
                     }
 
@@ -558,7 +573,7 @@ namespace CS499R
     }
 
     void
-    RenderState::shotFree(RenderShotCtx const * ctx) const
+    RenderState::shotFreeKickoffEntriesBuffer(RenderShotCtx const * ctx) const
     {
         for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
@@ -566,13 +581,10 @@ namespace CS499R
             {
                 auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
-                cl_int error = clReleaseMemObject(entry->buffer);
+                cl_int error = clReleaseMemObject(entry->ctxBuffer);
                 CS499R_ASSERT_NO_CL_ERROR(error);
             }
         }
-
-        free(ctx->kickoffCtxCircularArray);
-        free(ctx->kickoffEntries);
     }
 
 

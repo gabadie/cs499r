@@ -134,9 +134,14 @@ namespace CS499R
         ) const;
 
         void
-        shotInitCircularCtx(
+        shotInitKickoffEntries(
             RenderShotCtx const * ctx,
             common_render_context_t const * templateCtx
+        ) const;
+
+        void
+        shotAllocKickoffEntriesBuffer(
+            RenderShotCtx const * ctx
         ) const;
 
         void
@@ -175,7 +180,7 @@ namespace CS499R
         ) const;
 
         void
-        shotFree(RenderShotCtx const * ctx) const;
+        shotFreeKickoffEntriesBuffer(RenderShotCtx const * ctx) const;
 
     };
 
