@@ -222,15 +222,7 @@ namespace CS499R
         ctx->samplesPerSubdivisions = debugKernel ? 1 : mSamplesPerSubdivisions;
         ctx->recursionPerSample = debugKernel ? 1 : mRecursionPerSample;
 
-        ctx->pixelSubdivisions = ctx->pixelBorderSubdivisions * ctx->pixelBorderSubdivisions;
-        ctx->pixelSampleCount = ctx->pixelSubdivisions * ctx->samplesPerSubdivisions;
-        ctx->pixelRayCount = ctx->pixelSampleCount * ctx->recursionPerSample;
-
-        ctx->kickoffSampleIterationCount = min(ctx->samplesPerSubdivisions, kMaxKickoffSampleIteration);
-        ctx->kickoffInvocationCount =ctx-> samplesPerSubdivisions / ctx->kickoffSampleIterationCount;
-
         ctx->kickoffTileSize = sqrt(kThreadsPerTilesTarget);
-        ctx->kickoffTileGlobalSize = ctx->kickoffTileSize * ctx->kickoffTileSize;
 
         /*
          * We multiply here between the local size and warp size so that we
@@ -238,20 +230,16 @@ namespace CS499R
          * to much, because it will also decrease the warp coherency
          */
         ctx->kickoffTileLocalSize = warpSize * kWarpSizefactor;
-        ctx->coherencyTileSize = sqrt(ceilSquarePow2(ctx->kickoffTileLocalSize));
         ctx->kickoffTileGrid = size2_t(
             (ctx->renderResolution.x + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize,
             (ctx->renderResolution.y + ctx->kickoffTileSize - 1) / ctx->kickoffTileSize
         );
-        ctx->kickoffTileCount = ctx->kickoffTileGrid.x * ctx->kickoffTileGrid.y;
 
         { // validation
-            CS499R_ASSERT((ctx->kickoffTileGlobalSize % ctx->kickoffTileLocalSize) == 0);
+            CS499R_ASSERT((ctx->kickoffTileGlobalSize() % ctx->kickoffTileLocalSize) == 0);
 
-            CS499R_ASSERT((ctx->kickoffTileLocalSize % ctx->coherencyTileSize) == 0);
             CS499R_ASSERT((ctx->kickoffTileLocalSize % warpSize) == 0);
             CS499R_ASSERT(ctx->kickoffTileLocalSize <= CS499R_MAX_GROUP_SIZE);
-            CS499R_ASSERT((ctx->kickoffTileSize % ctx->coherencyTileSize) == 0);
         }
 
         { // memory allocations
@@ -281,19 +269,21 @@ namespace CS499R
         templateCtx->render.resolution.y = mRenderTarget->height();
         templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
 
-        templateCtx->render.passCount = ctx->pixelSubdivisions * ctx->kickoffInvocationCount;
+        templateCtx->render.passCount = ctx->pixelSubdivisions() * ctx->kickoffInvocationCount();
 
         templateCtx->render.kickoffTileSize = ctx->kickoffTileSize;
-        templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount;
+        templateCtx->render.kickoffSampleIterationCount = ctx->kickoffSampleIterationCount();
         templateCtx->render.kickoffSampleRecursionCount = ctx->recursionPerSample;
 
         { // render context's CBT init
-            templateCtx->render.cpt.coherencyTileSize = ctx->coherencyTileSize;
+            size_t const coherencyTileSize = sqrt(ceilSquarePow2(ctx->kickoffTileLocalSize));
+
+            templateCtx->render.cpt.coherencyTileSize = coherencyTileSize;
             templateCtx->render.cpt.coherencyTilePerKickoffTileBorder = (
-                ctx->kickoffTileSize / ctx->coherencyTileSize
+                ctx->kickoffTileSize / coherencyTileSize
             );
             templateCtx->render.cpt.groupPerCoherencyTile = (
-                (ctx->coherencyTileSize * ctx->coherencyTileSize) /
+                (coherencyTileSize * coherencyTileSize) /
                 ctx->kickoffTileLocalSize
             );
 
@@ -346,7 +336,7 @@ namespace CS499R
         // clones the render context circular pass 0 into others
         for (size_t circularPassId = 1; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
             {
                 auto const kickoffEntrySrc = ctx->kickoffEntry(0, kickoffTileId);
                 auto const kickoffEntryDest = ctx->kickoffEntry(circularPassId, kickoffTileId);
@@ -370,7 +360,7 @@ namespace CS499R
 
         for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
             {
                 auto const kickoffEntry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
@@ -408,7 +398,7 @@ namespace CS499R
         }
 
         size_t passId = 0;
-        size_t const passCount = ctx->kickoffInvocationCount * ctx->pixelSubdivisions;
+        size_t const passCount = ctx->kickoffInvocationCount() * ctx->pixelSubdivisions();
 
         size_t progressId = 1;
         size_t const progressCount = passCount;
@@ -418,7 +408,7 @@ namespace CS499R
         ShotIteration it;
 
         // render loops
-        for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount; it.invocationId++)
+        for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount(); it.invocationId++)
         {
             for (it.subPixel.y = 0; it.subPixel.y < ctx->pixelBorderSubdivisions; it.subPixel.y++)
             {
@@ -427,7 +417,7 @@ namespace CS499R
                     size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
                     // upload render context buffers for this pass
-                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
+                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
                     {
                         auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
@@ -443,7 +433,7 @@ namespace CS499R
                     }
 
                     // kickoff this pass
-                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount; it.kickoffTileId++)
+                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
                     {
                         auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
@@ -462,7 +452,7 @@ namespace CS499R
                     {
                         size_t const nextCircularPassId = passId % kHostAheadCommandCount;
 
-                        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+                        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
                         {
                             auto const entry = ctx->kickoffEntry(nextCircularPassId, kickoffTileId);
 
@@ -481,7 +471,7 @@ namespace CS499R
         // wait all remaining passes
         for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
         {
-            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
             {
                 auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
@@ -493,7 +483,7 @@ namespace CS499R
         }
 
         { // render target multiplication
-            float32_t const multiplyFactor = 1.0f / float32_t(ctx->pixelSampleCount);
+            float32_t const multiplyFactor = 1.0f / float32_t(ctx->pixelSampleCount());
 
             multiplyRenderTarget(multiplyFactor);
         }
@@ -512,7 +502,7 @@ namespace CS499R
     ) const
     {
         kickoffCtx->render.passId = (
-            shotIteration->invocationId * ctx->pixelSubdivisions +
+            shotIteration->invocationId * ctx->pixelSubdivisions() +
             shotIteration->subPixel.y * ctx->pixelBorderSubdivisions +
             shotIteration->subPixel.x
         );
@@ -543,13 +533,15 @@ namespace CS499R
     {
         cl_int error = 0;
 
+        size_t const globalSize = ctx->kickoffTileGlobalSize();
+
         error |= clSetKernelArg(
             kernel, 0,
             sizeof(renderCtxBuffer), &renderCtxBuffer
         );
         error |= clEnqueueNDRangeKernel(
             cmdQueue, kernel,
-            1, nullptr, &ctx->kickoffTileGlobalSize, &ctx->kickoffTileLocalSize,
+            1, nullptr, &globalSize, &ctx->kickoffTileLocalSize,
             eventWaitListSize, eventWaitList,
             event
         );
@@ -577,7 +569,7 @@ namespace CS499R
     {
         for (size_t circularPassId = 0; circularPassId < kHostAheadCommandCount; circularPassId++)
         {
-            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount; kickoffTileId++)
+            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
             {
                 auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
@@ -590,7 +582,6 @@ namespace CS499R
 
     // ------------------------------------------------------------------------- NASTY C++ WORK AROUNDS
 
-    size_t const RenderState::kMaxKickoffSampleIteration;
     size_t const RenderState::kThreadsPerTilesTarget;
     size_t const RenderState::kWarpSizefactor;
 

@@ -9,6 +9,7 @@ namespace CS499R
 {
 
     size_t const kHostAheadCommandCount = 10;
+    size_t const kMaxKickoffSampleIteration = 32;
 
     /*
      * The render shot context is generate at each draw
@@ -23,19 +24,62 @@ namespace CS499R
         size_t samplesPerSubdivisions;
         size_t recursionPerSample;
 
-        size_t pixelSubdivisions;
-        size_t pixelSampleCount;
-        size_t pixelRayCount;
-
-        size_t kickoffSampleIterationCount;
-        size_t kickoffInvocationCount;
-
-        size_t coherencyTileSize;
         size_t kickoffTileSize;
-        size_t kickoffTileGlobalSize;
         size_t kickoffTileLocalSize;
         size2_t kickoffTileGrid;
-        size_t kickoffTileCount;
+
+
+        // --------------------------------------------------------------------- FUNCTIONS
+
+        inline
+        size_t
+        pixelSubdivisions() const
+        {
+            return pixelBorderSubdivisions * pixelBorderSubdivisions;
+        }
+
+        inline
+        size_t
+        pixelSampleCount() const
+        {
+            return pixelSubdivisions() * samplesPerSubdivisions;
+        }
+
+        inline
+        size_t
+        pixelRayCount() const
+        {
+            return pixelSampleCount() * recursionPerSample;
+        }
+
+        inline
+        size_t
+        kickoffSampleIterationCount() const
+        {
+            return min(samplesPerSubdivisions, kMaxKickoffSampleIteration);
+        }
+
+        inline
+        size_t
+        kickoffInvocationCount() const
+        {
+            CS499R_ASSERT((samplesPerSubdivisions % kickoffSampleIterationCount()) == 0)
+            return samplesPerSubdivisions / kickoffSampleIterationCount();
+        }
+
+        inline
+        size_t
+        kickoffTileGlobalSize() const
+        {
+            return kickoffTileSize * kickoffTileSize;
+        }
+
+        inline
+        size_t
+        kickoffTileCount() const
+        {
+            return kickoffTileGrid.x * kickoffTileGrid.y;
+        }
 
 
     private:
@@ -63,7 +107,7 @@ namespace CS499R
         void
         allocKickoffEntries()
         {
-            kickoffEntries = alloc<kickoff_entry_t>(kickoffTileCount * kHostAheadCommandCount);
+            kickoffEntries = alloc<kickoff_entry_t>(kickoffTileCount() * kHostAheadCommandCount);
         }
 
         /*
@@ -74,9 +118,9 @@ namespace CS499R
         kickoffEntry(size_t streamPassId, size_t tileId) const
         {
             CS499R_ASSERT(streamPassId <= kHostAheadCommandCount);
-            CS499R_ASSERT(tileId <= kickoffTileCount);
+            CS499R_ASSERT(tileId <= kickoffTileCount());
 
-            return kickoffEntries + streamPassId * kickoffTileCount + tileId;
+            return kickoffEntries + streamPassId * kickoffTileCount() + tileId;
         }
 
 

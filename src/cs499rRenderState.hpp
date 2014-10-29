@@ -65,7 +65,6 @@ namespace CS499R
     private:
         // --------------------------------------------------------------------- CONSTANTS
 
-        static size_t const kMaxKickoffSampleIteration = 32;
         static size_t const kThreadsPerTilesTarget = 2048 * 8;
         static size_t const kWarpSizefactor = 2;
 
