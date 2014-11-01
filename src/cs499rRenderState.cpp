@@ -90,16 +90,16 @@ namespace CS499R
     }
 
     void
-    RenderState::clearRenderTarget()
+    RenderState::clear(RenderTarget * destRenderTarget)
     {
         uint8_t const pattern = 0;
 
-        auto const rayTracer = mRenderTarget->mRayTracer;
+        auto const rayTracer = destRenderTarget->mRayTracer;
 
         cl_int error = clEnqueueFillBuffer(
-            rayTracer->mCmdQueue, mRenderTarget->mGpuBuffer,
+            rayTracer->mCmdQueue, destRenderTarget->mGpuBuffer,
             &pattern, sizeof(pattern),
-            0, mRenderTarget->width() * mRenderTarget->height() * RenderTarget::kChanelCount * sizeof(float32_t),
+            0, destRenderTarget->width() * destRenderTarget->height() * RenderTarget::kChanelCount * sizeof(float32_t),
             0, nullptr, nullptr
         );
 
@@ -386,108 +386,157 @@ namespace CS499R
         cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
         cl_kernel const kernel = rayTracer->mProgram[mRayAlgorithm].kernel;
 
+        RenderTarget * const superTileTarget = (ctx->superTiling()
+                ? new RenderTarget(rayTracer, ctx->virtualPixelPerSuperTileBorder())
+                : nullptr
+        );
+
         { // kernel arguments
             error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.meshInstances);
             error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sceneBuffer->mBuffer.meshOctreeNodes);
             error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &sceneBuffer->mBuffer.primitives);
-            error |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
+
+            if (superTileTarget)
+            {
+                error |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &superTileTarget->mGpuBuffer);
+            }
+            else
+            {
+                error |= clSetKernelArg(kernel, 4, sizeof(cl_mem), &mRenderTarget->mGpuBuffer);
+            }
 
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
-        { // clears render target
-            clearRenderTarget();
+        if (superTileTarget == nullptr)
+        {
+            /*
+             * We clears the render final target because without super tiling,
+             * each passes will add into the target's bufffer.
+             */
+            clear(mRenderTarget);
         }
 
-        size_t passId = 0;
-        size_t const passCount = ctx->kickoffInvocationCount() * ctx->pixelSubdivisions();
+        float32_t const finalMultiplicationFactor = 1.0f / float32_t(ctx->pixelSampleCount());
 
-        size_t progressId = 1;
-        size_t const progressCount = passCount;
+        size2_t const superTileGrid = ctx->superTiling() ? ctx->superTileGrid() : 1;
+        size_t const passCount = ctx->kickoffInvocationCount() * ctx->pixelSubdivisions();
+        size_t const progressCount = passCount * superTileGrid.x * superTileGrid.y;
 
         renderTracker->eventShotProgress(0, progressCount);
 
         ShotIteration it;
+        size_t progressId = 1;
 
         // render loops
-        for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount(); it.invocationId++)
+        for (it.superTilePos.x = 0; it.superTilePos.x < superTileGrid.x; it.superTilePos.x++) {
+        for (it.superTilePos.y = 0; it.superTilePos.y < superTileGrid.y; it.superTilePos.y++)
         {
-            for (it.subPixel.y = 0; it.subPixel.y < ctx->pixelBorderSubdivisions; it.subPixel.y++)
+            size_t passId = 0;
+
+            if (superTileTarget != nullptr)
+            { // clears render target
+                clear(superTileTarget);
+            }
+
+            for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount(); it.invocationId++) {
+            for (it.subPixel.y = 0; it.subPixel.y < ctx->pixelBorderSubdivisions; it.subPixel.y++) {
+            for (it.subPixel.x = 0; it.subPixel.x < ctx->pixelBorderSubdivisions; it.subPixel.x++)
             {
-                for (it.subPixel.x = 0; it.subPixel.x < ctx->pixelBorderSubdivisions; it.subPixel.x++)
+                size_t const currentCircularPassId = passId % kHostAheadCommandCount;
+
+                // upload render context buffers for this pass
+                for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
                 {
-                    size_t const currentCircularPassId = passId % kHostAheadCommandCount;
+                    auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
-                    // upload render context buffers for this pass
-                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
-                    {
-                        auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
-
-                        shotUpdateKickoffRenderCtx(
-                            ctx,
-                            &it,
-                            &kickoffEntry->ctx,
-                            cmdQueue,
-                            kickoffEntry->ctxBuffer,
-                            0, nullptr,
-                            &kickoffEntry->bufferWriteDone
-                        );
-                    }
-
-                    // kickoff this pass
-                    for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
-                    {
-                        auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
-
-                        shotKickoffRenderCtx(
-                            ctx,
-                            cmdQueue, kernel,
-                            kickoffEntry->ctxBuffer,
-                            1, &kickoffEntry->bufferWriteDone,
-                            &kickoffEntry->kickoffDone
-                        );
-                    }
-
-                    passId++;
-
-                    if (passId >= kHostAheadCommandCount && passId != passCount)
-                    {
-                        size_t const nextCircularPassId = passId % kHostAheadCommandCount;
-
-                        for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
-                        {
-                            auto const entry = ctx->kickoffEntry(nextCircularPassId, kickoffTileId);
-
-                            shotWaitKickoffEntry(entry);
-                        }
-
-                        renderTracker->eventShotProgress(progressId, progressCount);
-                        progressId++;
-                    }
+                    shotUpdateKickoffRenderCtx(
+                        ctx,
+                        &it,
+                        &kickoffEntry->ctx,
+                        cmdQueue,
+                        kickoffEntry->ctxBuffer,
+                        0, nullptr,
+                        &kickoffEntry->bufferWriteDone
+                    );
                 }
-            }
-        }
 
-        CS499R_ASSERT(passId == passCount);
+                // kickoff this pass
+                for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
+                {
+                    auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
-        // wait all remaining passes
-        for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
-        {
-            for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
+                    shotKickoffRenderCtx(
+                        ctx,
+                        cmdQueue, kernel,
+                        kickoffEntry->ctxBuffer,
+                        1, &kickoffEntry->bufferWriteDone,
+                        &kickoffEntry->kickoffDone
+                    );
+                }
+
+                passId++;
+
+                if (passId >= kHostAheadCommandCount && passId != passCount)
+                {
+                    size_t const nextCircularPassId = passId % kHostAheadCommandCount;
+
+                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
+                    {
+                        auto const entry = ctx->kickoffEntry(nextCircularPassId, kickoffTileId);
+
+                        shotWaitKickoffEntry(entry);
+                    }
+
+                    renderTracker->eventShotProgress(progressId, progressCount);
+                    progressId++;
+                }
+            }}}
+
+            CS499R_ASSERT(passId == passCount);
+
+            // wait all remaining passes
+            for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
             {
-                auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
+                for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
+                {
+                    auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
 
-                shotWaitKickoffEntry(entry);
+                    shotWaitKickoffEntry(entry);
+                }
+
+                renderTracker->eventShotProgress(progressId, progressCount);
+                progressId++;
             }
 
-            renderTracker->eventShotProgress(progressId, progressCount);
-            progressId++;
-        }
+            if (superTileTarget != nullptr)
+            {
+                /*
+                 * We have rendered into the super tile's target so we need to
+                 * downscale it to the final target
+                 */
+                downscale(
+                    mRenderTarget,
+                    superTileTarget,
+                    0,
+                    superTileTarget->resolution(),
+                    it.superTilePos * ctx->pixelPerSuperTileBorder(),
+                    ctx->pixelPerSuperTileBorder(),
+                    finalMultiplicationFactor,
+                    0,
+                    nullptr,
+                    nullptr
+                );
+            }
+        }} // for (it.superTilePos)
 
+        if (superTileTarget == nullptr)
         { // render target multiplication
-            float32_t const multiplyFactor = 1.0f / float32_t(ctx->pixelSampleCount());
-
-            multiplyRenderTarget(multiplyFactor);
+            multiplyRenderTarget(finalMultiplicationFactor);
+        }
+        else
+        {
+            delete superTileTarget;
         }
     }
 

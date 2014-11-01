@@ -73,6 +73,7 @@ namespace CS499R
 
         struct ShotIteration
         {
+            size2_t superTilePos;
             size_t invocationId;
             size_t kickoffTileId;
             size2_t subPixel;
@@ -91,7 +92,7 @@ namespace CS499R
          * Render targets operations
          */
         void
-        clearRenderTarget();
+        clear(RenderTarget * destRenderTarget);
 
         /*
          * Downscale to the current render target

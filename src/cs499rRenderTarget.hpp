@@ -57,6 +57,10 @@ namespace CS499R
         // --------------------------------------------------------------------- IDLE
 
         RenderTarget(RayTracer const * rayTracer, size_t width, size_t height);
+        RenderTarget(RayTracer const * rayTracer, size_t squareWidth)
+            : RenderTarget(rayTracer, squareWidth, squareWidth)
+        { }
+
         ~RenderTarget();
 
 

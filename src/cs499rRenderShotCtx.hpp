@@ -158,6 +158,16 @@ namespace CS499R
         }
 
         /*
+         * Returns if super tiling is worth it
+         */
+        inline
+        bool
+        superTiling() const
+        {
+            return virtualPixelPerPixelBorder() != 1;
+        }
+
+        /*
          * The number of super tile on the x and y axes in the final target
          */
         inline
