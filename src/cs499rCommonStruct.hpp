@@ -53,9 +53,6 @@ namespace CS499R
     } common_octree_node_t;
 
     typedef
-    common_octree_node_t common_mesh_octree_node_t;
-
-    typedef
     struct __attribute__((aligned(16), packed))
     common_mesh_s
     {

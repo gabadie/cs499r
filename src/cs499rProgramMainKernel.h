@@ -23,7 +23,7 @@ __kernel void
 kernel_main(
     __global common_render_context_t const * coherencyCx,
     __global common_mesh_instance_t const * meshInstances,
-    __global common_mesh_octree_node_t const * meshOctreeNodes,
+    __global common_octree_node_t const * octreeNodes,
     __global common_primitive_t const * primitives,
     __global float32_t * renderTarget
 )
@@ -50,7 +50,7 @@ kernel_main(
     for (uint32_t i = 0; i < coherencyCx->render.kickoffSampleIterationCount; i++)
     {
         camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
-        scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+        scene_intersection(sampleCx, coherencyCx, meshInstances, octreeNodes, primitives);
 
         sampleColor += sampleCx->rayInterMeshInstance->emitColor;
         float32x3_t sampleColorMultiply = sampleCx->rayInterMeshInstance->diffuseColor;
@@ -58,7 +58,7 @@ kernel_main(
         for (uint32_t i = 1; i < coherencyCx->render.kickoffSampleRecursionCount; i++)
         {
             path_tracer_rebound(sampleCx);
-            scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+            scene_intersection(sampleCx, coherencyCx, meshInstances, octreeNodes, primitives);
 
             sampleColor += sampleCx->rayInterMeshInstance->emitColor * sampleColorMultiply;
             sampleColorMultiply *= sampleCx->rayInterMeshInstance->diffuseColor;
@@ -71,7 +71,7 @@ kernel_main(
      * Here is the normal debuger ray tracer's code
      */
     camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
-    scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+    scene_intersection(sampleCx, coherencyCx, meshInstances, octreeNodes, primitives);
 
     __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
 
@@ -96,7 +96,7 @@ kernel_main(
     sampleCx->stats = 0;
 
     camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
-    scene_intersection(sampleCx, coherencyCx, meshInstances, meshOctreeNodes, primitives);
+    scene_intersection(sampleCx, coherencyCx, meshInstances, octreeNodes, primitives);
 
     __global common_mesh_instance_t const * const meshInstance = sampleCx->rayInterMeshInstance;
 

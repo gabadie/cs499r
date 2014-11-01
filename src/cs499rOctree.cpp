@@ -83,7 +83,7 @@ namespace CS499R
     void
     Octree::exportToCommonOctreeNodeArray(
         size_t * outPrimNewIds,
-        common_mesh_octree_node_t * outOctreeCommonNodes
+        common_octree_node_t * outOctreeCommonNodes
     ) const
     {
         size_t cursors[] = { 0, 0 };

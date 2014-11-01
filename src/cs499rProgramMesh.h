@@ -29,7 +29,7 @@ mesh_octree_intersection(
     sample_context_t * const sampleCx,
     __global common_mesh_instance_t const * const meshInstance,
     __global common_primitive_t const * const meshPrimitives,
-    __global common_mesh_octree_node_t const * const rootNode
+    __global common_octree_node_t const * const rootNode
 )
 {
     uint32_t nodeStackSize = 1;
@@ -64,7 +64,7 @@ mesh_octree_intersection(
 
         uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackSize - 1];
 
-        __global common_mesh_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
+        __global common_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
         uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
@@ -157,7 +157,7 @@ inline
 void
 mesh_instance_intersection(
     sample_context_t * sampleCx,
-    __global common_mesh_octree_node_t const * meshOctreeNodes,
+    __global common_octree_node_t const * octreeNodes,
     __global common_primitive_t const * primitives
 )
 {
@@ -173,7 +173,7 @@ mesh_instance_intersection(
 #endif
 
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
-    __global common_mesh_octree_node_t const * const meshRootNode = meshOctreeNodes + meshInstance->mesh.octreeRootGlobalId;
+    __global common_octree_node_t const * const meshRootNode = octreeNodes + meshInstance->mesh.octreeRootGlobalId;
 
 #if CS499R_CONFIG_ENABLE_MESH_OCTREE
     mesh_octree_intersection(

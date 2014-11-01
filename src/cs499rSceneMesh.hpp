@@ -74,7 +74,7 @@ namespace CS499R
         size_t mOctreeNodeCount;
 
         // the octree's node array
-        common_mesh_octree_node_t * mOctreeNodeArray;
+        common_octree_node_t * mOctreeNodeArray;
 
         // the mesh's center pos within the octree basis
         float32x3_t mCenterPosition;

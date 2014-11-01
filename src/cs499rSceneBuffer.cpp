@@ -161,7 +161,7 @@ namespace CS499R
 
             mBuffer.meshOctreeNodes = clCreateBuffer(
                 context, CL_MEM_READ_ONLY,
-                totalMeshOctreeNodeCount * sizeof(common_mesh_octree_node_t),
+                totalMeshOctreeNodeCount * sizeof(common_octree_node_t),
                 NULL,
                 &error
             );
@@ -181,8 +181,8 @@ namespace CS499R
 
                 error |= clEnqueueWriteBuffer(
                     cmdQueue, mBuffer.meshOctreeNodes, CL_FALSE,
-                    meshOctreeNodeOffset * sizeof(common_mesh_octree_node_t),
-                    sceneMesh->mOctreeNodeCount * sizeof(common_mesh_octree_node_t),
+                    meshOctreeNodeOffset * sizeof(common_octree_node_t),
+                    sceneMesh->mOctreeNodeCount * sizeof(common_octree_node_t),
                     sceneMesh->mOctreeNodeArray,
                     0, NULL, NULL
                 );

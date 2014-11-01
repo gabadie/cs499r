@@ -14,7 +14,7 @@ scene_intersection(
     sample_context_t * sampleCx,
     __global common_render_context_t const * shotCx,
     __global common_mesh_instance_t const * meshInstances,
-    __global common_mesh_octree_node_t const * meshOctreeNodes,
+    __global common_octree_node_t const * octreeNodes,
     __global common_primitive_t const * primitives
 )
 {
@@ -32,7 +32,7 @@ scene_intersection(
     {
         sampleCx->boundMeshInstance = meshInstances + i;
 
-        mesh_instance_intersection(sampleCx, meshOctreeNodes, primitives);
+        mesh_instance_intersection(sampleCx, octreeNodes, primitives);
     }
 }
 

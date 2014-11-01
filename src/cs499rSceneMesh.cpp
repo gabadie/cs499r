@@ -64,7 +64,7 @@ namespace CS499R
             mPrimitiveCount = octree.primCount();
             mPrimitiveArray = alloc<common_primitive_t>(mPrimitiveCount);
             mOctreeNodeCount = octree.nodeCount();
-            mOctreeNodeArray = alloc<common_mesh_octree_node_t>(mOctreeNodeCount);
+            mOctreeNodeArray = alloc<common_octree_node_t>(mOctreeNodeCount);
             mCenterPosition = -lowerBound;
             mVertexUpperBound = upperBound - lowerBound;
             mOctreeRootHalfSize = octree.boxSize() * 0.5f;
