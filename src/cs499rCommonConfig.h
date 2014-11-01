@@ -51,10 +51,11 @@
  *
  *  This optimisation renders per tile, but with a bigger resolution, so that
  *  the CBT and ICBT coherency tiles' area is reduced. Then each tile are
- *  downscaled on the final render target.
+ *  downscaled on the final render target. But it also decreases the number of
+ *  diverging samples per final pixel.
  */
 #ifndef CS499R_CONFIG_ENABLE_SUPERSAMPLING
-# define CS499R_CONFIG_ENABLE_SUPERSAMPLING 1
+# define CS499R_CONFIG_ENABLE_SUPERSAMPLING 0
 #endif
 
 
