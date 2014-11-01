@@ -9,6 +9,11 @@
 #include "cs499rScene.hpp"
 #include "cs499rSceneBuffer.hpp"
 
+#include <iostream>
+
+#define show(x) \
+    std::cout << #x << " = " << x << std::endl
+
 
 namespace CS499R
 {
@@ -268,12 +273,19 @@ namespace CS499R
         templateCtx->scene.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
 
         // init render
-        templateCtx->render.targetResolution.x = mRenderTarget->width();
-        templateCtx->render.targetResolution.y = mRenderTarget->height();
+        if (ctx->superTiling())
+        {
+            templateCtx->render.targetResolution = ctx->virtualPixelPerSuperTileBorder();
+        }
+        else
+        {
+            templateCtx->render.targetResolution.x = mRenderTarget->width();
+            templateCtx->render.targetResolution.y = mRenderTarget->height();
+        }
         templateCtx->render.targetVirtualOffset = 0;
         templateCtx->render.virtualTargetResolution.x = ctx->virtualTargetResolution().x;
         templateCtx->render.virtualTargetResolution.y = ctx->virtualTargetResolution().y;
-        templateCtx->render.subpixelPerPixelBorder = ctx->pixelBorderSubdivisions;
+        templateCtx->render.subpixelPerPixelBorder = ctx->virtualPixelBorderSubdivisions();
 
         templateCtx->render.passCount = ctx->pixelSubdivisions() * ctx->kickoffInvocationCount();
 
@@ -419,12 +431,13 @@ namespace CS499R
              * each passes will add into the target's bufffer.
              */
             clear(mRenderTarget);
+            clFinish(cmdQueue);
         }
 
-        float32_t const finalMultiplicationFactor = 1.0f / float32_t(ctx->pixelSampleCount());
+        float32_t const finalMultiplicationFactor = 1.0f / float32_t(ctx->virtualPixelSampleCount());
 
         size2_t const superTileGrid = ctx->superTiling() ? ctx->superTileGrid() : 1;
-        size_t const passCount = ctx->kickoffInvocationCount() * ctx->pixelSubdivisions();
+        size_t const passCount = ctx->kickoffInvocationCount() * ctx->virtualPixelSubdivisions();
         size_t const progressCount = passCount * superTileGrid.x * superTileGrid.y;
 
         renderTracker->eventShotProgress(0, progressCount);
@@ -439,19 +452,30 @@ namespace CS499R
             size_t passId = 0;
 
             if (superTileTarget != nullptr)
-            { // clears render target
+            {
+                /*
+                 * We clears the super tile's render target because,
+                 * each passes will add into it.
+                 */
                 clear(superTileTarget);
+                clFinish(cmdQueue);
             }
 
+            size2_t const kickoffTileStart = kMaxKickoffTilePerSuperTileBorder * it.superTilePos;
+            size2_t const kickoffTileEnd = min(kickoffTileStart + kMaxKickoffTilePerSuperTileBorder, ctx->kickoffTileGrid);
+
             for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount(); it.invocationId++) {
-            for (it.subPixel.y = 0; it.subPixel.y < ctx->pixelBorderSubdivisions; it.subPixel.y++) {
-            for (it.subPixel.x = 0; it.subPixel.x < ctx->pixelBorderSubdivisions; it.subPixel.x++)
+            for (it.subPixel.y = 0; it.subPixel.y < ctx->virtualPixelBorderSubdivisions(); it.subPixel.y++) {
+            for (it.subPixel.x = 0; it.subPixel.x < ctx->virtualPixelBorderSubdivisions(); it.subPixel.x++)
             {
                 size_t const currentCircularPassId = passId % kHostAheadCommandCount;
 
                 // upload render context buffers for this pass
-                for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
+                for (it.kickoffTilePos.x = kickoffTileStart.x; it.kickoffTilePos.x < kickoffTileEnd.x; it.kickoffTilePos.x++) {
+                for (it.kickoffTilePos.y = kickoffTileStart.y; it.kickoffTilePos.y < kickoffTileEnd.y; it.kickoffTilePos.y++)
                 {
+                    it.kickoffTileId = it.kickoffTilePos.x + it.kickoffTilePos.y * ctx->kickoffTileGrid.x;
+
                     auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
                     shotUpdateKickoffRenderCtx(
@@ -463,11 +487,14 @@ namespace CS499R
                         0, nullptr,
                         &kickoffEntry->bufferWriteDone
                     );
-                }
+                }} // for (it.kickoffTilePos)
 
                 // kickoff this pass
-                for (it.kickoffTileId = 0; it.kickoffTileId < ctx->kickoffTileCount(); it.kickoffTileId++)
+                for (it.kickoffTilePos.x = kickoffTileStart.x; it.kickoffTilePos.x < kickoffTileEnd.x; it.kickoffTilePos.x++) {
+                for (it.kickoffTilePos.y = kickoffTileStart.y; it.kickoffTilePos.y < kickoffTileEnd.y; it.kickoffTilePos.y++)
                 {
+                    it.kickoffTileId = it.kickoffTilePos.x + it.kickoffTilePos.y * ctx->kickoffTileGrid.x;
+
                     auto const kickoffEntry = ctx->kickoffEntry(currentCircularPassId, it.kickoffTileId);
 
                     shotKickoffRenderCtx(
@@ -477,7 +504,7 @@ namespace CS499R
                         1, &kickoffEntry->bufferWriteDone,
                         &kickoffEntry->kickoffDone
                     );
-                }
+                }} // for (it.kickoffTilePos)
 
                 passId++;
 
@@ -485,12 +512,15 @@ namespace CS499R
                 {
                     size_t const nextCircularPassId = passId % kHostAheadCommandCount;
 
-                    for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
+                    for (it.kickoffTilePos.x = kickoffTileStart.x; it.kickoffTilePos.x < kickoffTileEnd.x; it.kickoffTilePos.x++) {
+                    for (it.kickoffTilePos.y = kickoffTileStart.y; it.kickoffTilePos.y < kickoffTileEnd.y; it.kickoffTilePos.y++)
                     {
-                        auto const entry = ctx->kickoffEntry(nextCircularPassId, kickoffTileId);
+                        it.kickoffTileId = it.kickoffTilePos.x + it.kickoffTilePos.y * ctx->kickoffTileGrid.x;
+
+                        auto const entry = ctx->kickoffEntry(nextCircularPassId, it.kickoffTileId);
 
                         shotWaitKickoffEntry(entry);
-                    }
+                    }} // for (it.kickoffTilePos)
 
                     renderTracker->eventShotProgress(progressId, progressCount);
                     progressId++;
@@ -502,12 +532,15 @@ namespace CS499R
             // wait all remaining passes
             for (size_t circularPassId = 0; circularPassId < min(passCount, kHostAheadCommandCount); circularPassId++)
             {
-                for (size_t kickoffTileId = 0; kickoffTileId < ctx->kickoffTileCount(); kickoffTileId++)
+                for (it.kickoffTilePos.x = kickoffTileStart.x; it.kickoffTilePos.x < kickoffTileEnd.x; it.kickoffTilePos.x++) {
+                for (it.kickoffTilePos.y = kickoffTileStart.y; it.kickoffTilePos.y < kickoffTileEnd.y; it.kickoffTilePos.y++)
                 {
-                    auto const entry = ctx->kickoffEntry(circularPassId, kickoffTileId);
+                    it.kickoffTileId = it.kickoffTilePos.x + it.kickoffTilePos.y * ctx->kickoffTileGrid.x;
+
+                    auto const entry = ctx->kickoffEntry(circularPassId, it.kickoffTileId);
 
                     shotWaitKickoffEntry(entry);
-                }
+                }} // for (it.kickoffTilePos)
 
                 renderTracker->eventShotProgress(progressId, progressCount);
                 progressId++;
@@ -519,6 +552,7 @@ namespace CS499R
                  * We have rendered into the super tile's target so we need to
                  * downscale it to the final target
                  */
+                clFinish(cmdQueue);
                 downscale(
                     mRenderTarget,
                     superTileTarget,
@@ -531,8 +565,11 @@ namespace CS499R
                     nullptr,
                     nullptr
                 );
+                clFinish(cmdQueue);
             }
         }} // for (it.superTilePos)
+
+        CS499R_ASSERT(progressId == progressCount + 1);
 
         if (superTileTarget == nullptr)
         { // render target multiplication

@@ -20,7 +20,7 @@ namespace CS499R
     /*
      * Maximum number of super samples per border
      */
-    size_t const kMaxVirtualPixelPerPixelBorder = 4;
+    size_t const kMaxVirtualPixelPerPixelBorder = 2;
 
     /*
      * Maximum number of kickoff-tile per super-tile border
@@ -135,6 +135,27 @@ namespace CS499R
         virtualPixelBorderSubdivisions() const
         {
             return pixelBorderSubdivisions / virtualPixelPerPixelBorder();
+        }
+
+        /*
+         * The virtual pixel's MSA
+         */
+        inline
+        size_t
+        virtualPixelSubdivisions() const
+        {
+            size_t const borderSubdivisions = virtualPixelBorderSubdivisions();
+            return borderSubdivisions * borderSubdivisions;
+        }
+
+        /*
+         * The virtual pixel's sample count
+         */
+        inline
+        size_t
+        virtualPixelSampleCount() const
+        {
+            return virtualPixelSubdivisions() * samplesPerSubdivisions;
         }
 
         /*

@@ -74,9 +74,10 @@ namespace CS499R
         struct ShotIteration
         {
             size2_t superTilePos;
+            size2_t kickoffTilePos;
+            size2_t subPixel;
             size_t invocationId;
             size_t kickoffTileId;
-            size2_t subPixel;
         };
 
 
