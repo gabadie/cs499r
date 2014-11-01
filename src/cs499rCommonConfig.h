@@ -54,7 +54,7 @@
  *  downscaled on the final render target.
  */
 #ifndef CS499R_CONFIG_ENABLE_SUPERSAMPLING
-# define CS499R_CONFIG_ENABLE_SUPERSAMPLING 0
+# define CS499R_CONFIG_ENABLE_SUPERSAMPLING 1
 #endif
 
 

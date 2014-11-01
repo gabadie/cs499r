@@ -20,7 +20,7 @@ namespace CS499R
     /*
      * Maximum number of super samples per border
      */
-    size_t const kMaxVirtualPixelPerPixelBorder = 2;
+    size_t const kMaxVirtualPixelPerPixelBorder = 4;
 
     /*
      * Maximum number of kickoff-tile per super-tile border

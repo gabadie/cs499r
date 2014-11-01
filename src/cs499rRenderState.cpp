@@ -282,7 +282,6 @@ namespace CS499R
             templateCtx->render.targetResolution.x = mRenderTarget->width();
             templateCtx->render.targetResolution.y = mRenderTarget->height();
         }
-        templateCtx->render.targetVirtualOffset = 0;
         templateCtx->render.virtualTargetResolution.x = ctx->virtualTargetResolution().x;
         templateCtx->render.virtualTargetResolution.y = ctx->virtualTargetResolution().y;
         templateCtx->render.subpixelPerPixelBorder = ctx->virtualPixelBorderSubdivisions();
@@ -593,6 +592,9 @@ namespace CS499R
         cl_event * event
     ) const
     {
+        kickoffCtx->render.targetVirtualOffset.x = shotIteration->superTilePos.x * ctx->virtualPixelPerSuperTileBorder();
+        kickoffCtx->render.targetVirtualOffset.y = shotIteration->superTilePos.y * ctx->virtualPixelPerSuperTileBorder();
+
         kickoffCtx->render.passId = (
             shotIteration->invocationId * ctx->pixelSubdivisions() +
             shotIteration->subPixel.y * ctx->pixelBorderSubdivisions +
