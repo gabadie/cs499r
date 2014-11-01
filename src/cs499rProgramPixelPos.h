@@ -180,4 +180,28 @@ kernel_pixel_pos_icpt(
     return kickoffTilePixelPos + coherencyCx->render.kickoffTilePos;
 }
 
+
+inline
+uint32x2_t
+kernel_pixel_pos(
+    __global common_render_context_t const * const coherencyCx,
+    sample_context_t * const sampleCx
+)
+{
+#if CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_CPT
+    return kernel_pixel_pos_cpt(coherencyCx, sampleCx);
+
+#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_ICPT
+    return kernel_pixel_pos_icpt(coherencyCx, sampleCx);
+
+#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_DUMMY
+    return kernel_pixel_pos_dummy(coherencyCx, sampleCx);
+
+#else
+# error "invalid CS499R_CONFIG_PIXELPOS"
+
+#endif // CS499R_CONFIG_PIXELPOS
+}
+
+
 #endif // _CLH_CS499R_PROGRAM_PIXEL_POS

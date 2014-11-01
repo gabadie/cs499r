@@ -31,19 +31,7 @@ kernel_main(
     sample_context_t sampleCxArray[1];// CS499R_MAX_GROUP_SIZE
     sample_context_t * const sampleCx = sampleCxArray;
 
-#if CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_CPT
-    uint32x2_t const virtualPixelPos = kernel_pixel_pos_cpt(coherencyCx, sampleCx);
-
-#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_ICPT
-    uint32x2_t const virtualPixelPos = kernel_pixel_pos_icpt(coherencyCx, sampleCx);
-
-#elif CS499R_CONFIG_PIXELPOS == CS499R_CONFIG_PIXELPOS_DUMMY
-    uint32x2_t const virtualPixelPos = kernel_pixel_pos_dummy(coherencyCx, sampleCx);
-
-#else
-# error "invalid CS499R_CONFIG_PIXELPOS"
-
-#endif // CS499R_CONFIG_PIXELPOS
+    uint32x2_t const virtualPixelPos = kernel_pixel_pos(coherencyCx, sampleCx);
 
     if (
         virtualPixelPos.x >= coherencyCx->render.virtualTargetResolution.x ||
