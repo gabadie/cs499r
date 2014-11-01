@@ -126,6 +126,10 @@ namespace CS499R
         CS499R_ASSERT((srcSize.x % destSize.x) == 0);
         CS499R_ASSERT((srcSize.y % destSize.y) == 0);
         CS499R_ASSERT((srcSize.x / destSize.x) == (srcSize.y / destSize.y));
+        CS499R_ASSERT((srcPos.x + srcSize.x) <= srcRenderTarget->width());
+        CS499R_ASSERT((srcPos.y + srcSize.y) <= srcRenderTarget->height());
+        CS499R_ASSERT((destPos.x + destSize.x) <= destRenderTarget->width());
+        CS499R_ASSERT((destPos.y + destSize.y) <= destRenderTarget->height());
 
         common_downscale_context_t ctx;
 
