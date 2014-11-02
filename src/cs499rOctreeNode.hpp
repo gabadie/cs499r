@@ -44,7 +44,7 @@ namespace CS499R
          */
         void
         exportToCommonOctreeNode(
-            size_t * outPrimNewIds,
+            size_t * outPrimOrderedList,
             common_octree_node_t * outOctreeCommonNodes,
             size_t cursors[2]
         ) const;

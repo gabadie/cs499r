@@ -82,14 +82,14 @@ namespace CS499R
 
     void
     Octree::exportToCommonOctreeNodeArray(
-        size_t * outPrimNewIds,
+        size_t * outPrimOrderedList,
         common_octree_node_t * outOctreeCommonNodes
     ) const
     {
         size_t cursors[] = { 0, 0 };
 
         mRoot->exportToCommonOctreeNode(
-            outPrimNewIds,
+            outPrimOrderedList,
             outOctreeCommonNodes,
             cursors
         );

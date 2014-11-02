@@ -70,11 +70,11 @@ namespace CS499R
             mOctreeRootHalfSize = octree.boxSize() * 0.5f;
         }
 
-        auto const primNewIds = new size_t[mPrimitiveCount];
+        auto const primNewOrder = new size_t[mPrimitiveCount];
 
         { // export new prim's id and octree node array
             octree.exportToCommonOctreeNodeArray(
-                primNewIds,
+                primNewOrder,
                 mOctreeNodeArray
             );
         }
@@ -82,15 +82,15 @@ namespace CS499R
         // export primitives
         for (size_t primId = 0; primId < mPrimitiveCount; primId++)
         {
-            CS499R_ASSERT(primNewIds[primId] < mPrimitiveCount);
+            CS499R_ASSERT(primNewOrder[primId] < mPrimitiveCount);
 
-            mesh.mPrimitiveArray[primId].exportToCommonPrimitive(
-                mPrimitiveArray + primNewIds[primId],
+            mesh.mPrimitiveArray[primNewOrder[primId]].exportToCommonPrimitive(
+                mPrimitiveArray + primId,
                 mCenterPosition
             );
         }
 
-        delete [] primNewIds;
+        delete [] primNewOrder;
     }
 
     void

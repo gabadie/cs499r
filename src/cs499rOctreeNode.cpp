@@ -13,7 +13,7 @@ namespace CS499R
 
     void
     OctreeNode::exportToCommonOctreeNode(
-        size_t * outPrimNewIds,
+        size_t * outPrimOrderedList,
         common_octree_node_t * outOctreeCommonNodes,
         size_t cursors[2]
     ) const
@@ -30,7 +30,7 @@ namespace CS499R
 
             for (auto primId : mPrimitiveIds)
             {
-                outPrimNewIds[primId] = primNewId;
+                outPrimOrderedList[primNewId] = primId;
                 primNewId++;
             }
         }
@@ -63,7 +63,7 @@ namespace CS499R
 #endif
 
             subNode->exportToCommonOctreeNode(
-                outPrimNewIds,
+                outPrimOrderedList,
                 outOctreeCommonNodes,
                 cursors
             );

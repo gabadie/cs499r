@@ -33,12 +33,12 @@ namespace CS499R
         optimize();
 
         /*
-         * Exports the octree to common nodes, and returns the primitives'
-         * new ids
+         * Exports the octree to common nodes, and returns the ordered
+         * primitives list
          */
         void
         exportToCommonOctreeNodeArray(
-            size_t * outPrimNewIds,
+            size_t * outPrimOrderedList,
             common_octree_node_t * outOctreeCommonNodes
         ) const;
 
