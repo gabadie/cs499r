@@ -118,10 +118,19 @@ namespace CS499R
             exportCtx.nodeIdCounter = 0;
             exportCtx.primIdCounter = 0;
 
-            mRoot->exportToCommonOctreeNode(
+            auto const rootNodeId = mRoot->selfExportToCommonOctreeNode(
                 outPrimOrderedList,
                 outOctreeCommonNodes,
                 exportCtx
+            );
+
+            CS499R_ASSERT(rootNodeId == 0);
+
+            mRoot->exportToCommonOctreeNode(
+                outPrimOrderedList,
+                outOctreeCommonNodes,
+                exportCtx,
+                rootNodeId
             );
         }
 
@@ -194,10 +203,10 @@ namespace CS499R
             }
 
             /*
-             * Exports to common_mesh_octree_node_t
+             * Exports this node to common_mesh_octree_node_t
              */
-            void
-            exportToCommonOctreeNode(
+            size_t
+            selfExportToCommonOctreeNode(
                 PRIM * outPrimOrderedList,
                 common_octree_node_t * outOctreeCommonNodes,
                 ExportCtx & exportCtx
@@ -206,6 +215,9 @@ namespace CS499R
                 auto const nodeId = exportCtx.nodeIdCounter;
                 auto const primOffset = exportCtx.primIdCounter;
                 auto const commonNode = outOctreeCommonNodes + nodeId;
+
+                commonNode->primFirst = primOffset;
+                commonNode->primCount = mPrimitiveIds.size();
 
                 exportCtx.nodeIdCounter += 1;
                 exportCtx.primIdCounter += mPrimitiveIds.size();
@@ -218,40 +230,6 @@ namespace CS499R
                         outPrimOrderedList[primNewId] = primId;
                         primNewId++;
                     }
-                }
-
-                { // export
-                    commonNode->primFirst = primOffset;
-                    commonNode->primCount = mPrimitiveIds.size();
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-                    commonNode->subNodeCount = 0;
-#endif
-                }
-
-                // export sub offsets
-                for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
-                {
-                    auto const subNode = mChildren[i];
-
-                    if (subNode == nullptr)
-                    {
-                        commonNode->subNodeOffsets[i] = 0;
-                        continue;
-                    }
-
-                    auto const subNodeId = exportCtx.nodeIdCounter;
-
-                    commonNode->subNodeOffsets[i] = subNodeId;
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-                    commonNode->subNodeCount++;
-                    CS499R_ASSERT(commonNode->subNodeCount <= CS499R_ARRAY_SIZE(mChildren));
-#endif
-
-                    subNode->exportToCommonOctreeNode(
-                        outPrimOrderedList,
-                        outOctreeCommonNodes,
-                        exportCtx
-                    );
                 }
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
@@ -277,11 +255,65 @@ namespace CS499R
                         accessCount++;
                     }
 
-                    CS499R_ASSERT(accessCount == commonNode->subNodeCount);
+                    commonNode->subNodeCount = accessCount;
                     commonNode->subNodeAccessLists[directionId] = accessList;
                 }
 
 #endif //CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+
+                return nodeId;
+            }
+
+            /*
+             * Exports to common_mesh_octree_node_t
+             */
+            void
+            exportToCommonOctreeNode(
+                PRIM * outPrimOrderedList,
+                common_octree_node_t * outOctreeCommonNodes,
+                ExportCtx & exportCtx,
+                size_t nodeId
+            ) const
+            {
+                auto const commonNode = outOctreeCommonNodes + nodeId;
+
+                // export sub offsets
+                for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
+                {
+                    auto const subNode = mChildren[i];
+
+                    if (subNode == nullptr)
+                    {
+                        commonNode->subNodeOffsets[i] = 0;
+                        continue;
+                    }
+
+                    commonNode->subNodeOffsets[i] = subNode->selfExportToCommonOctreeNode(
+                        outPrimOrderedList,
+                        outOctreeCommonNodes,
+                        exportCtx
+                    );
+
+#if CS499R_CONFIG_ENABLE_OCTREE_CONSECUTIVE_SUBNODES
+                }
+
+                for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
+                {
+                    auto const subNode = mChildren[i];
+
+                    if (subNode == nullptr)
+                    {
+                        continue;
+                    }
+#endif
+
+                    subNode->exportToCommonOctreeNode(
+                        outPrimOrderedList,
+                        outOctreeCommonNodes,
+                        exportCtx,
+                        commonNode->subNodeOffsets[i]
+                    );
+                }
             }
 
             /*

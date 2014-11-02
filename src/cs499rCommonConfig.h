@@ -47,6 +47,16 @@
 #endif
 
 /*
+ * Stores the octree node's children consecutively in the memory
+ *
+ *  This optimisation slightly reduce the cache's number of page fault by
+ *  storing a node's direct children consecutively in the memory
+ */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_CONSECUTIVE_SUBNODES
+# define CS499R_CONFIG_ENABLE_OCTREE_CONSECUTIVE_SUBNODES 1
+#endif
+
+/*
  * Enables the super-sampling rendering
  *
  *  This optimisation renders per tile, but with a bigger resolution, so that
