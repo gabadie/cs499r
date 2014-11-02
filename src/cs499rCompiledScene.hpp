@@ -1,8 +1,8 @@
 
-#ifndef _H_CS499R_SCENEBUFFER
-#define _H_CS499R_SCENEBUFFER
+#ifndef _H_CS499R_COMPILEDSCENE
+#define _H_CS499R_COMPILEDSCENE
 
-#include "cs499rPrefix.hpp"
+#include "cs499rSceneMesh.hpp"
 
 
 namespace CS499R
@@ -11,13 +11,13 @@ namespace CS499R
     /*
      * The scene buffer old all the scene information in buffers on the GPU side
      */
-    class SceneBuffer
+    class CompiledScene
     {
     public:
         // --------------------------------------------------------------------- IDLE
 
-        SceneBuffer(Scene const * scene, RayTracer const * rayTracer);
-        ~SceneBuffer();
+        CompiledScene(Scene const * scene, RayTracer const * rayTracer);
+        ~CompiledScene();
 
 
     private:
@@ -50,19 +50,19 @@ namespace CS499R
          * Creates mBuffer.primitives
          */
         void
-        createPrimitivesBuffer(SceneMesh::SceneBufferCtx & ctx);
+        createPrimitivesBuffer(SceneMesh::CompiledSceneCtx & ctx);
 
         /*
          * Creates mBuffer.meshInstances
          */
         void
-        createMeshInstancesBuffer(SceneMesh::SceneBufferCtx const & ctx);
+        createMeshInstancesBuffer(SceneMesh::CompiledSceneCtx const & ctx);
 
         /*
          * Creates mBuffer.meshOctreeNodes
          */
         void
-        createMeshOctreeNodesBuffer(SceneMesh::SceneBufferCtx & ctx);
+        createMeshOctreeNodesBuffer(SceneMesh::CompiledSceneCtx & ctx);
 
         /*
          * Releases GPU side buffers

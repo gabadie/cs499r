@@ -44,7 +44,7 @@ main(int argc, char const * const * argv)
 
     {
         CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);
-        CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
+        CS499R::CompiledScene sceneBuffer(&scene, &rayTracer);
 
         renderState.mRenderTarget = &renderTarget;
         renderState.shotScene(&sceneBuffer, &camera, &terminalTracker);

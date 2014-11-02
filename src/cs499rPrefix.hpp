@@ -24,6 +24,7 @@ namespace CS499R
 {
 
     class Camera;
+    class CompiledScene;
     class Image;
     class Mesh;
     class RayTracer;
@@ -33,7 +34,6 @@ namespace CS499R
     class RenderTarget;
     class RenderTerminalTracker;
     class Scene;
-    class SceneBuffer;
     class SceneMesh;
     class SceneMeshInstance;
     class SceneObject;

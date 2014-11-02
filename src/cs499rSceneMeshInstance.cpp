@@ -24,7 +24,7 @@ namespace CS499R
 
     void
     SceneMeshInstance::exportToCommonMeshInstance(
-        SceneMesh::SceneBufferCtx const & ctx,
+        SceneMesh::CompiledSceneCtx const & ctx,
         common_mesh_instance_t * outMeshInstance
     ) const
     {

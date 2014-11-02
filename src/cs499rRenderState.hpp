@@ -46,7 +46,7 @@ namespace CS499R
          * Shots the scene from the camera into the render target
          */
         void
-        shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderAbstractTracker * renderTracker);
+        shotScene(CompiledScene const * compiledScene, Camera const * camera, RenderAbstractTracker * renderTracker);
 
 
         // --------------------------------------------------------------------- CONSTS
@@ -129,7 +129,7 @@ namespace CS499R
         void
         shotInitTemplateCtx(
             RenderShotCtx const * ctx,
-            SceneBuffer const * sceneBuffer,
+            CompiledScene const * compiledScene,
             Camera const * camera,
             common_render_context_t * templateCtx
         ) const;
@@ -148,7 +148,7 @@ namespace CS499R
         void
         shotKickoff(
             RenderShotCtx const * ctx,
-            SceneBuffer const * sceneBuffer,
+            CompiledScene const * compiledScene,
             RenderAbstractTracker * renderTracker
         );
 

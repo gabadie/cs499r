@@ -30,9 +30,9 @@ namespace CS499R
         using SceneMeshOffsetMap = std::map<SceneMesh const *, size_t>;
 
         /*
-         * Context when building up SceneBuffer
+         * Context when building up CompiledScene
          */
-        struct SceneBufferCtx
+        struct CompiledSceneCtx
         {
             // global primitive offset for each meshes
             SceneMeshOffsetMap meshPrimitivesGlobalOffsets;
@@ -101,14 +101,14 @@ namespace CS499R
          */
         void
         exportToCommonMesh(
-            SceneMesh::SceneBufferCtx const & ctx,
+            SceneMesh::CompiledSceneCtx const & ctx,
             common_mesh_t * outMesh
         ) const;
 
 
         // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class CompiledScene;
         friend class Scene;
-        friend class SceneBuffer;
         friend class SceneMeshInstance;
 
     };

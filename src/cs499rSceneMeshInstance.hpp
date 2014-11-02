@@ -56,7 +56,7 @@ namespace CS499R
          */
         void
         exportToCommonMeshInstance(
-            SceneMesh::SceneBufferCtx const & ctx,
+            SceneMesh::CompiledSceneCtx const & ctx,
             common_mesh_instance_t * outMeshInstance
         ) const;
 
@@ -72,7 +72,7 @@ namespace CS499R
 
         // --------------------------------------------------------------------- FRIENDSHIP
         friend class Scene;
-        friend class SceneBuffer;
+        friend class CompiledScene;
 
     };
 

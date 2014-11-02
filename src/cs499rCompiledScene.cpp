@@ -1,13 +1,13 @@
 
 #include <string.h>
+#include "cs499rCompiledScene.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rScene.hpp"
-#include "cs499rSceneBuffer.hpp"
 
 namespace CS499R
 {
 
-    SceneBuffer::SceneBuffer(Scene const * scene, RayTracer const * rayTracer)
+    CompiledScene::CompiledScene(Scene const * scene, RayTracer const * rayTracer)
         : mScene(scene)
         , mRayTracer(rayTracer)
     {
@@ -16,15 +16,15 @@ namespace CS499R
         createBuffers();
     }
 
-    SceneBuffer::~SceneBuffer()
+    CompiledScene::~CompiledScene()
     {
         releaseBuffers();
     }
 
     void
-    SceneBuffer::createBuffers()
+    CompiledScene::createBuffers()
     {
-        SceneMesh::SceneBufferCtx ctx;
+        SceneMesh::CompiledSceneCtx ctx;
 
         createPrimitivesBuffer(ctx);
 
@@ -34,7 +34,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createPrimitivesBuffer(SceneMesh::SceneBufferCtx & ctx)
+    CompiledScene::createPrimitivesBuffer(SceneMesh::CompiledSceneCtx & ctx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -85,7 +85,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createMeshInstancesBuffer(SceneMesh::SceneBufferCtx const & ctx)
+    CompiledScene::createMeshInstancesBuffer(SceneMesh::CompiledSceneCtx const & ctx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -122,7 +122,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::createMeshOctreeNodesBuffer(SceneMesh::SceneBufferCtx & ctx)
+    CompiledScene::createMeshOctreeNodesBuffer(SceneMesh::CompiledSceneCtx & ctx)
     {
         cl_int error = 0;
 
@@ -177,7 +177,7 @@ namespace CS499R
     }
 
     void
-    SceneBuffer::releaseBuffers()
+    CompiledScene::releaseBuffers()
     {
         size_t const bufferArraySize = sizeof(mBuffer) / sizeof(cl_mem);
         cl_mem * bufferArray = (cl_mem *) &mBuffer;

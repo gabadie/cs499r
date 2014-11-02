@@ -95,7 +95,7 @@ namespace CS499R
 
     void
     SceneMesh::exportToCommonMesh(
-        SceneMesh::SceneBufferCtx const & ctx,
+        SceneMesh::CompiledSceneCtx const & ctx,
         common_mesh_t * outMesh
     ) const
     {

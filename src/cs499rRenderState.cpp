@@ -1,13 +1,13 @@
 
 #include "cs499rBenchmark.hpp"
 #include "cs499rCamera.hpp"
+#include "cs499rCompiledScene.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rRenderAbstractTracker.hpp"
 #include "cs499rRenderShotCtx.hpp"
 #include "cs499rRenderState.hpp"
 #include "cs499rRenderTarget.hpp"
 #include "cs499rScene.hpp"
-#include "cs499rSceneBuffer.hpp"
 
 #include <iostream>
 
@@ -35,14 +35,14 @@ namespace CS499R
     }
 
     void
-    RenderState::shotScene(SceneBuffer const * sceneBuffer, Camera const * camera, RenderAbstractTracker * renderTracker)
+    RenderState::shotScene(CompiledScene const * compiledScene, Camera const * camera, RenderAbstractTracker * renderTracker)
     {
-        CS499R_ASSERT(sceneBuffer != nullptr);
+        CS499R_ASSERT(compiledScene != nullptr);
         CS499R_ASSERT(camera != nullptr);
         CS499R_ASSERT(renderTracker != nullptr);
         CS499R_ASSERT(validateParams());
         CS499R_ASSERT(mRenderTarget != nullptr);
-        CS499R_ASSERT(mRenderTarget->mRayTracer == sceneBuffer->mRayTracer);
+        CS499R_ASSERT(mRenderTarget->mRayTracer == compiledScene->mRayTracer);
 
         RenderShotCtx shotCtx;
 
@@ -53,13 +53,13 @@ namespace CS499R
         { // init
             common_render_context_t templateCtx;
 
-            shotInitTemplateCtx(&shotCtx, sceneBuffer, camera, &templateCtx);
+            shotInitTemplateCtx(&shotCtx, compiledScene, camera, &templateCtx);
             shotInitKickoffEntries(&shotCtx, &templateCtx);
             shotAllocKickoffEntriesBuffer(&shotCtx);
         }
 
         // kick off
-        shotKickoff(&shotCtx, sceneBuffer, renderTracker);
+        shotKickoff(&shotCtx, compiledScene, renderTracker);
 
         // free
         shotFreeKickoffEntriesBuffer(&shotCtx);
@@ -258,7 +258,7 @@ namespace CS499R
     void
     RenderState::shotInitTemplateCtx(
         RenderShotCtx const * ctx,
-        SceneBuffer const * sceneBuffer,
+        CompiledScene const * compiledScene,
         Camera const * camera,
         common_render_context_t * templateCtx
     ) const
@@ -270,7 +270,7 @@ namespace CS499R
         }
 
         // +1 because of the anonymous mesh
-        templateCtx->scene.meshInstanceMaxId = sceneBuffer->mScene->mObjectsMap.meshInstances.size() + 1;
+        templateCtx->scene.meshInstanceMaxId = compiledScene->mScene->mObjectsMap.meshInstances.size() + 1;
 
         // init render
         if (ctx->superTiling())
@@ -393,9 +393,9 @@ namespace CS499R
     }
 
     void
-    RenderState::shotKickoff(RenderShotCtx const * ctx, SceneBuffer const * sceneBuffer, RenderAbstractTracker * renderTracker)
+    RenderState::shotKickoff(RenderShotCtx const * ctx, CompiledScene const * compiledScene, RenderAbstractTracker * renderTracker)
     {
-        auto const rayTracer = sceneBuffer->mRayTracer;
+        auto const rayTracer = compiledScene->mRayTracer;
 
         cl_int error = 0;
         cl_command_queue const cmdQueue = rayTracer->mCmdQueue;
@@ -407,9 +407,9 @@ namespace CS499R
         );
 
         { // kernel arguments
-            error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &sceneBuffer->mBuffer.meshInstances);
-            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &sceneBuffer->mBuffer.meshOctreeNodes);
-            error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &sceneBuffer->mBuffer.primitives);
+            error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &compiledScene->mBuffer.meshInstances);
+            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &compiledScene->mBuffer.meshOctreeNodes);
+            error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &compiledScene->mBuffer.primitives);
 
             if (superTileTarget)
             {
