@@ -57,6 +57,17 @@
 #endif
 
 /*
+ * Optimises the octree's leaves that to few primitives
+ *
+ *  This optimisation removes leaves that have to few primitives. This has the
+ *  hability to compress the octree's memory size and not let the raytracer test
+ *  many cube intersections that are not worth it.
+ */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_OPTIMISATION_STAGE
+# define CS499R_CONFIG_ENABLE_OCTREE_OPTIMISATION_STAGE 1
+#endif
+
+/*
  * Enables the super-sampling rendering
  *
  *  This optimisation renders per tile, but with a bigger resolution, so that

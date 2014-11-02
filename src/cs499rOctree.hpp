@@ -101,7 +101,11 @@ namespace CS499R
         size_t
         optimize()
         {
+#if CS499R_CONFIG_ENABLE_OCTREE_OPTIMISATION_STAGE
             return mRoot->optimize();
+#else
+            return 0;
+#endif
         }
 
         /*
