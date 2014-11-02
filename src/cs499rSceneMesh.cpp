@@ -37,7 +37,7 @@ namespace CS499R
 
         mesh.computeBoundingBox(&lowerBound, &upperBound);
 
-        Octree octree(lowerBound, upperBound);
+        Octree<size_t> octree(lowerBound, upperBound);
 
         { // build up mesh's octree
             /*

@@ -17,6 +17,7 @@ namespace CS499R
      * Octree recursively subdivides space in 8 boxes, each containing a list of
      * primitive indexes (could be index for a mesh or a mesh's triangle).
      */
+    template <typename PRIM>
     class Octree
     {
     public:
@@ -27,13 +28,81 @@ namespace CS499R
          * geometric information parameters
          */
         void
-        insert(size_t primId, float32x3_t primCenter, float32_t primBiggestDimSize);
+        insert(PRIM primId, float32x3_t primCenter, float32_t primBiggestDimSize)
+        {
+            auto currentOctreeNode = mRoot;
+
+            // seek the correct node who should contain this primitive
+            for (;;)
+            {
+                auto const currentNodeSize = currentOctreeNode->size();
+
+                if (currentNodeSize * 0.5f < primBiggestDimSize)
+                {
+                    break;
+                }
+
+                CS499R_ASSERT(abs(primCenter.x - currentOctreeNode->mCenter.x) <= currentNodeSize);
+                CS499R_ASSERT(abs(primCenter.y - currentOctreeNode->mCenter.y) <= currentNodeSize);
+                CS499R_ASSERT(abs(primCenter.z - currentOctreeNode->mCenter.z) <= currentNodeSize);
+
+                auto const subNodeCoord = size3_t(
+                    size_t(primCenter.x > currentOctreeNode->mCenter.x),
+                    size_t(primCenter.y > currentOctreeNode->mCenter.y),
+                    size_t(primCenter.z > currentOctreeNode->mCenter.z)
+                );
+
+                auto const subNodeId = subNodeIdFromCoord(subNodeCoord);
+
+                if (currentOctreeNode->mChildren[subNodeId] == nullptr)
+                {
+                    // this octree sub node was not existing yet, so we create it.
+
+                    auto const subNodeSizeLog = currentOctreeNode->mSizeLog - 1;
+                    float32_t const subNodeSize = pow(2.0f, subNodeSizeLog);
+                    auto const subNodeCenterOffset = subNodeSize * 0.5f;
+                    auto const subNodeCenter = currentOctreeNode->mCenter + float32x3_t(
+                        subNodeCoord.x ? subNodeCenterOffset : -subNodeCenterOffset,
+                        subNodeCoord.y ? subNodeCenterOffset : -subNodeCenterOffset,
+                        subNodeCoord.z ? subNodeCenterOffset : -subNodeCenterOffset
+                    );
+
+                    currentOctreeNode->mChildren[subNodeId] = new OctreeNode(
+                        subNodeCenter,
+                        subNodeSizeLog
+                    );
+                }
+
+                currentOctreeNode = currentOctreeNode->mChildren[subNodeId];
+            }
+
+            {
+                auto const currentNodeSize = currentOctreeNode->size();
+
+                CS499R_ASSERT(primBiggestDimSize >= currentNodeSize * 0.5f);
+                CS499R_ASSERT(primBiggestDimSize <= currentNodeSize);
+
+                CS499R_ASSERT(primCenter.x >= currentOctreeNode->mCenter.x - currentNodeSize * 0.5f);
+                CS499R_ASSERT(primCenter.y >= currentOctreeNode->mCenter.y - currentNodeSize * 0.5f);
+                CS499R_ASSERT(primCenter.z >= currentOctreeNode->mCenter.z - currentNodeSize * 0.5f);
+                CS499R_ASSERT(primCenter.x <= currentOctreeNode->mCenter.x + currentNodeSize * 0.5f);
+                CS499R_ASSERT(primCenter.y <= currentOctreeNode->mCenter.y + currentNodeSize * 0.5f);
+                CS499R_ASSERT(primCenter.z <= currentOctreeNode->mCenter.z + currentNodeSize * 0.5f);
+            }
+
+            currentOctreeNode->mPrimitiveIds.push_back(primId);
+
+            mPrimCount++;
+        }
 
         /*
          * Optimizes the octree
          */
         size_t
-        optimize();
+        optimize()
+        {
+            return mRoot->optimize();
+        }
 
         /*
          * Exports the octree to common nodes, and returns the ordered
@@ -41,9 +110,18 @@ namespace CS499R
          */
         void
         exportToCommonOctreeNodeArray(
-            size_t * outPrimOrderedList,
+            PRIM * outPrimOrderedList,
             common_octree_node_t * outOctreeCommonNodes
-        ) const;
+        ) const
+        {
+            size_t cursors[] = { 0, 0 };
+
+            mRoot->exportToCommonOctreeNode(
+                outPrimOrderedList,
+                outOctreeCommonNodes,
+                cursors
+            );
+        }
 
         size_t
         boxSize() const
@@ -58,7 +136,10 @@ namespace CS499R
         }
 
         size_t
-        nodeCount() const;
+        nodeCount() const
+        {
+            return mRoot->nodeCount();
+        }
 
 
         // --------------------------------------------------------------------- IDLE
@@ -66,8 +147,18 @@ namespace CS499R
         Octree(
             float32x3_t const & lowerBound,
             float32x3_t const & upperBound
-        );
-        ~Octree();
+        )
+        {
+            mPrimCount = 0;
+            mBoxSizeLog = int32_t(ceil(log2(max(upperBound - lowerBound))));
+
+            mRoot = new OctreeNode(boxSize() * 0.5f + lowerBound, mBoxSizeLog);
+        }
+
+        ~Octree()
+        {
+            delete mRoot;
+        }
 
 
     private:
@@ -76,7 +167,6 @@ namespace CS499R
         /*
          * An octree node
          */
-        template <typename PRIM>
         class OctreeNode
         {
         public:
@@ -323,7 +413,7 @@ namespace CS499R
         // --------------------------------------------------------------------- MEMBERS
 
         // the octree's root
-        OctreeNode<size_t> * mRoot;
+        OctreeNode * mRoot;
 
         // the octree's root log size
         int32_t mBoxSizeLog;

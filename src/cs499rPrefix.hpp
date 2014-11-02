@@ -26,7 +26,6 @@ namespace CS499R
     class Camera;
     class Image;
     class Mesh;
-    class Octree;
     class RayTracer;
     class RenderAbstractTracker;
     class RenderShotCtx;
