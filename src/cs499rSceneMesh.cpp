@@ -95,14 +95,14 @@ namespace CS499R
 
     void
     SceneMesh::exportToCommonMesh(
-        SceneMesh::CompiledSceneCtx const & ctx,
+        CompiledScene::CompilationCtx const & compilationCtx,
         common_mesh_t * outMesh
     ) const
     {
         CS499R_STATIC_ASSERT(sizeof(common_mesh_t) == sizeof(uint32_t) * 8);
 
-        auto const sceneMeshPrimFirst = ctx.meshPrimitivesGlobalOffsets.find(this)->second;
-        auto const sceneMeshOctreeRootId = ctx.meshOctreeRootGlobalId.find(this)->second;
+        auto const sceneMeshPrimFirst = compilationCtx.meshPrimitivesGlobalOffsets.find(this)->second;
+        auto const sceneMeshOctreeRootId = compilationCtx.meshOctreeRootGlobalId.find(this)->second;
 
         outMesh->primFirst = sceneMeshPrimFirst;
         outMesh->primCount = mPrimitiveCount;

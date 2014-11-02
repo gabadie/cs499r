@@ -3,6 +3,7 @@
 #define _H_CS499R_SCENEMESHINSTANCE
 
 #include "cs499rCommonStruct.hpp"
+#include "cs499rCompiledScene.hpp"
 #include "cs499rSceneMesh.hpp"
 
 
@@ -56,7 +57,7 @@ namespace CS499R
          */
         void
         exportToCommonMeshInstance(
-            SceneMesh::CompiledSceneCtx const & ctx,
+            CompiledScene::CompilationCtx const & compilationCtx,
             common_mesh_instance_t * outMeshInstance
         ) const;
 

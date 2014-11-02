@@ -24,17 +24,17 @@ namespace CS499R
     void
     CompiledScene::createBuffers()
     {
-        SceneMesh::CompiledSceneCtx ctx;
+        CompilationCtx compilationCtx;
 
-        createPrimitivesBuffer(ctx);
+        createPrimitivesBuffer(compilationCtx);
 
-        createMeshOctreeNodesBuffer(ctx);
+        createMeshOctreeNodesBuffer(compilationCtx);
 
-        createMeshInstancesBuffer(ctx);
+        createMeshInstancesBuffer(compilationCtx);
     }
 
     void
-    CompiledScene::createPrimitivesBuffer(SceneMesh::CompiledSceneCtx & ctx)
+    CompiledScene::createPrimitivesBuffer(CompilationCtx & compilationCtx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -46,7 +46,7 @@ namespace CS499R
         {
             auto sceneMesh = it.second;
 
-            ctx.meshPrimitivesGlobalOffsets.insert({sceneMesh, totalPrimCount});
+            compilationCtx.meshPrimitivesGlobalOffsets.insert({sceneMesh, totalPrimCount});
 
             totalPrimCount += sceneMesh->mPrimitiveCount;
         }
@@ -85,7 +85,7 @@ namespace CS499R
     }
 
     void
-    CompiledScene::createMeshInstancesBuffer(SceneMesh::CompiledSceneCtx const & ctx)
+    CompiledScene::createMeshInstancesBuffer(CompilationCtx const & compilationCtx)
     {
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
@@ -104,7 +104,7 @@ namespace CS499R
             auto const sceneMeshInstance = it.second;
             auto const commonMesh = instanceArray + instanceId;
 
-            sceneMeshInstance->exportToCommonMeshInstance(ctx, commonMesh);
+            sceneMeshInstance->exportToCommonMeshInstance(compilationCtx, commonMesh);
 
             instanceId++;
         }
@@ -122,7 +122,7 @@ namespace CS499R
     }
 
     void
-    CompiledScene::createMeshOctreeNodesBuffer(SceneMesh::CompiledSceneCtx & ctx)
+    CompiledScene::createMeshOctreeNodesBuffer(CompilationCtx & compilationCtx)
     {
         cl_int error = 0;
 
@@ -134,7 +134,7 @@ namespace CS499R
             {
                 auto sceneMesh = it.second;
 
-                ctx.meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
+                compilationCtx.meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
 
                 totalMeshOctreeNodeCount += sceneMesh->mOctreeNodeCount;
             }

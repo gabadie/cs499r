@@ -24,7 +24,7 @@ namespace CS499R
 
     void
     SceneMeshInstance::exportToCommonMeshInstance(
-        SceneMesh::CompiledSceneCtx const & ctx,
+        CompiledScene::CompilationCtx const & compilationCtx,
         common_mesh_instance_t * outMeshInstance
     ) const
     {
@@ -49,7 +49,7 @@ namespace CS499R
         outMeshInstance->diffuseColor = mColorDiffuse;
         outMeshInstance->emitColor = mColorEmit;
 
-        mSceneMesh->exportToCommonMesh(ctx, &outMeshInstance->mesh);
+        mSceneMesh->exportToCommonMesh(compilationCtx, &outMeshInstance->mesh);
     }
 
     void

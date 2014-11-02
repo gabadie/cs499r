@@ -2,7 +2,9 @@
 #ifndef _H_CS499R_COMPILEDSCENE
 #define _H_CS499R_COMPILEDSCENE
 
-#include "cs499rSceneMesh.hpp"
+#include <map>
+
+#include "cs499rPrefix.hpp"
 
 
 namespace CS499R
@@ -21,6 +23,23 @@ namespace CS499R
 
 
     private:
+        // --------------------------------------------------------------------- MEMBERS
+
+        using SceneMeshOffsetMap = std::map<SceneMesh const *, size_t>;
+
+        /*
+         * Context when building up CompiledScene
+         */
+        struct CompilationCtx
+        {
+            // global primitive offset for each meshes
+            SceneMeshOffsetMap meshPrimitivesGlobalOffsets;
+
+            // global node id of the mesh's octree root
+            SceneMeshOffsetMap meshOctreeRootGlobalId;
+        };
+
+
         // --------------------------------------------------------------------- MEMBERS
 
         // the scene source
@@ -50,19 +69,19 @@ namespace CS499R
          * Creates mBuffer.primitives
          */
         void
-        createPrimitivesBuffer(SceneMesh::CompiledSceneCtx & ctx);
+        createPrimitivesBuffer(CompilationCtx & compilationCtx);
 
         /*
          * Creates mBuffer.meshInstances
          */
         void
-        createMeshInstancesBuffer(SceneMesh::CompiledSceneCtx const & ctx);
+        createMeshInstancesBuffer(CompilationCtx const & compilationCtx);
 
         /*
          * Creates mBuffer.meshOctreeNodes
          */
         void
-        createMeshOctreeNodesBuffer(SceneMesh::CompiledSceneCtx & ctx);
+        createMeshOctreeNodesBuffer(CompilationCtx & compilationCtx);
 
         /*
          * Releases GPU side buffers
@@ -73,6 +92,8 @@ namespace CS499R
 
         // --------------------------------------------------------------------- FRIENDSHIP
         friend class RenderState;
+        friend class SceneMesh;
+        friend class SceneMeshInstance;
 
     };
 
