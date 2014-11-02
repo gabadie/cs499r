@@ -1,6 +1,5 @@
 
 #include "cs499rOctree.hpp"
-#include "cs499rOctreeNode.hpp"
 
 
 namespace CS499R
@@ -31,7 +30,7 @@ namespace CS499R
                 size_t(primCenter.z > currentOctreeNode->mCenter.z)
             );
 
-            auto const subNodeId = OctreeNode::subNodeIdFromCoord(subNodeCoord);
+            auto const subNodeId = subNodeIdFromCoord(subNodeCoord);
 
             if (currentOctreeNode->mChildren[subNodeId] == nullptr)
             {
@@ -46,7 +45,7 @@ namespace CS499R
                     subNodeCoord.z ? subNodeCenterOffset : -subNodeCenterOffset
                 );
 
-                currentOctreeNode->mChildren[subNodeId] = new OctreeNode(
+                currentOctreeNode->mChildren[subNodeId] = new OctreeNode<size_t>(
                     subNodeCenter,
                     subNodeSizeLog
                 );
@@ -109,7 +108,7 @@ namespace CS499R
         mPrimCount = 0;
         mBoxSizeLog = int32_t(ceil(log2(max(upperBound - lowerBound))));
 
-        mRoot = new OctreeNode(boxSize() * 0.5f + lowerBound, mBoxSizeLog);
+        mRoot = new OctreeNode<size_t>(boxSize() * 0.5f + lowerBound, mBoxSizeLog);
     }
 
     Octree::~Octree()
