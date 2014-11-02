@@ -52,5 +52,29 @@ namespace CS499R
         mSceneMesh->exportToCommonMesh(ctx, &outMeshInstance->mesh);
     }
 
+    void
+    SceneMeshInstance::exportAnonymousToCommonMeshInstance(
+        common_mesh_instance_t * outAnonymousMesh
+    )
+    {
+        /*
+         * The anonymous mesh has completly null matrices in order to
+         * have a grey background on normal debuging.
+         */
+        outAnonymousMesh->meshSceneMatrix.x = 0.0f;
+        outAnonymousMesh->meshSceneMatrix.y = 0.0f;
+        outAnonymousMesh->meshSceneMatrix.z = 0.0f;
+        outAnonymousMesh->meshSceneMatrix.w = 0.0f;
+        outAnonymousMesh->sceneMeshMatrix.x = 0.0f;
+        outAnonymousMesh->sceneMeshMatrix.y = 0.0f;
+        outAnonymousMesh->sceneMeshMatrix.z = 0.0f;
+        outAnonymousMesh->sceneMeshMatrix.w = 0.0f;
+
+        outAnonymousMesh->diffuseColor = 0.0f;
+        outAnonymousMesh->emitColor = 0.0f;
+        outAnonymousMesh->mesh.primFirst = 0;
+        outAnonymousMesh->mesh.primCount = 0;
+    }
+
 
 }

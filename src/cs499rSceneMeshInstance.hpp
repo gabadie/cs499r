@@ -60,6 +60,15 @@ namespace CS499R
             common_mesh_instance_t * outMeshInstance
         ) const;
 
+        /*
+         * Export the anonymous mesh instance to a common mesh instance
+         */
+        static
+        void
+        exportAnonymousToCommonMeshInstance(
+            common_mesh_instance_t * outAnonymousMesh
+        );
+
 
         // --------------------------------------------------------------------- FRIENDSHIP
         friend class Scene;

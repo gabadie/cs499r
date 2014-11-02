@@ -94,25 +94,7 @@ namespace CS499R
         auto const instanceArray = alloc<common_mesh_instance_t>(instanceCount + 1);
 
         { // init the anonymous mesh instance
-            auto anonymousMesh = instanceArray + 0;
-
-            /*
-             * The anonymous mesh has completly null matrices in order to
-             * have a grey background on normal debuging.
-             */
-            anonymousMesh->meshSceneMatrix.x = 0.0f;
-            anonymousMesh->meshSceneMatrix.y = 0.0f;
-            anonymousMesh->meshSceneMatrix.z = 0.0f;
-            anonymousMesh->meshSceneMatrix.w = 0.0f;
-            anonymousMesh->sceneMeshMatrix.x = 0.0f;
-            anonymousMesh->sceneMeshMatrix.y = 0.0f;
-            anonymousMesh->sceneMeshMatrix.z = 0.0f;
-            anonymousMesh->sceneMeshMatrix.w = 0.0f;
-
-            anonymousMesh->diffuseColor = 0.0f;
-            anonymousMesh->emitColor = 0.0f;
-            anonymousMesh->mesh.primFirst = 0;
-            anonymousMesh->mesh.primCount = 0;
+            SceneMeshInstance::exportAnonymousToCommonMeshInstance(instanceArray + 0);
         }
 
         size_t instanceId = 1;
