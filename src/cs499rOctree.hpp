@@ -114,12 +114,14 @@ namespace CS499R
             common_octree_node_t * outOctreeCommonNodes
         ) const
         {
-            size_t cursors[] = { 0, 0 };
+            ExportCtx exportCtx;
+            exportCtx.nodeIdCounter = 0;
+            exportCtx.primIdCounter = 0;
 
             mRoot->exportToCommonOctreeNode(
                 outPrimOrderedList,
                 outOctreeCommonNodes,
-                cursors
+                exportCtx
             );
         }
 
@@ -162,7 +164,16 @@ namespace CS499R
 
 
     private:
-        // --------------------------------------------------------------------- PRIVATE CLASS
+        // --------------------------------------------------------------------- PRIVATE STRUCTS
+
+        /*
+         * Octree export counters
+         */
+        struct ExportCtx
+        {
+            size_t nodeIdCounter;
+            size_t primIdCounter;
+        };
 
         /*
          * An octree node
@@ -189,15 +200,15 @@ namespace CS499R
             exportToCommonOctreeNode(
                 PRIM * outPrimOrderedList,
                 common_octree_node_t * outOctreeCommonNodes,
-                size_t cursors[2]
+                ExportCtx & exportCtx
             ) const
             {
-                auto const nodeId = cursors[0];
-                auto const primOffset = cursors[1];
+                auto const nodeId = exportCtx.nodeIdCounter;
+                auto const primOffset = exportCtx.primIdCounter;
                 auto const commonNode = outOctreeCommonNodes + nodeId;
 
-                cursors[0] += 1;
-                cursors[1] += mPrimitiveIds.size();
+                exportCtx.nodeIdCounter += 1;
+                exportCtx.primIdCounter += mPrimitiveIds.size();
 
                 { // export primitive ids list
                     auto primNewId = primOffset;
@@ -228,18 +239,18 @@ namespace CS499R
                         continue;
                     }
 
-                    auto const subNodeId = cursors[0];
+                    auto const subNodeId = exportCtx.nodeIdCounter;
 
                     commonNode->subNodeOffsets[i] = subNodeId;
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-                    commonNode->subNodeCount ++;
+                    commonNode->subNodeCount++;
                     CS499R_ASSERT(commonNode->subNodeCount <= CS499R_ARRAY_SIZE(mChildren));
 #endif
 
                     subNode->exportToCommonOctreeNode(
                         outPrimOrderedList,
                         outOctreeCommonNodes,
-                        cursors
+                        exportCtx
                     );
                 }
 
