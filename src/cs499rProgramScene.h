@@ -29,7 +29,7 @@
 
 #define octree_tmplt_prim_intersection(sampleCx, primId) \
     { \
-        sampleCx->boundMeshInstance = meshInstances + (primId) + 1; \
+        sampleCx->boundMeshInstance = meshInstances + (primId); \
         mesh_instance_intersection(sampleCx, rootNode, primitives); \
     }
 

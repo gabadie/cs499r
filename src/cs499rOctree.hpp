@@ -115,12 +115,14 @@ namespace CS499R
         void
         exportToCommonOctreeNodeArray(
             PRIM * outPrimOrderedList,
-            common_octree_node_t * outOctreeCommonNodes
+            common_octree_node_t * outOctreeCommonNodes,
+            size_t firstPrimId = 0
         ) const
         {
             ExportCtx exportCtx;
             exportCtx.nodeIdCounter = 0;
-            exportCtx.primIdCounter = 0;
+            exportCtx.primOffsetCounter = 0;
+            exportCtx.primFirstId = firstPrimId;
 
             auto const rootNodeId = mRoot->selfExportToCommonOctreeNode(
                 outPrimOrderedList,
@@ -185,7 +187,8 @@ namespace CS499R
         struct ExportCtx
         {
             size_t nodeIdCounter;
-            size_t primIdCounter;
+            size_t primOffsetCounter;
+            size_t primFirstId;
         };
 
         /*
@@ -217,14 +220,14 @@ namespace CS499R
             ) const
             {
                 auto const nodeId = exportCtx.nodeIdCounter;
-                auto const primOffset = exportCtx.primIdCounter;
+                auto const primOffset = exportCtx.primOffsetCounter;
                 auto const commonNode = outOctreeCommonNodes + nodeId;
 
-                commonNode->primFirst = primOffset;
+                commonNode->primFirst = exportCtx.primFirstId + primOffset;
                 commonNode->primCount = mPrimitiveIds.size();
 
                 exportCtx.nodeIdCounter += 1;
-                exportCtx.primIdCounter += mPrimitiveIds.size();
+                exportCtx.primOffsetCounter += mPrimitiveIds.size();
 
                 { // export primitive ids list
                     auto primNewId = primOffset;

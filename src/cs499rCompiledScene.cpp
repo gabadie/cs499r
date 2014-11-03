@@ -200,9 +200,14 @@ namespace CS499R
 
             CS499R_ASSERT_ALIGNMENT(sceneOctreeCommonNodes);
 
+            /*
+             * We export the scene octree form by starting from the mesh
+             * instance one 1 because the id 0 is the anonymous mesh instance.
+             */
             octree.exportToCommonOctreeNodeArray(
                 compilationCtx.meshInstanceOrderList,
-                sceneOctreeCommonNodes
+                sceneOctreeCommonNodes,
+                1
             );
 
             error = clEnqueueWriteBuffer(
