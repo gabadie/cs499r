@@ -69,6 +69,12 @@ namespace CS499R
             return result->second;
         }
 
+        /*
+         * Returns the scene's bounding box
+         */
+        void
+        computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const;
+
 
         // --------------------------------------------------------------------- IDLE
 
