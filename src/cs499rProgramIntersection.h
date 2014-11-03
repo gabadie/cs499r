@@ -130,10 +130,15 @@ primitive_intersection(
  */
 inline
 uint32_t
-box_intersection(sample_context_t const * const sampleCx, float32x3_t const OE, float32x3_t const OG)
+box_intersection_raw(
+    sample_context_t const * const sampleCx,
+    float32x3_t const OE,
+    float32x3_t const OG,
+    float32x3_t const dComponentInverted
+)
 {
-    float32x3_t const t0 = OE * sampleCx->rayMeshDirectionInverted;
-    float32x3_t const t1 = OG * sampleCx->rayMeshDirectionInverted;
+    float32x3_t const t0 = OE * dComponentInverted;
+    float32x3_t const t1 = OG * dComponentInverted;
     float32x3_t const tMin = min(t0, t1);
     float32x3_t const tMax = max(t0, t1);
 
@@ -144,6 +149,18 @@ box_intersection(sample_context_t const * const sampleCx, float32x3_t const OE, 
         (tMin.z < min(tMax.x, tMax.y)) &&
         (max(tMax.x, max(tMax.y, tMax.z)) > 0.0f) &&
         (min(tMin.x, min(tMin.y, tMin.z)) < sampleCx->rayInterDistance)
+    );
+}
+
+inline
+uint32_t
+box_intersection(sample_context_t const * const sampleCx, float32x3_t const OE, float32x3_t const OG)
+{
+    return box_intersection_raw(
+        sampleCx,
+        OE,
+        OG,
+        sampleCx->rayMeshDirectionInverted
     );
 }
 

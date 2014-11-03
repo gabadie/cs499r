@@ -70,6 +70,16 @@ namespace CS499R
             cl_mem octreeNodes;
         } mBuffer;
 
+        // the infos
+        struct
+        {
+            // the half size of the scene octree's root node
+            float32_t sceneOctreeRootHalfSize;
+
+            // the scene octree's offset
+            float32x3_t sceneOctreeOffset;
+        } mInfo;
+
 
         // --------------------------------------------------------------------- METHODES
 

@@ -155,6 +155,11 @@ namespace CS499R
 
         octree.optimize();
 
+        {
+            mInfo.sceneOctreeOffset = -lowerBound;
+            mInfo.sceneOctreeRootHalfSize = octree.boxSize() * 0.5f;
+        }
+
         size_t const totalSceneOctreeNodeCount = octree.nodeCount();
 
         CS499R_ASSERT(totalSceneOctreeNodeCount != 0);

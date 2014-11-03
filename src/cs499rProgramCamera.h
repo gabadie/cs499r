@@ -38,6 +38,8 @@ camera_first_ray(
     );
 
     sampleCx->raySceneDirection = normalize(rayFocusPoint - sampleCx->raySceneOrigin);
+
+    sampleCx->raySceneDirectionInverted = 1.0f / sampleCx->raySceneDirection;
 }
 
 #endif // _CLH_CS499R_PROGRAM_CAMERA

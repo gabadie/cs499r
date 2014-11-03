@@ -271,6 +271,8 @@ namespace CS499R
 
         // +1 because of the anonymous mesh
         templateCtx->scene.meshInstanceMaxId = compiledScene->mScene->mObjectsMap.meshInstances.size() + 1;
+        templateCtx->scene.octreeOffset = compiledScene->mInfo.sceneOctreeOffset;
+        templateCtx->scene.octreeRootHalfSize = compiledScene->mInfo.sceneOctreeRootHalfSize;
 
         // init render
         if (ctx->superTiling())

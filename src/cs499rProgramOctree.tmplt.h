@@ -10,6 +10,8 @@
         rootNode \
     )
 
+#define octree_tmplt_ray_origin(sampleCx) ((float32x3_t)(0.0f))
+#define octree_tmplt_ray_direction_inverted(sampleCx) ((float32x3_t)(1.0f))
 #define octree_tmplt_root_half_size() 1.0f
 #define octree_tmplt_prim_intersection(sampleCx, primId)
 
@@ -31,8 +33,8 @@ octree_tmplt_intersection(
     {
         nodeStack[0] = 0;
         subNodeAccessStack[0] = 0;
-        nodeInfosStack[0].xyz = -sampleCx->rayMeshOrigin;
-        nodeInfosStack[0].w = octree_tmplt_root_half_size();
+        nodeInfosStack[0].xyz = -(octree_tmplt_ray_origin(sampleCx));
+        nodeInfosStack[0].w = (octree_tmplt_root_half_size());
     }
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
@@ -107,7 +109,14 @@ octree_tmplt_intersection(
         float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
         float32x4_t const subNodeInfos = octree_sub_node_infos(nodeInfos, subNodeId);
 
-        if (!box_intersection(sampleCx, subNodeInfos.xyz - subNodeInfos.w, subNodeInfos.xyz + 3.0f * subNodeInfos.w))
+        if (
+            !box_intersection_raw(
+                sampleCx,
+                subNodeInfos.xyz - subNodeInfos.w,
+                subNodeInfos.xyz + 3.0f * subNodeInfos.w,
+                (octree_tmplt_ray_direction_inverted(sampleCx))
+            )
+        )
         {
             continue;
         }
@@ -121,6 +130,8 @@ octree_tmplt_intersection(
     }
 }
 
+#undef octree_tmplt_ray_origin
+#undef octree_tmplt_ray_direction_inverted
 #undef octree_tmplt_intersection
 #undef octree_tmplt_root_half_size
 #undef octree_tmplt_prim_intersection

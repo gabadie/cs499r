@@ -13,8 +13,11 @@ __private struct sample_context_s
     // ray's origin in the mesh space
     float32x3_t raySceneOrigin;
 
-    // normalized ray's direction in the mesh space
+    // normalized ray's direction in the scene space
     float32x3_t raySceneDirection;
+
+    // normalized ray's direction in the scene space inverted
+    float32x3_t raySceneDirectionInverted;
 
     // ray's origin in the mesh space
     float32x3_t rayMeshOrigin;
@@ -22,7 +25,7 @@ __private struct sample_context_s
     // normalized ray's direction in the mesh space
     float32x3_t rayMeshDirection;
 
-    // normalized ray's direction inverted
+    // normalized ray's direction in the mesh space inverted
     float32x3_t rayMeshDirectionInverted;
 
     // ray's minimal distance found for depth test

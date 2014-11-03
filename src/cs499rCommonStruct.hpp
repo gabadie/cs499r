@@ -127,6 +127,11 @@ namespace CS499R
         // the max id of mesh instances in the scene
         __attribute__((aligned(16))) uint32_t meshInstanceMaxId;
 
+        // the half size of the scene octree's root node
+        __attribute__((aligned(16))) float32_t octreeRootHalfSize;
+
+        // the scene octree's offset
+        __attribute__((aligned(16))) float32x3_t octreeOffset;
     } common_scene_t;
 
     typedef

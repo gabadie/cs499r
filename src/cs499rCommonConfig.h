@@ -79,6 +79,13 @@
 # define CS499R_CONFIG_ENABLE_SUPERSAMPLING 0
 #endif
 
+/*
+ * Enables scene's octree
+ */
+#ifndef CS499R_CONFIG_ENABLE_SCENE_OCTREE
+# define CS499R_CONFIG_ENABLE_SCENE_OCTREE 1
+#endif
+
 
 /*
  * Configures the pixels gathering strategy per warp
