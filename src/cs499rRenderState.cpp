@@ -463,7 +463,10 @@ namespace CS499R
             }
 
             size2_t const kickoffTileStart = kMaxKickoffTilePerSuperTileBorder * it.superTilePos;
-            size2_t const kickoffTileEnd = min(kickoffTileStart + kMaxKickoffTilePerSuperTileBorder, ctx->kickoffTileGrid);
+            size2_t const kickoffTileEnd = (ctx->superTiling()
+                ? min(kickoffTileStart + kMaxKickoffTilePerSuperTileBorder, ctx->kickoffTileGrid)
+                : ctx->kickoffTileGrid
+            );
 
             for (it.invocationId = 0; it.invocationId < ctx->kickoffInvocationCount(); it.invocationId++) {
             for (it.subPixel.y = 0; it.subPixel.y < ctx->virtualPixelBorderSubdivisions(); it.subPixel.y++) {
