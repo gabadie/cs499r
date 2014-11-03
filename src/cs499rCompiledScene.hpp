@@ -37,6 +37,20 @@ namespace CS499R
 
             // global node id of the mesh's octree root
             SceneMeshOffsetMap meshOctreeRootGlobalId;
+
+            // the mesh instances' order list to upload in mBuffer.meshInstances
+            SceneMeshInstance ** meshInstanceOrderList;
+
+
+            CompilationCtx()
+            {
+                meshInstanceOrderList = nullptr;
+            }
+
+            ~CompilationCtx()
+            {
+                free(meshInstanceOrderList);
+            }
         };
 
 
@@ -53,7 +67,7 @@ namespace CS499R
         {
             cl_mem primitives;
             cl_mem meshInstances;
-            cl_mem meshOctreeNodes;
+            cl_mem octreeNodes;
         } mBuffer;
 
 
@@ -81,7 +95,7 @@ namespace CS499R
          * Creates mBuffer.meshOctreeNodes
          */
         void
-        createMeshOctreeNodesBuffer(CompilationCtx & compilationCtx);
+        createOctreeNodesBuffer(CompilationCtx & compilationCtx);
 
         /*
          * Releases GPU side buffers

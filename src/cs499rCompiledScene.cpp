@@ -1,6 +1,7 @@
 
 #include <string.h>
 #include "cs499rCompiledScene.hpp"
+#include "cs499rOctree.hpp"
 #include "cs499rRayTracer.hpp"
 #include "cs499rScene.hpp"
 
@@ -26,9 +27,9 @@ namespace CS499R
     {
         CompilationCtx compilationCtx;
 
-        createPrimitivesBuffer(compilationCtx);
+        createOctreeNodesBuffer(compilationCtx);
 
-        createMeshOctreeNodesBuffer(compilationCtx);
+        createPrimitivesBuffer(compilationCtx);
 
         createMeshInstancesBuffer(compilationCtx);
     }
@@ -87,6 +88,8 @@ namespace CS499R
     void
     CompiledScene::createMeshInstancesBuffer(CompilationCtx const & compilationCtx)
     {
+        CS499R_ASSERT(compilationCtx.meshInstanceOrderList);
+
         cl_int error = 0;
         cl_context context = mRayTracer->mContext;
 
@@ -97,16 +100,12 @@ namespace CS499R
             SceneMeshInstance::exportAnonymousToCommonMeshInstance(instanceArray + 0);
         }
 
-        size_t instanceId = 1;
-
-        for (auto it : mScene->mObjectsMap.meshInstances)
+        for (size_t instanceId = 0; instanceId < instanceCount; instanceId++)
         {
-            auto const sceneMeshInstance = it.second;
-            auto const commonMesh = instanceArray + instanceId;
+            auto const sceneMeshInstance = compilationCtx.meshInstanceOrderList[instanceId];
+            auto const commonMesh = instanceArray + (instanceId + 1);
 
             sceneMeshInstance->exportToCommonMeshInstance(compilationCtx, commonMesh);
-
-            instanceId++;
         }
 
         mBuffer.meshInstances = clCreateBuffer(
@@ -122,11 +121,45 @@ namespace CS499R
     }
 
     void
-    CompiledScene::createMeshOctreeNodesBuffer(CompilationCtx & compilationCtx)
+    CompiledScene::createOctreeNodesBuffer(CompilationCtx & compilationCtx)
     {
         cl_int error = 0;
+        cl_command_queue const cmdQueue = mRayTracer->mCmdQueue;
 
-        { // alloc mBuffer.meshOctreeNodes
+        // create scene's octree
+        float32x3_t lowerBound;
+        float32x3_t upperBound;
+
+        mScene->computeBoundingBox(&lowerBound, &upperBound);
+
+        Octree<SceneMeshInstance *> octree(lowerBound, upperBound);
+
+        for (auto it : mScene->mObjectsMap.meshInstances)
+        {
+            auto const meshInstance = it.second;
+
+            float32x3_t meshInstanceLowerBound;
+            float32x3_t meshInstanceUpperBound;
+
+            meshInstance->computeBoundingBox(
+                &meshInstanceLowerBound,
+                &meshInstanceUpperBound
+            );
+
+            octree.insert(
+                meshInstance,
+                (meshInstanceLowerBound + meshInstanceUpperBound) * 0.5f,
+                max(meshInstanceUpperBound - meshInstanceLowerBound)
+            );
+        }
+
+        octree.optimize();
+
+        size_t const totalSceneOctreeNodeCount = octree.nodeCount();
+
+        CS499R_ASSERT(totalSceneOctreeNodeCount != 0);
+
+        { // alloc mBuffer.octreeNodes
             cl_context const context = mRayTracer->mContext;
             size_t totalMeshOctreeNodeCount = 0;
 
@@ -134,16 +167,19 @@ namespace CS499R
             {
                 auto sceneMesh = it.second;
 
-                compilationCtx.meshOctreeRootGlobalId.insert({sceneMesh, totalMeshOctreeNodeCount});
+                compilationCtx.meshOctreeRootGlobalId.insert({
+                    sceneMesh,
+                    totalMeshOctreeNodeCount + totalSceneOctreeNodeCount
+                });
 
                 totalMeshOctreeNodeCount += sceneMesh->mOctreeNodeCount;
             }
 
             CS499R_ASSERT(totalMeshOctreeNodeCount != 0);
 
-            mBuffer.meshOctreeNodes = clCreateBuffer(
+            mBuffer.octreeNodes = clCreateBuffer(
                 context, CL_MEM_READ_ONLY,
-                totalMeshOctreeNodeCount * sizeof(common_octree_node_t),
+                (totalSceneOctreeNodeCount + totalMeshOctreeNodeCount) * sizeof(common_octree_node_t),
                 NULL,
                 &error
             );
@@ -151,9 +187,32 @@ namespace CS499R
             CS499R_ASSERT_NO_CL_ERROR(error);
         }
 
-        { // upload mBuffer.meshOctreeNodes's content
-            cl_command_queue const cmdQueue = mRayTracer->mCmdQueue;
-            size_t meshOctreeNodeOffset = 0;
+        { // upload scene's octree nodes to mBuffer.octreeNodes
+            auto const sceneOctreeCommonNodes = alloc<common_octree_node_t>(totalSceneOctreeNodeCount);
+            compilationCtx.meshInstanceOrderList = alloc<SceneMeshInstance *>(mScene->mObjectsMap.meshInstances.size());
+
+            CS499R_ASSERT_ALIGNMENT(sceneOctreeCommonNodes);
+
+            octree.exportToCommonOctreeNodeArray(
+                compilationCtx.meshInstanceOrderList,
+                sceneOctreeCommonNodes
+            );
+
+            error = clEnqueueWriteBuffer(
+                cmdQueue, mBuffer.octreeNodes, CL_FALSE,
+                0,
+                totalSceneOctreeNodeCount * sizeof(common_octree_node_t),
+                sceneOctreeCommonNodes,
+                0, NULL, NULL
+            );
+
+            CS499R_ASSERT_NO_CL_ERROR(error);
+
+            free(sceneOctreeCommonNodes);
+        }
+
+        { // upload meshes' octree nodes to mBuffer.octreeNodes
+            size_t meshOctreeNodeOffset = totalSceneOctreeNodeCount;
 
             for (auto it : mScene->mObjectsMap.meshes)
             {
@@ -161,8 +220,8 @@ namespace CS499R
 
                 CS499R_ASSERT_ALIGNMENT(sceneMesh->mOctreeNodeArray);
 
-                error |= clEnqueueWriteBuffer(
-                    cmdQueue, mBuffer.meshOctreeNodes, CL_FALSE,
+                error = clEnqueueWriteBuffer(
+                    cmdQueue, mBuffer.octreeNodes, CL_FALSE,
                     meshOctreeNodeOffset * sizeof(common_octree_node_t),
                     sceneMesh->mOctreeNodeCount * sizeof(common_octree_node_t),
                     sceneMesh->mOctreeNodeArray,

@@ -408,7 +408,7 @@ namespace CS499R
 
         { // kernel arguments
             error |= clSetKernelArg(kernel, 1, sizeof(cl_mem), &compiledScene->mBuffer.meshInstances);
-            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &compiledScene->mBuffer.meshOctreeNodes);
+            error |= clSetKernelArg(kernel, 2, sizeof(cl_mem), &compiledScene->mBuffer.octreeNodes);
             error |= clSetKernelArg(kernel, 3, sizeof(cl_mem), &compiledScene->mBuffer.primitives);
 
             if (superTileTarget)
