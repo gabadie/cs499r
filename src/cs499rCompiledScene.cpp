@@ -188,6 +188,8 @@ namespace CS499R
         }
 
         { // upload scene's octree nodes to mBuffer.octreeNodes
+            cl_event writeDone;
+
             auto const sceneOctreeCommonNodes = alloc<common_octree_node_t>(totalSceneOctreeNodeCount);
             compilationCtx.meshInstanceOrderList = alloc<SceneMeshInstance *>(mScene->mObjectsMap.meshInstances.size());
 
@@ -203,9 +205,16 @@ namespace CS499R
                 0,
                 totalSceneOctreeNodeCount * sizeof(common_octree_node_t),
                 sceneOctreeCommonNodes,
-                0, NULL, NULL
+                0, NULL,
+                &writeDone
             );
 
+            CS499R_ASSERT_NO_CL_ERROR(error);
+
+            error = clWaitForEvents(1, &writeDone);
+            CS499R_ASSERT_NO_CL_ERROR(error);
+
+            error = clReleaseEvent(writeDone);
             CS499R_ASSERT_NO_CL_ERROR(error);
 
             free(sceneOctreeCommonNodes);
