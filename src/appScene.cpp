@@ -191,10 +191,87 @@ namespace
             auto sceneMeshInstance = scene.addMeshInstance("monkey/001", sceneMesh);
 
             sceneMeshInstance->mColorDiffuse = kColorWhite;
-            sceneMeshInstance->mScenePosition = float32x3_t(-0.0f, -0.0f, 2.0f);
+            sceneMeshInstance->mScenePosition = float32x3_t(3.0f, 1.0f, 0.0f);
             sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
                 float32x3_t(0.0f, +1.0f, 0.0f),
                 float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        { // Torus
+            CS499R::Mesh mesh("models/torus.obj");
+
+            auto sceneMesh = scene.addMesh("torus", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("torus/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(8.0f, -4.0f, 0.25f);
+        }
+
+        { // Sphere
+            CS499R::Mesh mesh("models/sphere.obj");
+
+            auto sceneMesh = scene.addMesh("sphere", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("sphere/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(10.0f, 8.0f, 1.0f);
+        }
+
+        { // Cone
+            CS499R::Mesh mesh("models/cone.obj");
+
+            auto sceneMesh = scene.addMesh("cone", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("cone/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(5.0f, 12.0f, 1.0f);
+        }
+
+        { // Cube
+            float32_t const angle = 0.85f * kPi;
+            CS499R::Mesh mesh("models/cube_sharp.obj");
+
+            auto sceneMesh = scene.addMesh("cube", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("cube/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(15.0f, 1.0f, 1.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(cos(angle), sin(angle), 0.0f),
+                float32x3_t(-sin(angle), cos(angle), 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        { // Bunny
+            CS499R::Mesh mesh("models/stanford_bunny.obj");
+
+            auto sceneMesh = scene.addMesh("bunny", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("bunny/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(-1.5f, -4.0f, 1.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, -1.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
+        }
+
+        { // Teapot
+            float32_t const angle = 0.6f * kPi;
+            CS499R::Mesh mesh("models/utah_teapot.obj");
+
+            auto sceneMesh = scene.addMesh("teapot", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("teapot/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition = float32x3_t(-3.0f, 3.0f, 0.0f);
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(cos(angle), sin(angle), 0.0f),
+                float32x3_t(-sin(angle), cos(angle), 0.0f),
                 float32x3_t(0.0f, 0.0f, +1.0f)
             );
         }

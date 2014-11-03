@@ -15,7 +15,7 @@ main(int argc, char const * const * argv)
     }
 
     size_t const imageWidth = 256;
-    size_t const imageHeight = imageWidth;
+    size_t const imageHeight = (imageWidth * 9) / 16;
 
     CS499R::RayTracer rayTracer(device);
     CS499R::RenderState renderState;
@@ -23,8 +23,7 @@ main(int argc, char const * const * argv)
     CS499R::Camera camera;
 
     { // sets up the camera
-        camera.mShotPosition = float32x3_t(-10.0f, -15.0f, 9.0f);
-        camera.mShotPosition = float32x3_t(-10.0f, -10.0f, 2.0f);
+        camera.mShotPosition = float32x3_t(-18.0f, -8.0f, 8.0f);
         camera.mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
         camera.mShotDiagonalLength = 0.02f;
     }
