@@ -32,6 +32,15 @@ namespace CS499R
         float32x3_t mColorEmit;
 
 
+        // --------------------------------------------------------------------- FUNCTION
+
+        /*
+         * Returns the mesh instance's bounding box
+         */
+        void
+        computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const;
+
+
         // --------------------------------------------------------------------- OPERATORS
 
         SceneMesh &

@@ -6,6 +6,50 @@
 namespace CS499R
 {
 
+    void
+    SceneMeshInstance::computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const
+    {
+        float32x3_t lowerBound = +INFINITY;
+        float32x3_t upperBound = -INFINITY;
+
+        for (size_t primId = 0; primId < mSceneMesh->mPrimitiveCount; primId++)
+        {
+            auto const * const prim = mSceneMesh->mPrimitiveArray + primId;
+
+            float32x3_t const v0 = (
+                mMeshSceneMatrix.x * prim->v0.x +
+                mMeshSceneMatrix.y * prim->v0.y +
+                mMeshSceneMatrix.z * prim->v0.z +
+                mScenePosition - dot(mMeshSceneMatrix, mSceneMesh->mCenterPosition)
+            );
+
+            float32x3_t const v1 = (
+                mMeshSceneMatrix.x * prim->e0.x +
+                mMeshSceneMatrix.y * prim->e0.y +
+                mMeshSceneMatrix.z * prim->e0.z +
+                v0
+            );
+
+            float32x3_t const v2 = (
+                mMeshSceneMatrix.x * prim->e1.x +
+                mMeshSceneMatrix.y * prim->e1.y +
+                mMeshSceneMatrix.z * prim->e1.z +
+                v0
+            );
+
+            lowerBound = min(lowerBound, v0);
+            lowerBound = min(lowerBound, v1);
+            lowerBound = min(lowerBound, v2);
+
+            upperBound = max(upperBound, v0);
+            upperBound = max(upperBound, v1);
+            upperBound = max(upperBound, v2);
+        }
+
+        *outLowerBound = lowerBound;
+        *outUpperBound = upperBound;
+    }
+
     SceneMeshInstance::SceneMeshInstance(
         Scene * const scene,
         std::string const & objectName,
