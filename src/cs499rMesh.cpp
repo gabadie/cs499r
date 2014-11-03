@@ -99,17 +99,18 @@ namespace CS499R
                 uint32x4_t face;
 
                 iss >> face.x;
+                CS499R_ASSERT(iss);
                 iss >> face.y;
                 CS499R_ASSERT(iss);
                 iss >> face.z;
+                CS499R_ASSERT(iss);
+                iss >> face.w;
 
                 face = face - uint32_t(1);
 
                 if (iss)
                 {
-                    iss >> face.w;
-
-                    faces.push_back(uint32x3_t(face.z, face.w - 1, face.x));
+                    faces.push_back(uint32x3_t(face.z, face.w, face.x));
                 }
 
                 faces.push_back(uint32x3_t(face.x, face.y, face.z));
