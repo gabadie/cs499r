@@ -67,7 +67,7 @@
  * This compute the scene's octree intersection and meshes' octree intersection
  * in the same loop.
  */
-//inline
+inline
 void
 scene_octree_one_loop_intersection(
     sample_context_t * const sampleCx,
@@ -108,7 +108,7 @@ scene_octree_one_loop_intersection(
      * The mesh iterations variables
      */
     __global common_mesh_instance_t const * meshInstance = meshInstances;
-    __global common_mesh_instance_t const * meshInstanceEnd;
+    __global common_mesh_instance_t const * meshInstanceEnd = meshInstances;
 
     for(;;)
     {
@@ -122,7 +122,7 @@ scene_octree_one_loop_intersection(
         uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
         uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
 
-        if (subNodeAccessId != node->subNodeCount)
+        if (subNodeAccessId < node->subNodeCount)
         {
             subNodeAccessStack[nodeStackId] = subNodeAccessId + 1;
 
@@ -193,47 +193,19 @@ scene_octree_one_loop_intersection(
              */
             meshInstance++;
 
-            if (meshInstance < meshInstanceEnd)
+            if (meshInstance == meshInstanceEnd)
             {
                 /*
-                 * There is still some meshes in the current octree node
+                 * We have finished with the current octree node, we restor
+                 * scene octree browsing and we can go upward
                  */
 
-                sampleCx->boundMeshInstance = meshInstance;
-
-                mesh_instance_prepare_frame(sampleCx, meshInstance);
-
-                // load mesh octree browsing
-                octreeRootOffset = meshInstance->mesh.octreeRootGlobalId;
-                octreePrimitiveOffset = meshInstance->mesh.primFirst;
-                directionId = octree_direction_id(sampleCx->rayMeshDirection);
-                directionInverted = sampleCx->rayMeshDirectionInverted;
-
-                /*
-                 * nextNodeStackId = nodeStackId because we replace the
-                 * current mesh's root with the next mesh's root
-                 */
-                uint32_t const nextNodeStackId = nodeStackId;
-
-                nodeStack[nextNodeStackId] = octreeRootOffset;
-                subNodeAccessStack[nextNodeStackId] = 0;
-                nodeInfosStack[nextNodeStackId].xyz = -(mesh_octree_ray_origin(sampleCx));
-                nodeInfosStack[nextNodeStackId].w = (mesh_octree_root_half_size());
-                nodeMeshStackSize = 1;
-
-                continue;
+                // restore to scene octree browsing
+                octreeRootOffset = 0;
+                octreePrimitiveOffset = 0;
+                directionId = sceneDirectionId;
+                directionInverted = sampleCx->raySceneDirectionInverted;
             }
-
-            /*
-             * We have finished with the current octree node, we restor
-             * scene octree browsing and we can go upward
-             */
-
-            // restore to scene octree browsing
-            octreeRootOffset = 0;
-            octreePrimitiveOffset = 0;
-            directionId = sceneDirectionId;
-            directionInverted = sampleCx->raySceneDirectionInverted;
         }
         else if (node->primCount != 0)
         {
@@ -243,10 +215,28 @@ scene_octree_one_loop_intersection(
              */
             meshInstance = meshInstances + node->primFirst;
             meshInstanceEnd = meshInstance + node->primCount;
+        }
 
-            sampleCx->boundMeshInstance = meshInstance;
-
+#if CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
+        while (meshInstance < meshInstanceEnd)
+        {
             mesh_instance_prepare_frame(sampleCx, meshInstance);
+
+            if (mesh_boundingbox_intersection(
+                sampleCx,
+                meshInstance
+            ))
+            {
+                break;
+            }
+
+            meshInstance++;
+        }
+#endif //CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
+
+        if (meshInstance < meshInstanceEnd)
+        {
+            sampleCx->boundMeshInstance = meshInstance;
 
             // load mesh octree browsing
             octreeRootOffset = meshInstance->mesh.octreeRootGlobalId;
@@ -255,7 +245,7 @@ scene_octree_one_loop_intersection(
             directionInverted = sampleCx->rayMeshDirectionInverted;
 
             // set up octree stack
-            uint32_t const nextNodeStackId = nodeStackId + 1;
+            uint32_t const nextNodeStackId = nodeSceneStackSize;
 
             nodeStack[nextNodeStackId] = octreeRootOffset;
             subNodeAccessStack[nextNodeStackId] = 0;
@@ -265,6 +255,8 @@ scene_octree_one_loop_intersection(
 
             continue;
         }
+
+        // assert(nodeMeshStackSize == 0)
 
         /*
          * We are going up in the scene octree right away
@@ -276,7 +268,6 @@ scene_octree_one_loop_intersection(
             // scene processing is done
             return;
         }
-
     }
 }
 
