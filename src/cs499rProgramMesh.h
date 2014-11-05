@@ -7,6 +7,16 @@
 #include "cs499rProgramIntersection.h"
 
 
+// ----------------------------------------------------------------------------- MACROS
+
+#define mesh_octree_ray_origin(sampleCx) \
+    sampleCx->rayMeshOrigin
+
+#define mesh_octree_root_half_size() \
+    meshInstance->mesh.vertexUpperBound.w
+
+
+
 // ----------------------------------------------------------------------------- OCTREE TEMPLATE
 
 #define octree_tmplt_intersection(sampleCx, rootNode) \
@@ -18,13 +28,13 @@
     )
 
 #define octree_tmplt_ray_origin(sampleCx) \
-    sampleCx->rayMeshOrigin
+    mesh_octree_ray_origin(sampleCx)
 
 #define octree_tmplt_ray_direction_inverted(sampleCx) \
     sampleCx->rayMeshDirectionInverted
 
 #define octree_tmplt_root_half_size() \
-    meshInstance->mesh.vertexUpperBound.w
+    mesh_octree_root_half_size()
 
 #define octree_tmplt_prim_intersection(sampleCx, primId) \
     primitive_intersection(sampleCx, meshPrimitives + (primId))

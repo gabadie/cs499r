@@ -51,7 +51,7 @@ octree_tmplt_intersection(
 
     while (1)
     {
-#ifdef CS499R_STATS_MESH_OCTREE_LOOPS
+#ifdef CS499R_STATS_OCTREE_LOOPS
         sampleCx->stats++;
 #endif
 
@@ -127,6 +127,10 @@ octree_tmplt_intersection(
         subNodeAccessStack[nodeStackSize] = 0;
 
         nodeStackSize++;
+
+#ifdef CS499R_STATS_OCTREE_NODE_BROWSING
+        sampleCx->stats++;
+#endif
     }
 }
 

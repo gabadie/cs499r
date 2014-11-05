@@ -56,6 +56,17 @@
 # define CS499R_CONFIG_ENABLE_OCTREE_CONSECUTIVE_SUBNODES 1
 #endif
 
+ /*
+  * Merge the scene octree and mesh octree intersection computation in one loop
+  *
+  *  This optimisation has the hability to de-synchronise the warp threads when
+  *  iterating over differents meshes. This way, it reduces the GPU idle time
+  *  caused by warp threads' execution mask set by conditions.
+  */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
+# define CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP 0
+#endif
+
 /*
  * Optimises the octree's leaves that to few primitives
  *
