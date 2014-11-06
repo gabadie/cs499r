@@ -27,7 +27,7 @@ __constant float32x4_t const kOctreeSubnodeInfoOffset[] = {
 /*
  * This array is the sub-node access order depending on the ray direction.
  */
-__constant uint32_t const kOctreeSubNodeAccessOrder[] = {
+__constant uint32_t const kOctreeSubnodeAccessOrder[] = {
     0x01234567,
     0x10325476,
     0x23016745,
@@ -51,19 +51,22 @@ octree_direction_id(float32x3_t const rayDirection)
 
 inline
 uint32_t
-octree_sub_node_order(float32x3_t const rayDirection)
+octree_subnode_order(float32x3_t const rayDirection)
 {
     uint32_t const directionId = octree_direction_id(rayDirection);
 
-    return kOctreeSubNodeAccessOrder[directionId];
+    return kOctreeSubnodeAccessOrder[directionId];
 }
 
+/*
+ * Computes subnode's geometry
+ */
 inline
 float32x4_t
-octree_sub_node_infos(float32x4_t const nodeInfos, uint32_t const subNodeId)
+octree_subnode_geometry(float32x4_t const nodeInfos, uint32_t const subnodeId)
 {
     return (
-        nodeInfos.w * kOctreeSubnodeInfoOffset[subNodeId] +
+        nodeInfos.w * kOctreeSubnodeInfoOffset[subnodeId] +
         nodeInfos
     );
 }

@@ -116,22 +116,22 @@ scene_octree_one_loop_intersection(
 #endif
 
         octree_stack_t * const stackRaw = stack + nodeSceneStackSize + nodeMeshStackSize - 1;
-        uint32_t const subNodeAccessId = stackRaw->subnodeAccessId;
+        uint32_t const subnodeAccessId = stackRaw->subnodeAccessId;
         __global common_octree_node_t const * const node = rootNode + stackRaw->nodeGlobalId;
 
-        if (subNodeAccessId != node->subNodeCount)
+        if (subnodeAccessId != node->subnodeCount)
         {
-            stackRaw->subnodeAccessId = subNodeAccessId + 1;
+            stackRaw->subnodeAccessId = subnodeAccessId + 1;
 
-            uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
-            uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
-            float32x4_t const subNodeInfos = octree_sub_node_infos(stackRaw->nodeGeometry, subNodeId);
+            uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
+            uint32_t const subnodeId = (subnodeAccessOrder >> (subnodeAccessId * 4)) & kOctreeSubNodeMask;
+            float32x4_t const subnodeGeometry = octree_subnode_geometry(stackRaw->nodeGeometry, subnodeId);
 
             if (
                 !box_intersection_raw(
                     sampleCx,
-                    subNodeInfos.xyz - subNodeInfos.w,
-                    subNodeInfos.xyz + 3.0f * subNodeInfos.w,
+                    subnodeGeometry.xyz - subnodeGeometry.w,
+                    subnodeGeometry.xyz + 3.0f * subnodeGeometry.w,
                     directionInverted
                 )
             )
@@ -142,12 +142,12 @@ scene_octree_one_loop_intersection(
             octree_stack_t * const nextStackRaw = stackRaw + 1;
 
             // going down
-            nextStackRaw->nodeGeometry = subNodeInfos;
-            nextStackRaw->nodeGlobalId = octreeRootOffset + node->subNodeOffsets[subNodeId];
+            nextStackRaw->nodeGeometry = subnodeGeometry;
+            nextStackRaw->nodeGlobalId = octreeRootOffset + node->subnodeOffsets[subnodeId];
             nextStackRaw->subnodeAccessId = 0;
 
 #ifdef CS499R_STATS_OCTREE_NODE_BROWSING
-            //sampleCx->stats++;
+            sampleCx->stats++;
 #endif
 
             if (nodeMeshStackSize != 0)

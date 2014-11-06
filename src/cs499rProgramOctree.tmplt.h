@@ -27,12 +27,12 @@ octree_tmplt_intersection(
 {
     uint32_t nodeStackSize = 1;
     uint32_t nodeStack[kOctreeNodeStackSize];
-    uint32_t subNodeAccessStack[kOctreeNodeStackSize];
+    uint32_t subnodeAccessStack[kOctreeNodeStackSize];
     float32x4_t nodeInfosStack[kOctreeNodeStackSize];
 
     {
         nodeStack[0] = 0;
-        subNodeAccessStack[0] = 0;
+        subnodeAccessStack[0] = 0;
         nodeInfosStack[0].xyz = -(octree_tmplt_ray_origin(sampleCx));
         nodeInfosStack[0].w = (octree_tmplt_root_half_size());
     }
@@ -45,7 +45,7 @@ octree_tmplt_intersection(
 # endif
 
 #elif CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
-    uint32_t const subNodeAccessOrder = octree_sub_node_order(sampleCx->rayMeshDirection);
+    uint32_t const subnodeAccessOrder = octree_subnode_order(sampleCx->rayMeshDirection);
 
 #endif
 
@@ -55,28 +55,28 @@ octree_tmplt_intersection(
         sampleCx->stats++;
 #endif
 
-        uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackSize - 1];
+        uint32_t const subnodeAccessId = subnodeAccessStack[nodeStackSize - 1];
 
         __global common_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-        uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
-        //uint32_t const subNodeAccessOrder = kOctreeSubNodeAccessOrder[directionId];
+        uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
+        //uint32_t const subnodeAccessOrder = kOctreeSubNodeAccessOrder[directionId];
 #endif
 
 #if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
-        uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
+        uint32_t const subnodeId = (subnodeAccessOrder >> (subnodeAccessId * 4)) & kOctreeSubNodeMask;
 
 #else
-        uint32_t const subNodeId = subNodeAccessId;
+        uint32_t const subnodeId = subnodeAccessId;
 
 #endif
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-        if (subNodeAccessId == node->subNodeCount)
+        if (subnodeAccessId == node->subnodeCount)
 
 #else
-        if (subNodeAccessId == kOctreeNodeSubdivisonCount)
+        if (subnodeAccessId == kOctreeNodeSubdivisonCount)
 
 #endif
         {
@@ -97,23 +97,23 @@ octree_tmplt_intersection(
             continue;
         }
 
-        subNodeAccessStack[nodeStackSize - 1] = subNodeAccessId + 1;
+        subnodeAccessStack[nodeStackSize - 1] = subnodeAccessId + 1;
 
 #if 1 // TODO: !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS causes a GPU abort
-        if (node->subNodeOffsets[subNodeId] == 0)
+        if (node->subnodeOffsets[subnodeId] == 0)
         {
             continue;
         }
 #endif
 
         float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
-        float32x4_t const subNodeInfos = octree_sub_node_infos(nodeInfos, subNodeId);
+        float32x4_t const subnodeInfos = octree_subnode_geometry(nodeInfos, subnodeId);
 
         if (
             !box_intersection_raw(
                 sampleCx,
-                subNodeInfos.xyz - subNodeInfos.w,
-                subNodeInfos.xyz + 3.0f * subNodeInfos.w,
+                subnodeInfos.xyz - subnodeInfos.w,
+                subnodeInfos.xyz + 3.0f * subnodeInfos.w,
                 (octree_tmplt_ray_direction_inverted(sampleCx))
             )
         )
@@ -122,9 +122,9 @@ octree_tmplt_intersection(
         }
 
         // going down
-        nodeStack[nodeStackSize] = node->subNodeOffsets[subNodeId];
-        nodeInfosStack[nodeStackSize] = subNodeInfos;
-        subNodeAccessStack[nodeStackSize] = 0;
+        nodeStack[nodeStackSize] = node->subnodeOffsets[subnodeId];
+        nodeInfosStack[nodeStackSize] = subnodeInfos;
+        subnodeAccessStack[nodeStackSize] = 0;
 
         nodeStackSize++;
 

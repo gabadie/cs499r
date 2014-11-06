@@ -46,34 +46,34 @@ namespace CS499R
                 CS499R_ASSERT(abs(primCenter.y - currentOctreeNode->mCenter.y) <= currentNodeSize);
                 CS499R_ASSERT(abs(primCenter.z - currentOctreeNode->mCenter.z) <= currentNodeSize);
 
-                auto const subNodeCoord = size3_t(
+                auto const subnodeCoord = size3_t(
                     size_t(primCenter.x > currentOctreeNode->mCenter.x),
                     size_t(primCenter.y > currentOctreeNode->mCenter.y),
                     size_t(primCenter.z > currentOctreeNode->mCenter.z)
                 );
 
-                auto const subNodeId = subNodeIdFromCoord(subNodeCoord);
+                auto const subnodeId = subnodeIdFromCoord(subnodeCoord);
 
-                if (currentOctreeNode->mChildren[subNodeId] == nullptr)
+                if (currentOctreeNode->mChildren[subnodeId] == nullptr)
                 {
                     // this octree sub node was not existing yet, so we create it.
 
-                    auto const subNodeSizeLog = currentOctreeNode->mSizeLog - 1;
-                    float32_t const subNodeSize = pow(2.0f, subNodeSizeLog);
-                    auto const subNodeCenterOffset = subNodeSize * 0.5f;
-                    auto const subNodeCenter = currentOctreeNode->mCenter + float32x3_t(
-                        subNodeCoord.x ? subNodeCenterOffset : -subNodeCenterOffset,
-                        subNodeCoord.y ? subNodeCenterOffset : -subNodeCenterOffset,
-                        subNodeCoord.z ? subNodeCenterOffset : -subNodeCenterOffset
+                    auto const subnodeSizeLog = currentOctreeNode->mSizeLog - 1;
+                    float32_t const subnodeSize = pow(2.0f, subnodeSizeLog);
+                    auto const subnodeCenterOffset = subnodeSize * 0.5f;
+                    auto const subnodeCenter = currentOctreeNode->mCenter + float32x3_t(
+                        subnodeCoord.x ? subnodeCenterOffset : -subnodeCenterOffset,
+                        subnodeCoord.y ? subnodeCenterOffset : -subnodeCenterOffset,
+                        subnodeCoord.z ? subnodeCenterOffset : -subnodeCenterOffset
                     );
 
-                    currentOctreeNode->mChildren[subNodeId] = new OctreeNode(
-                        subNodeCenter,
-                        subNodeSizeLog
+                    currentOctreeNode->mChildren[subnodeId] = new OctreeNode(
+                        subnodeCenter,
+                        subnodeSizeLog
                     );
                 }
 
-                currentOctreeNode = currentOctreeNode->mChildren[subNodeId];
+                currentOctreeNode = currentOctreeNode->mChildren[subnodeId];
             }
 
             {
@@ -262,8 +262,8 @@ namespace CS499R
                         accessCount++;
                     }
 
-                    commonNode->subNodeCount = accessCount;
-                    commonNode->subNodeAccessLists[directionId] = accessList;
+                    commonNode->subnodeCount = accessCount;
+                    commonNode->subnodeAccessLists[directionId] = accessList;
                 }
 
 #endif //CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
@@ -287,15 +287,15 @@ namespace CS499R
                 // export sub offsets
                 for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
                 {
-                    auto const subNode = mChildren[i];
+                    auto const subnode = mChildren[i];
 
-                    if (subNode == nullptr)
+                    if (subnode == nullptr)
                     {
-                        commonNode->subNodeOffsets[i] = 0;
+                        commonNode->subnodeOffsets[i] = 0;
                         continue;
                     }
 
-                    commonNode->subNodeOffsets[i] = subNode->selfExportToCommonOctreeNode(
+                    commonNode->subnodeOffsets[i] = subnode->selfExportToCommonOctreeNode(
                         outPrimOrderedList,
                         outOctreeCommonNodes,
                         exportCtx
@@ -306,19 +306,19 @@ namespace CS499R
 
                 for (size_t i = 0; i < CS499R_ARRAY_SIZE(mChildren); i++)
                 {
-                    auto const subNode = mChildren[i];
+                    auto const subnode = mChildren[i];
 
-                    if (subNode == nullptr)
+                    if (subnode == nullptr)
                     {
                         continue;
                     }
 #endif
 
-                    subNode->exportToCommonOctreeNode(
+                    subnode->exportToCommonOctreeNode(
                         outPrimOrderedList,
                         outOctreeCommonNodes,
                         exportCtx,
-                        commonNode->subNodeOffsets[i]
+                        commonNode->subnodeOffsets[i]
                     );
                 }
             }
@@ -454,9 +454,9 @@ namespace CS499R
         static
         inline
         size_t
-        subNodeIdFromCoord(size3_t const & subNodeCoord)
+        subnodeIdFromCoord(size3_t const & subnodeCoord)
         {
-            return subNodeCoord.x + 2 * subNodeCoord.y + 4 * subNodeCoord.z;
+            return subnodeCoord.x + 2 * subnodeCoord.y + 4 * subnodeCoord.z;
         }
 
 
