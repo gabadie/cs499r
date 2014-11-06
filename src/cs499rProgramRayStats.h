@@ -24,7 +24,8 @@
 //#define CS499R_STATS_OCTREE_LOOPS
 
 /*
- * Stats on mesh browsed in scene_octree_one_loop_intersection()
+ * Stats on mesh browsed in mesh_instance_intersection() or
+ * in scene_octree_one_loop_intersection()
  */
 //#define CS499R_STATS_OCTREE_MESH_BROWSING
 
