@@ -82,15 +82,14 @@ scene_octree_one_loop_intersection(
      */
     uint32_t nodeSceneStackSize = 1;
     uint32_t nodeMeshStackSize = 0;
-    uint32_t nodeStack[2 * kOctreeNodeStackSize];
-    uint32_t subNodeAccessStack[2 * kOctreeNodeStackSize];
-    float32x4_t nodeInfosStack[2 * kOctreeNodeStackSize];
+
+    octree_stack_t stack[2 * kOctreeNodeStackSize];
 
     { // init Octrees' node stack
-        nodeStack[0] = 0;
-        subNodeAccessStack[0] = 0;
-        nodeInfosStack[0].xyz = -(scene_octree_ray_origin(sampleCx, renderContext));
-        nodeInfosStack[0].w = (scene_octree_root_half_size(renderContext));
+        stack[0].nodeGeometry.xyz = -(scene_octree_ray_origin(sampleCx, renderContext));
+        stack[0].nodeGeometry.w = (scene_octree_root_half_size(renderContext));
+        stack[0].nodeGlobalId = 0;
+        stack[0].subnodeAccessId = 0;
     }
 
     // the scene's direction id
@@ -116,18 +115,17 @@ scene_octree_one_loop_intersection(
         sampleCx->stats++;
 #endif
 
-        uint32_t const nodeStackId = nodeSceneStackSize + nodeMeshStackSize - 1;
-        uint32_t const subNodeAccessId = subNodeAccessStack[nodeStackId];
-        __global common_octree_node_t const * const node = rootNode + nodeStack[nodeStackId];
-        uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
-        uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
+        octree_stack_t * const stackRaw = stack + nodeSceneStackSize + nodeMeshStackSize - 1;
+        uint32_t const subNodeAccessId = stackRaw->subnodeAccessId;
+        __global common_octree_node_t const * const node = rootNode + stackRaw->nodeGlobalId;
 
         if (subNodeAccessId != node->subNodeCount)
         {
-            subNodeAccessStack[nodeStackId] = subNodeAccessId + 1;
+            stackRaw->subnodeAccessId = subNodeAccessId + 1;
 
-            float32x4_t const nodeInfos = nodeInfosStack[nodeStackId];
-            float32x4_t const subNodeInfos = octree_sub_node_infos(nodeInfos, subNodeId);
+            uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
+            uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
+            float32x4_t const subNodeInfos = octree_sub_node_infos(stackRaw->nodeGeometry, subNodeId);
 
             if (
                 !box_intersection_raw(
@@ -141,12 +139,12 @@ scene_octree_one_loop_intersection(
                 continue;
             }
 
-            uint32_t const nextNodeStackId = nodeStackId + 1;
+            octree_stack_t * const nextStackRaw = stackRaw + 1;
 
             // going down
-            nodeStack[nextNodeStackId] = octreeRootOffset + node->subNodeOffsets[subNodeId];
-            nodeInfosStack[nextNodeStackId] = subNodeInfos;
-            subNodeAccessStack[nextNodeStackId] = 0;
+            nextStackRaw->nodeGeometry = subNodeInfos;
+            nextStackRaw->nodeGlobalId = octreeRootOffset + node->subNodeOffsets[subNodeId];
+            nextStackRaw->subnodeAccessId = 0;
 
 #ifdef CS499R_STATS_OCTREE_NODE_BROWSING
             //sampleCx->stats++;
@@ -253,12 +251,12 @@ scene_octree_one_loop_intersection(
                 directionInverted = sampleCx->rayMeshDirectionInverted;
 
                 // set up octree stack
-                uint32_t const nextNodeStackId = nodeSceneStackSize;
+                octree_stack_t * const nextStackRaw = stack + nodeSceneStackSize;
 
-                nodeStack[nextNodeStackId] = octreeRootOffset;
-                subNodeAccessStack[nextNodeStackId] = 0;
-                nodeInfosStack[nextNodeStackId].xyz = -(mesh_octree_ray_origin(sampleCx));
-                nodeInfosStack[nextNodeStackId].w = (mesh_octree_root_half_size());
+                nextStackRaw->nodeGlobalId = octreeRootOffset;
+                nextStackRaw->subnodeAccessId = 0;
+                nextStackRaw->nodeGeometry.xyz = -(mesh_octree_ray_origin(sampleCx));
+                nextStackRaw->nodeGeometry.w = (mesh_octree_root_half_size());
                 nodeMeshStackSize = 1;
 
                 continue;

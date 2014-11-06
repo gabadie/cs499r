@@ -68,5 +68,16 @@ octree_sub_node_infos(float32x4_t const nodeInfos, uint32_t const subNodeId)
     );
 }
 
+/*
+ * Octree stack's structure
+ */
+typedef
+struct octree_stack_s
+{
+    float32x4_t nodeGeometry;
+    uint32_t nodeGlobalId;
+    uint32_t subnodeAccessId;
+} octree_stack_t;
+
 
 #endif // _CLH_CS499R_PROGRAM_OCTREE
