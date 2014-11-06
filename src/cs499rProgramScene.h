@@ -122,7 +122,7 @@ scene_octree_one_loop_intersection(
         uint32_t const subNodeAccessOrder = node->subNodeAccessLists[directionId];
         uint32_t const subNodeId = (subNodeAccessOrder >> (subNodeAccessId * 4)) & kOctreeSubNodeMask;
 
-        if (subNodeAccessId < node->subNodeCount)
+        if (subNodeAccessId != node->subNodeCount)
         {
             subNodeAccessStack[nodeStackId] = subNodeAccessId + 1;
 
@@ -202,12 +202,11 @@ scene_octree_one_loop_intersection(
 
                 // restore to scene octree browsing
                 octreeRootOffset = 0;
-                octreePrimitiveOffset = 0;
                 directionId = sceneDirectionId;
                 directionInverted = sampleCx->raySceneDirectionInverted;
             }
         }
-        else if (node->primCount != 0)
+        else
         {
             /*
              * We are about to go up in the scene octree, but this node has
@@ -218,42 +217,52 @@ scene_octree_one_loop_intersection(
         }
 
 #if CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
-        while (meshInstance < meshInstanceEnd)
-        {
-            mesh_instance_prepare_frame(sampleCx, meshInstance);
-
-            if (mesh_boundingbox_intersection(
-                sampleCx,
-                meshInstance
-            ))
-            {
-                break;
-            }
-
-            meshInstance++;
-        }
-#endif //CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
-
         if (meshInstance < meshInstanceEnd)
         {
-            sampleCx->boundMeshInstance = meshInstance;
+            do
+            {
+                mesh_instance_prepare_frame(sampleCx, meshInstance);
 
-            // load mesh octree browsing
-            octreeRootOffset = meshInstance->mesh.octreeRootGlobalId;
-            octreePrimitiveOffset = meshInstance->mesh.primFirst;
-            directionId = octree_direction_id(sampleCx->rayMeshDirection);
-            directionInverted = sampleCx->rayMeshDirectionInverted;
+                if (mesh_boundingbox_intersection(
+                    sampleCx,
+                    meshInstance
+                ))
+                {
+                    break;
+                }
 
-            // set up octree stack
-            uint32_t const nextNodeStackId = nodeSceneStackSize;
+                meshInstance++;
+            }
+            while (meshInstance < meshInstanceEnd);
+#else
+        {
+#endif //CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
 
-            nodeStack[nextNodeStackId] = octreeRootOffset;
-            subNodeAccessStack[nextNodeStackId] = 0;
-            nodeInfosStack[nextNodeStackId].xyz = -(mesh_octree_ray_origin(sampleCx));
-            nodeInfosStack[nextNodeStackId].w = (mesh_octree_root_half_size());
-            nodeMeshStackSize = 1;
+            if (meshInstance < meshInstanceEnd)
+            {
+                sampleCx->boundMeshInstance = meshInstance;
 
-            continue;
+#if !CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
+                mesh_instance_prepare_frame(sampleCx, meshInstance);
+#endif
+
+                // load mesh octree browsing
+                octreeRootOffset = meshInstance->mesh.octreeRootGlobalId;
+                octreePrimitiveOffset = meshInstance->mesh.primFirst;
+                directionId = octree_direction_id(sampleCx->rayMeshDirection);
+                directionInverted = sampleCx->rayMeshDirectionInverted;
+
+                // set up octree stack
+                uint32_t const nextNodeStackId = nodeSceneStackSize;
+
+                nodeStack[nextNodeStackId] = octreeRootOffset;
+                subNodeAccessStack[nextNodeStackId] = 0;
+                nodeInfosStack[nextNodeStackId].xyz = -(mesh_octree_ray_origin(sampleCx));
+                nodeInfosStack[nextNodeStackId].w = (mesh_octree_root_half_size());
+                nodeMeshStackSize = 1;
+
+                continue;
+            }
         }
 
         // assert(nodeMeshStackSize == 0)
