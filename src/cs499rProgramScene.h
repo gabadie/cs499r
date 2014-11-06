@@ -259,6 +259,10 @@ scene_octree_one_loop_intersection(
                 nextStackRaw->nodeGeometry.w = (mesh_octree_root_half_size());
                 nodeMeshStackSize = 1;
 
+#ifdef CS499R_STATS_OCTREE_MESH_BROWSING
+                sampleCx->stats++;
+#endif
+
                 continue;
             }
         }
