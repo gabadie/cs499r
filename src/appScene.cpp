@@ -1,4 +1,7 @@
 
+#include <iomanip>
+#include <sstream>
+
 #include "app.hpp"
 
 
@@ -182,7 +185,7 @@ namespace
     }
 
     void
-    buildSceneContent(CS499R::Scene & scene)
+    buildSceneSparsedContent(CS499R::Scene & scene)
     {
         { // Monkey
             CS499R::Mesh mesh("models/monkey.obj");
@@ -277,6 +280,53 @@ namespace
         }
     }
 
+    void
+    buildScenePyramidContent(CS499R::Scene & scene)
+    {
+        CS499R::Mesh mesh("models/sphere.obj");
+
+        float32_t const sphereRadius = 1.0f;
+        float32_t const pyramidAngle = 0.6f;
+        size_t const pyramidSize = 3;
+        auto const sceneMesh = scene.addMesh("sphere", mesh);
+
+        size_t i = 1;
+        for (size_t layerId = 0; layerId < pyramidSize; layerId++)
+        {
+            for (size_t y = 0; y <= layerId; y++)
+            {
+                for (size_t x = 0; x <= y; x++)
+                {
+                    std::ostringstream ss;
+                    ss << "sphere/" << std::right << std::setw(3);
+                    ss << i++;
+
+                    auto const sceneMeshInstance = scene.addMeshInstance(ss.str(), sceneMesh);
+
+                    float32x3_t const instancePosition (sphereRadius * float32x3_t(
+                        (
+                            2.0f * float32_t(x) -
+                            (float32_t(pyramidSize) - 1.0f) -
+                            float32_t(y)
+                        ),
+                        sqrt(3.0f) * (
+                            float32_t(y) -
+                            (2.0f / 3.0f) * float32_t(layerId)
+                        ),
+                        1.0f + 2.0f * sqrt(3.0f / 4.0f - 1.0f / 9.0f) * (pyramidSize - layerId - 1)
+                    ));
+
+                    sceneMeshInstance->mColorDiffuse = kColorWhite;
+                    sceneMeshInstance->mScenePosition = float32x3_t(
+                        instancePosition.x * cos(pyramidAngle) - instancePosition.y * sin(pyramidAngle) + 2.0f,
+                        instancePosition.x * sin(pyramidAngle) + instancePosition.y * cos(pyramidAngle) + 2.0f,
+                        instancePosition.z
+                    );
+                }
+            }
+        }
+    }
+
 }
 
 namespace App
@@ -287,7 +337,8 @@ namespace App
     {
         buildSceneRoom(scene);
         buildSceneLights(scene);
-        buildSceneContent(scene);
+        //buildSceneSparsedContent(scene);
+        buildScenePyramidContent(scene);
     }
 
 }
