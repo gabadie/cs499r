@@ -10,7 +10,7 @@
 /*
  * The stat output's factor
  */
-#define CS499R_CONFIG_RAY_STATS_FACTOR (0.02f, 0.02f, 0.02f)
+#define CS499R_CONFIG_RAY_STATS_FACTOR (0.02f, 0.001f, 0.001f)
 
 /*
  * Disables a stats output
@@ -20,7 +20,7 @@
 /*
  * Stats on primitive_intersection() calls
  */
-#define CS499R_STATS_PRIM_INTERSECTION CS499R_DISABLE_STATS
+#define CS499R_STATS_PRIM_INTERSECTION 1
 
 /*
  * Stats on loops in octree_tmplt_intersection() or

@@ -152,8 +152,6 @@ scene_octree_one_loop_intersection(
             }
             else
             {
-                sample_stats_id(sampleCx,0,++);
-
                 nodeSceneStackSize++;
             }
 
@@ -188,19 +186,6 @@ scene_octree_one_loop_intersection(
              * We have finished with that mesh
              */
             meshInstance++;
-
-            if (meshInstance == meshInstanceEnd)
-            {
-                /*
-                 * We have finished with the current octree node, we restor
-                 * scene octree browsing and we can go upward
-                 */
-
-                // restore to scene octree browsing
-                octreeRootOffset = 0;
-                directionId = sceneDirectionId;
-                directionInverted = sampleCx->raySceneDirectionInverted;
-            }
         }
         else
         {
@@ -263,6 +248,19 @@ scene_octree_one_loop_intersection(
 
                 continue;
             }
+        }
+
+        if (meshInstance == meshInstanceEnd)
+        {
+            /*
+             * We have finished with the current octree node, we restor
+             * scene octree browsing and we can go upward
+             */
+
+            // restore to scene octree browsing
+            octreeRootOffset = 0;
+            directionId = sceneDirectionId;
+            directionInverted = sampleCx->raySceneDirectionInverted;
         }
 
         // assert(nodeMeshStackSize == 0)
