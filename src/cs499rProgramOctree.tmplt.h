@@ -51,9 +51,7 @@ octree_tmplt_intersection(
 
     while (1)
     {
-#ifdef CS499R_STATS_OCTREE_LOOPS
-        sampleCx->stats++;
-#endif
+        sample_stats_name(sampleCx,OCTREE_LOOPS,++);
 
         uint32_t const subnodeAccessId = subnodeAccessStack[nodeStackSize - 1];
 
@@ -128,9 +126,7 @@ octree_tmplt_intersection(
 
         nodeStackSize++;
 
-#ifdef CS499R_STATS_OCTREE_NODE_BROWSING
-        sampleCx->stats++;
-#endif
+        sample_stats_name(sampleCx,OCTREE_NODE_BROWSING,++);
     }
 }
 

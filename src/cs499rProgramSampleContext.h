@@ -49,7 +49,7 @@ __private struct sample_context_s
 
 #ifdef _CL_PROGRAM_RAY_STATS
     // the sample's stats
-    uint32_t stats;
+    uint32_t stats[4];
 #endif
 
 } sample_context_t;

@@ -99,9 +99,7 @@ mesh_instance_intersection(
     }
 #endif
 
-#ifdef CS499R_STATS_OCTREE_MESH_BROWSING
-    sampleCx->stats++;
-#endif
+    sample_stats_name(sampleCx,OCTREE_MESH_BROWSING,++);
 
     __global common_primitive_t const * const meshPrimitives = primitives + meshInstance->mesh.primFirst;
     __global common_octree_node_t const * const meshRootNode = octreeNodes + meshInstance->mesh.octreeRootGlobalId;

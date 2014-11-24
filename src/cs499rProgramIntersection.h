@@ -49,9 +49,7 @@ primitive_intersection(
     __global common_primitive_t const * primitive
 )
 {
-#ifdef CS499R_STATS_PRIM_INTERSECTION
-    sampleCx->stats++;
-#endif
+    sample_stats_name(sampleCx,PRIM_INTERSECTION,++);
 
     float32x3_t const normal = (float32x3_t)(primitive->v0.w, primitive->e0.w, primitive->e1.w);
     float32_t const normalDotRay = dot(sampleCx->rayMeshDirection, normal);

@@ -93,7 +93,9 @@ kernel_main(
 #  error "need #define CS499R_CONFIG_RAY_STATS_FACTOR"
 # endif
 
-    sampleCx->stats = 0;
+    sampleCx->stats[0] = 0;
+    sampleCx->stats[1] = 0;
+    sampleCx->stats[2] = 0;
 
     camera_first_ray(sampleCx, coherencyCx, virtualPixelPos, coherencyCx->render.pixelSubpixelPos);
     scene_intersection(sampleCx, coherencyCx, meshInstances, octreeNodes, primitives);
@@ -110,15 +112,11 @@ kernel_main(
     float32x3_t sampleNormal = clamp(sceneNormal * 0.25f + 0.25f, 0.0f, 0.5f);
     float32_t sampleNormalBW = 0.33f * (sampleNormal.x + sampleNormal.y + sampleNormal.z);
 
-    float32_t statValue = (
-        CS499R_CONFIG_RAY_STATS_FACTOR *
-        (float32_t)(sampleCx->stats)
+    float32x3_t statValue = (
+        ((float32x3_t)CS499R_CONFIG_RAY_STATS_FACTOR) *
+        (float32x3_t)(sampleCx->stats[0], sampleCx->stats[1], sampleCx->stats[2])
     );
-    float32x3_t sampleColor = (float32x3_t)(
-        sampleNormalBW + statValue,
-        sampleNormalBW,
-        sampleNormalBW
-    );
+    float32x3_t sampleColor = statValue + sampleNormalBW;
 
 
 #endif

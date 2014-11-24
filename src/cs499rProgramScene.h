@@ -107,13 +107,11 @@ scene_octree_one_loop_intersection(
      * The mesh iterations variables
      */
     __global common_mesh_instance_t const * meshInstance = meshInstances;
-    __global common_mesh_instance_t const * meshInstanceEnd = meshInstances;
+    __global common_mesh_instance_t const * meshInstanceEnd = meshInstance;
 
     for(;;)
     {
-#ifdef CS499R_STATS_OCTREE_LOOPS
-        sampleCx->stats++;
-#endif
+        sample_stats_name(sampleCx,OCTREE_LOOPS,++);
 
         octree_stack_t * const stackRaw = stack + nodeSceneStackSize + nodeMeshStackSize - 1;
         uint32_t const subnodeAccessId = stackRaw->subnodeAccessId;
@@ -146,9 +144,7 @@ scene_octree_one_loop_intersection(
             nextStackRaw->nodeGlobalId = octreeRootOffset + node->subnodeOffsets[subnodeId];
             nextStackRaw->subnodeAccessId = 0;
 
-#ifdef CS499R_STATS_OCTREE_NODE_BROWSING
-            sampleCx->stats++;
-#endif
+            sample_stats_name(sampleCx,OCTREE_NODE_BROWSING,++);
 
             if (nodeMeshStackSize != 0)
             {
@@ -156,6 +152,8 @@ scene_octree_one_loop_intersection(
             }
             else
             {
+                sample_stats_id(sampleCx,0,++);
+
                 nodeSceneStackSize++;
             }
 
@@ -214,6 +212,8 @@ scene_octree_one_loop_intersection(
             meshInstanceEnd = meshInstance + node->primCount;
         }
 
+        // assert(nodeMeshStackSize == 0)
+
 #if CS499R_CONFIG_ENABLE_MESH_BOUNDING_BOX
         if (meshInstance < meshInstanceEnd)
         {
@@ -259,9 +259,7 @@ scene_octree_one_loop_intersection(
                 nextStackRaw->nodeGeometry.w = (mesh_octree_root_half_size());
                 nodeMeshStackSize = 1;
 
-#ifdef CS499R_STATS_OCTREE_MESH_BROWSING
-                sampleCx->stats++;
-#endif
+                sample_stats_name(sampleCx,OCTREE_MESH_BROWSING,++);
 
                 continue;
             }
