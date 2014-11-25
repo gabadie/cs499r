@@ -34,6 +34,7 @@ namespace CS499R
     class RenderTarget;
     class RenderTerminalTracker;
     class Scene;
+    class SceneCamera;
     class SceneMesh;
     class SceneMeshInstance;
     class SceneObject;

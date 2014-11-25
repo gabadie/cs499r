@@ -2,6 +2,8 @@
 #ifndef _H_CS499R_RENDERSTATE
 #define _H_CS499R_RENDERSTATE
 
+#include <string>
+
 #include "cs499rCommonStruct.hpp"
 #include "cs499rEnums.hpp"
 #include "cs499rRenderShotCtx.hpp"
@@ -48,6 +50,8 @@ namespace CS499R
         void
         shotScene(CompiledScene const * compiledScene, Camera const * camera, RenderAbstractTracker * renderTracker);
 
+        void
+        shotScene(CompiledScene const * compiledScene, std::string const cameraName, RenderAbstractTracker * renderTracker);
 
         // --------------------------------------------------------------------- CONSTS
 

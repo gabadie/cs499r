@@ -67,6 +67,14 @@ namespace CS499R
         renderTracker->eventShotEnd();
     }
 
+    void
+    RenderState::shotScene(CompiledScene const * compiledScene, std::string const cameraName, RenderAbstractTracker * renderTracker)
+    {
+        auto const camera = compiledScene->mScene->findCamera(cameraName);
+
+        return shotScene(compiledScene, camera, renderTracker);
+    }
+
     RenderState::RenderState()
     {
         mPixelBorderSubdivisions = kDefaultPixelBorderSubdivisions;

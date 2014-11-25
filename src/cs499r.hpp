@@ -16,6 +16,7 @@
 #include "cs499rRenderTarget.hpp"
 #include "cs499rRenderTerminalTracker.hpp"
 #include "cs499rScene.hpp"
+#include "cs499rSceneCamera.hpp"
 #include "cs499rSceneMesh.hpp"
 #include "cs499rSceneMeshInstance.hpp"
 #include "cs499rSceneObject.hpp"
