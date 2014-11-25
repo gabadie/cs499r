@@ -14,7 +14,7 @@ main(int argc, char const * const * argv)
         return 1;
     }
 
-    size_t const imageWidth = 256;
+    size_t const imageWidth = 512;
     size_t const imageHeight = (imageWidth * 9) / 16;
 
     CS499R::RayTracer rayTracer(device);

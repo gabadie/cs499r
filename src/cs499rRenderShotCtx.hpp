@@ -15,7 +15,7 @@ namespace CS499R
      */
 
     size_t const kHostAheadCommandCount = 10;
-    size_t const kMaxKickoffSampleIteration = 8;
+    size_t const kMaxKickoffSampleIteration = 1;
 
     /*
      * Maximum number of super samples per border

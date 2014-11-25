@@ -10,7 +10,7 @@
 /*
  * The stat output's factor
  */
-#define CS499R_CONFIG_RAY_STATS_FACTOR (0.02f, 0.001f, 0.001f)
+#define CS499R_CONFIG_RAY_STATS_FACTOR (0.02f, 0.0004f, 0.001f)
 
 /*
  * Disables a stats output
@@ -38,7 +38,7 @@
  * Stats on octree node browsed in octree_tmplt_intersection() or
  * in scene_octree_one_loop_intersection()
  */
-#define CS499R_STATS_OCTREE_NODE_BROWSING CS499R_DISABLE_STATS
+#define CS499R_STATS_OCTREE_NODE_BROWSING 0
 
 #define sample_stats_name(sampleCtx,name,op) \
     if (CS499R_STATS_##name < CS499R_DISABLE_STATS) \

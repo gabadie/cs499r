@@ -281,9 +281,9 @@ namespace
     }
 
     void
-    buildScenePyramidContent(CS499R::Scene & scene)
+    buildScenePyramidContent(CS499R::Scene & scene, char const * const meshPath)
     {
-        CS499R::Mesh mesh("models/sphere.obj");
+        CS499R::Mesh mesh(meshPath);
 
         float32_t const sphereRadius = 1.0f;
         float32_t const pyramidAngle = 0.6f;
@@ -338,7 +338,7 @@ namespace App
         buildSceneRoom(scene);
         buildSceneLights(scene);
         //buildSceneSparsedContent(scene);
-        buildScenePyramidContent(scene);
+        buildScenePyramidContent(scene, "models/sphere.obj");
     }
 
 }

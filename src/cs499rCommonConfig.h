@@ -64,7 +64,7 @@
   *  caused by warp threads' execution mask set by conditions.
   */
 #ifndef CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
-# define CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP 1
+# define CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP 0
 #endif
 
 /*
