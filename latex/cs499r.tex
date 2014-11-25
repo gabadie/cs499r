@@ -1,11 +1,27 @@
 \documentclass[10pt,twocolumn,a4paper]{article}
 
+% ------------------------------------------------------------------------------ Packages
 \usepackage{amsmath}
+\usepackage{color}
 \usepackage{float}
 \usepackage{graphicx}
 \usepackage{lipsum}
 \usepackage{listings}
 
+% ------------------------------------------------------------------------------ Listing config
+\definecolor{darkgreen}{rgb}{0,0.6,0}
+
+\lstset{
+    commentstyle=\color{darkgreen},
+    keywordstyle=\color{blue},
+    frame=single,
+    language=C,
+    breaklines=true,
+    basicstyle=\tiny
+}
+
+
+% ------------------------------------------------------------------------------ Document begin
 \begin{document}
 
 % ------------------------------------------------------------------------------ Title
@@ -95,7 +111,7 @@ to the cores.
 \subsection{Warp efficiency}
 Originally, GPU thread were only used for dummy customatization at different
 stages in the 3D rasterisation-based rendering pipeline like the following:
-\begin{lstlisting}[frame=single,language=C,breaklines=true,basicstyle=\tiny]
+\begin{lstlisting}[morekeywords={vec3,texture}]
 // GLSL fragment shader code of a normal maping
 vec3 planNormal = texture(normalMap, uvCoord).xyz * 2.0 - 1.0;
 vec3 meshNormal = tbnMatrix * planNormal;
@@ -109,7 +125,7 @@ compute unit that would just do the exact same sequences of states. But when
 it comes to conditions and loops, required for an octree accelerated ray
 intersection computation for instance, things are becoming tricky... Lets
 consider the following code:
-\begin{lstlisting}[frame=single,language=C,breaklines=true,basicstyle=\tiny]
+\begin{lstlisting}
 if (/* condition */) {
     //operation A
 }
@@ -182,8 +198,9 @@ Our implementation uses 3 buffers:
         from the scene's octree or the meshes' octree. A primitives (either a
         mesh or an instance) is only referenced into one octree node, to avoid
         primitive duplication or an index table.
-        \begin{lstlisting}[frame=single,language=C,breaklines=true,basicstyle=\tiny]
-struct octree_node_t{
+        \begin{lstlisting}
+struct octree_node_t
+{
     // the sub-nodes' offset from the octree root
     uint32_t subnodeOffsets[8];
     // the first primitive (mesh or triangle) id
@@ -221,12 +238,12 @@ As said above, our implementation uses 2 octree layers: one for the scene browsi
 and one for the meshes' browsing. Thats means the algorithm uses nested loops.
 \begin{figure}[H]
     \centering
-\begin{lstlisting}[frame=single,language=C,breaklines=true,basicstyle=\tiny]
+\begin{lstlisting}[morekeywords={foreach}]
 foreach intersected node in the scene octree
 { // loop 1
   foreach mesh in this scene node
   { // loop 2
-    foreach intersected node in mesh's octree
+    foreach intersected node in mesh s octree
     { // loop 3
       foreach triangle in this mesh node
       {
