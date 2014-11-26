@@ -8,7 +8,6 @@
 // ----------------------------------------------------------------------------- CONSTANTS
 
 __constant uint32_t const kOctreeNodeSubdivisonCount = 8;
-__constant uint32_t const kOctreeSubNodeMask = 0x7;
 __constant uint32_t const kOctreeNodeStackSize = 32;
 
 

@@ -63,7 +63,7 @@ octree_tmplt_intersection(
 #endif
 
 #if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
-        uint32_t const subnodeId = (subnodeAccessOrder >> (subnodeAccessId * 4)) & kOctreeSubNodeMask;
+        uint32_t const subnodeId = octree_subnode_access(subnodeAccessOrder, subnodeAccessId);
 
 #else
         uint32_t const subnodeId = subnodeAccessId;

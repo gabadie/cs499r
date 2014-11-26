@@ -278,6 +278,14 @@ namespace
                 float32x3_t(0.0f, 0.0f, +1.0f)
             );
         }
+
+        {
+            auto const camera = scene.addCamera("main");
+
+            camera->mShotPosition = float32x3_t(-18.0f, -8.0f, 8.0f);
+            camera->mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
+            camera->mShotDiagonalLength = 0.02f;
+        }
     }
 
     void
@@ -325,7 +333,59 @@ namespace
                 }
             }
         }
+
+        {
+            auto const camera = scene.addCamera("main");
+
+            camera->mShotPosition = float32x3_t(-18.0f, -8.0f, 8.0f);
+            camera->mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
+            camera->mShotDiagonalLength = 0.02f;
+        }
     }
+
+    void
+    buildSceneDragon(CS499R::Scene & scene)
+    {
+        {
+            CS499R::Mesh mesh("models/stanford_dragon.obj");
+
+            auto const sceneMesh = scene.addMesh("dragon", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("dragon/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+        }
+
+        {
+            auto const camera = scene.addCamera("main");
+
+            camera->mShotPosition = float32x3_t(-18.0f, -8.0f, 8.0f);
+            camera->mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
+            camera->mShotDiagonalLength = 0.02f;
+        }
+    }
+
+    void
+    buildSceneBunny(CS499R::Scene & scene)
+    {
+        {
+            CS499R::Mesh mesh("models/stanford_bunny.obj");
+
+            auto const sceneMesh = scene.addMesh("bunny", mesh);
+            auto sceneMeshInstance = scene.addMeshInstance("bunny/001", sceneMesh);
+
+            sceneMeshInstance->mColorDiffuse = kColorWhite;
+            sceneMeshInstance->mScenePosition.z = 1.0f;
+        }
+
+        {
+            auto const camera = scene.addCamera("main");
+
+            camera->mShotPosition = float32x3_t(-9.0f, -4.0f, 4.0f);
+            camera->mFocusPosition = float32x3_t(0.0f, 0.0f, 1.0f);
+            camera->mShotDiagonalLength = 0.02f;
+        }
+    }
+
 
 }
 
@@ -338,7 +398,9 @@ namespace App
         buildSceneRoom(scene);
         buildSceneLights(scene);
         //buildSceneSparsedContent(scene);
-        buildScenePyramidContent(scene, "models/sphere.obj");
+        //buildScenePyramidContent(scene, "models/sphere.obj");
+        buildSceneDragon(scene);
+        //buildSceneBunny(scene);
     }
 
 }

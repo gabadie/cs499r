@@ -122,7 +122,7 @@ scene_octree_one_loop_intersection(
             stackRaw->subnodeAccessId = subnodeAccessId + 1;
 
             uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
-            uint32_t const subnodeId = (subnodeAccessOrder >> (subnodeAccessId * 4)) & kOctreeSubNodeMask;
+            uint32_t const subnodeId = octree_subnode_access(subnodeAccessOrder, subnodeAccessId);
             float32x4_t const subnodeGeometry = octree_subnode_geometry(stackRaw->nodeGeometry, subnodeId);
 
             if (
