@@ -14,8 +14,13 @@ main(int argc, char const * const * argv)
         return 1;
     }
 
+#if 0
     size_t const imageWidth = 512;
     size_t const imageHeight = (imageWidth * 9) / 16;
+#else
+    size_t const imageWidth = 1920;
+    size_t const imageHeight = 1200;
+#endif
 
     CS499R::RayTracer rayTracer(device);
     CS499R::RenderState renderState;
@@ -26,7 +31,7 @@ main(int argc, char const * const * argv)
         renderState.mSamplesPerSubdivisions = 32;
         renderState.mRayAlgorithm = CS499R::kRayAlgorithmPathTracer;
         //renderState.mRayAlgorithm = CS499R::kRayAlgorithmDebugNormal;
-        //renderState.mRayAlgorithm = CS499R::kRayAlgorithmRayStats;
+        renderState.mRayAlgorithm = CS499R::kRayAlgorithmRayStats;
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
