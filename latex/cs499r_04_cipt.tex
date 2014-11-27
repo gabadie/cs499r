@@ -1,0 +1,28 @@
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\columnwidth]{render_stanford_bunny.png}
+    \caption{Stanford bunny rendered with a coherent interleaved path tracer algorithm.}
+    \label{fig:stanford_bunny_cipt}
+\end{figure}
+
+\begin{figure}[H]
+    \tiny
+    \centering
+    \begin{tabular}{ | l | c | c | }
+
+        \hline
+        Algorithm used & Bunny \\
+        \hline
+        Simple path tracer & 224.0ns \\
+        Coherent interleaved path tracer & 134.6ns \\
+        \hline
+
+    \end{tabular}
+    \caption{
+        Per ray rendering time comparaison between a simple path tracer
+        algorithm and a coherent interleaved path tracer (resolution of 512~x~288; 512
+        sample per pixels; 9 recursive raies per samples).
+    }
+    \label{table:cipt_compare}
+\end{figure}

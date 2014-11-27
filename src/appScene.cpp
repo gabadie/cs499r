@@ -375,6 +375,11 @@ namespace
 
             sceneMeshInstance->mColorDiffuse = kColorWhite;
             sceneMeshInstance->mScenePosition.z = 1.0f;
+            sceneMeshInstance->mMeshSceneMatrix = float32x3x3_t(
+                float32x3_t(0.0f, +1.0f, 0.0f),
+                float32x3_t(-1.0f, 0.0f, 0.0f),
+                float32x3_t(0.0f, 0.0f, +1.0f)
+            );
         }
 
         {
@@ -399,8 +404,8 @@ namespace App
         buildSceneLights(scene);
         //buildSceneSparsedContent(scene);
         //buildScenePyramidContent(scene, "models/sphere.obj");
-        buildSceneDragon(scene);
-        //buildSceneBunny(scene);
+        //buildSceneDragon(scene);
+        buildSceneBunny(scene);
     }
 
 }
