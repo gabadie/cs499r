@@ -1,0 +1,81 @@
+\subsection{Warp}
+Given the number of cores and threads a GPU can run simultanously, the hardware
+scheduler and all the compute unit would take a quite fair amout of space on the
+die. So one major difference versus CPUs, is that GPUs core share a same
+compute unit. The implementation might defer from the different constructor, but
+the idea is ruffly the same. The threads are packed together in groups called
+warps. Then each warp are scheduled on one of the existing compute unit, reading
+only one stream of instructions for this warp and so gives ALU operation order
+to the cores.
+
+\subsection{Warp efficiency}
+Originally, GPU thread were only used for dummy customatization at different
+stages in the 3D rasterisation-based rendering pipeline like the following:
+\begin{lstlisting}[morekeywords={vec3,texture}]
+// GLSL fragment shader code of a normal maping
+vec3 planNormal = texture(normalMap, uvCoord).xyz * 2.0 - 1.0;
+vec3 meshNormal = tbnMatrix * planNormal;
+vec3 lightColor = ambientLight + lightColor * dot(meshNormal, lightDirection);
+vec3 meshAlbedo = texture(colorMap, uvCoord).rgb;
+fragColor = meshAlbedo * lightColor;
+\end{lstlisting}
+So yes, we see that all threads would executes exactly the same instructions, so
+packing them in warps is totally fine, removing transitors for the duplicated
+compute unit that would just do the exact same sequences of states. But when
+it comes to conditions and loops, required for an octree accelerated ray
+intersection computation for instance, things are becoming tricky... Lets
+consider the following code:
+\begin{lstlisting}
+if (/* condition */) {
+    //operation A
+}
+else {
+    //operation B
+}
+\end{lstlisting}
+Remeber that a warp - a group of threads - are sharing the same compute unit. So
+for a given warp, if all of its threads have the condition successing (or failing),
+then the compute unit would only executes the operation A's instruction (respectively
+operation B's instruction). So in those cases, this is completly fine. But in the
+case of at least one thread would have a different condition result from its
+brother in this given warp, then the compute unit would execute operation A's
+instructions with a thread mask, and then operation B's instructions
+with an inverted thread mask. It means that when a warp's compute unit is
+executing instructions, some core might not be doing anything because of the
+thread mask. So the warp efficiency over an execution is simply defined as:
+
+\[\frac{\sum_{i \in instructions}activeThreads(i)}{| instructions | \times warpSize}\]
+
+\subsection{Warp scheduling}
+So both CPUs and GPUs have concept of threads. But the major difference between is
+how the schedulers work. On the CPU, the sheduler is always a software scheduler
+directly provided by the operating system. Mostly timer based preemptif
+scheduler for a round-robin implementation, or a collatorative
+sheduler where the applications yield its execution to another. But on modern GPU,
+the sechduler is hardware based. You can not pause a GPU thread with an explicit
+software call like pause().
+But they are automatically paused and resumed by the hardware. Mostly on memory
+operations, or a work group synchronisation barrier.
+
+\subsection{Memory coherency}
+As the CPUs, the GPUs also have memory caches. The memory is splitted into pages,
+but only few of them can be stored in the nearby cache, and loading a page into
+the cache is costly. Not many differences with a CPU, despite the fact that
+their is going to have many more threads executing, making the cache access prediction
+even tricky, and even impossible because of the warps' hardware scheduler running
+on a quantum as small as memory fetch instruction.
+
+\subsection{Memory access efficiency}
+The convenient thing comes on memory operations. If you have very large scene, with a
+lot of details, the memory coherency might drop completly, because clobered with
+the many threads working at the same time. That means cache's page fault would become more frequent.
+But this is where the warps' ahrdware scheduler come in. When a thread of a
+warp wants to access a memory
+location, it might take some time before it actually has the location's value.
+So the hardware scheduler will then pause this warp, until the location's value
+is available. Having paused this warp, the scheduler can then give another
+warp to the newly available compute unit in the meantime. Therefore, on a GPU, we will
+like to have even more threads than there is existing GPU cores to make sure the
+hardware scheduler always have pending warp to give to the compute units, whereas
+with a round robin software scheduler on a CPU, you would have many context
+switches droping the computing efficiency.
