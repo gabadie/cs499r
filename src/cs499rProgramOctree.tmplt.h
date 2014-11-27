@@ -37,11 +37,11 @@ octree_tmplt_intersection(
         nodeInfosStack[0].w = (octree_tmplt_root_half_size());
     }
 
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS != CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS
     uint32_t const directionId = octree_direction_id(sampleCx->rayMeshDirection);
 
 # if !CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
-#  error "CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS requires CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING"
+#  error "CS499R_CONFIG_OCTREE_ACCESS_LISTS requires CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING"
 # endif
 
 #elif CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
@@ -57,9 +57,15 @@ octree_tmplt_intersection(
 
         __global common_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
 
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
         uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
-        //uint32_t const subnodeAccessOrder = kOctreeSubNodeAccessOrder[directionId];
+
+#elif CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS
+        uint32_t const subnodeAccessOrder = octree_subnode_mask_access_list(
+            directionId,
+            node->subnodeMask
+        );
+
 #endif
 
 #if CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
@@ -70,11 +76,11 @@ octree_tmplt_intersection(
 
 #endif
 
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-        if (subnodeAccessId == node->subnodeCount)
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS
+        if (subnodeAccessId == kOctreeNodeSubdivisonCount)
 
 #else
-        if (subnodeAccessId == kOctreeNodeSubdivisonCount)
+        if (subnodeAccessId == node->subnodeCount)
 
 #endif
         {
@@ -97,7 +103,7 @@ octree_tmplt_intersection(
 
         subnodeAccessStack[nodeStackSize - 1] = subnodeAccessId + 1;
 
-#if 1 // TODO: !CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS causes a GPU abort
+#if 1 // TODO: !CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS causes a GPU abort
         if (node->subnodeOffsets[subnodeId] == 0)
         {
             continue;

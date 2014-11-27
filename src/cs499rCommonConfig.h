@@ -29,14 +29,27 @@
 #endif
 
 /*
- * Enables octree node's children access lists
+ * Enables octree node's sub-node access lists
  *
  *  This optimisation list all available subnodes in a node. This has the
  *  ability to reduce the conditions serialisation caused by testing if a
  *  subnode i exists when browsing an octree.
+ *
+ * There is two available implementations:
+ *    - CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS which will store the ray
+ *          directions dependent access lists into directly into the octree
+ *          node structure
+ *    - CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS which will only store the octree
+ *          nodes' sub-node mask into the octree node structure, and then find
+ *          out the associated correct node's sub-node access list from the
+ *          sub-node mask and the ray direction
  */
-#ifndef CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
-# define CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS 1
+#define CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS 0
+#define CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS 1
+#define CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS 2
+
+#ifndef CS499R_CONFIG_OCTREE_ACCESS_LISTS
+# define CS499R_CONFIG_OCTREE_ACCESS_LISTS CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS
 #endif
 
 /*

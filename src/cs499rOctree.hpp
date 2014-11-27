@@ -239,9 +239,9 @@ namespace CS499R
                     }
                 }
 
-#if CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
                 /*
-                 * generate common node' access lists depending on the direction
+                 * Generate common node's access lists depending on the direction
                  */
                 for (size_t directionId = 0; directionId < CS499R_ARRAY_SIZE(mChildren); directionId++)
                 {
@@ -266,7 +266,30 @@ namespace CS499R
                     commonNode->subnodeAccessLists[directionId] = accessList;
                 }
 
-#endif //CS499R_CONFIG_ENABLE_OCTREE_ACCESS_LISTS
+#elif CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS
+                /*
+                 * Generate common node's sub-node mask
+                 */
+                {
+                    uint32_t subnodeCount = 0;
+                    uint8_t subnodeMask = 0x0;
+
+                    for (size_t nodeId = 0; nodeId < CS499R_ARRAY_SIZE(mChildren); nodeId++)
+                    {
+                        if (mChildren[nodeId] == nullptr)
+                        {
+                            continue;
+                        }
+
+                        subnodeMask |= (1 << nodeId);
+                        subnodeCount++;
+                    }
+
+                    commonNode->subnodeCount = subnodeCount;
+                    commonNode->subnodeMask = subnodeMask;
+                }
+
+#endif //CS499R_CONFIG_OCTREE_ACCESS_LISTS
 
                 return nodeId;
             }
