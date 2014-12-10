@@ -1,0 +1,15 @@
+Now, we have seen in sub-sections \ref{subsec:cpt} and \ref{subsec:cipt} that
+both algorithms are slicing rendering tiles into smaller, cohenercy tiles. And
+the warp efficiency is increasing as the parrallel raies are getting closer, since
+they have an increasing probability to hit the same triangles. The idea of this
+optimization is to get parrallel raies closer, by replacing multi-sampling per
+super-sampling. The super-sampling technique is to render into an higher resolution
+rendering tile, and then downscales it where it belongs on the final render. This
+way, there is more coherency tiles with still the same number of pixels over the
+entire rendering viewport. And in our implementation, we actually witness an
+improved average rendering time per raies, downscale operation cost included.
+But with a given fix number of raies shot over the entire viewport, the image
+quality is actually decreasing with CPT and CIPT more than the performance
+improvement. This is due to the simple fact less sample passes would then be required
+per pixel before being downscaled, and therefore less distinct random seed values per
+downscaled pixels.
