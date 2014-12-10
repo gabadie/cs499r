@@ -1,3 +1,10 @@
+To quickly summarize, all octrees nodes (scene's octree and meshes' octree) are
+stored as an array in a same GPU buffer. With complex meshes or scenes, we would
+then have a lot of node, increasing this buffer size. But when tracing rays
+throuht the scene, all thread would be access this buffer quite a couple of time
+when browsing each octrees, cloberring the cache. This optimization only changes
+the nodes order in that buffer, trying to reduce memory cache's page faults, by
+storing all node's sub-nodes consecutively.
 
 \begin{figure}[H]
     \tiny
