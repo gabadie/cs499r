@@ -404,8 +404,8 @@ namespace App
         buildSceneLights(scene);
         //buildSceneSparsedContent(scene);
         //buildScenePyramidContent(scene, "models/sphere.obj");
-        //buildSceneDragon(scene);
-        buildSceneBunny(scene);
+        buildSceneDragon(scene);
+        //buildSceneBunny(scene);
     }
 
 }

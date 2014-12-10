@@ -26,15 +26,13 @@ octree_tmplt_intersection(
 )
 {
     uint32_t nodeStackSize = 1;
-    uint32_t nodeStack[kOctreeNodeStackSize];
-    uint32_t subnodeAccessStack[kOctreeNodeStackSize];
-    float32x4_t nodeInfosStack[kOctreeNodeStackSize];
+    octree_stack_t stack[kOctreeNodeStackSize];
 
-    {
-        nodeStack[0] = 0;
-        subnodeAccessStack[0] = 0;
-        nodeInfosStack[0].xyz = -(octree_tmplt_ray_origin(sampleCx));
-        nodeInfosStack[0].w = (octree_tmplt_root_half_size());
+    { // init Octrees' node stack
+        stack[0].nodeGeometry.xyz = -(octree_tmplt_ray_origin(sampleCx));
+        stack[0].nodeGeometry.w = (octree_tmplt_root_half_size());
+        stack[0].nodeGlobalId = 0;
+        stack[0].subnodeAccessId = 0;
     }
 
 #if CS499R_CONFIG_OCTREE_ACCESS_LISTS != CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS
@@ -53,9 +51,9 @@ octree_tmplt_intersection(
     {
         sample_stats_name(sampleCx,OCTREE_LOOPS,++);
 
-        uint32_t const subnodeAccessId = subnodeAccessStack[nodeStackSize - 1];
+        uint32_t const subnodeAccessId = stack[nodeStackSize - 1].subnodeAccessId;
 
-        __global common_octree_node_t const * const node = rootNode + nodeStack[nodeStackSize - 1];
+        __global common_octree_node_t const * const node = rootNode + stack[nodeStackSize - 1].nodeGlobalId;
 
 #if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
         uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
@@ -101,7 +99,7 @@ octree_tmplt_intersection(
             continue;
         }
 
-        subnodeAccessStack[nodeStackSize - 1] = subnodeAccessId + 1;
+        stack[nodeStackSize - 1].subnodeAccessId = subnodeAccessId + 1;
 
 #if 1 // TODO: !CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NO_ACCESS_LISTS causes a GPU abort
         if (node->subnodeOffsets[subnodeId] == 0)
@@ -110,7 +108,7 @@ octree_tmplt_intersection(
         }
 #endif
 
-        float32x4_t const nodeInfos = nodeInfosStack[nodeStackSize - 1];
+        float32x4_t const nodeInfos = stack[nodeStackSize - 1].nodeGeometry;
         float32x4_t const subnodeInfos = octree_subnode_geometry(nodeInfos, subnodeId);
 
         if (
@@ -126,9 +124,9 @@ octree_tmplt_intersection(
         }
 
         // going down
-        nodeStack[nodeStackSize] = node->subnodeOffsets[subnodeId];
-        nodeInfosStack[nodeStackSize] = subnodeInfos;
-        subnodeAccessStack[nodeStackSize] = 0;
+        stack[nodeStackSize].nodeGlobalId = node->subnodeOffsets[subnodeId];
+        stack[nodeStackSize].nodeGeometry = subnodeInfos;
+        stack[nodeStackSize].subnodeAccessId = 0;
 
         nodeStackSize++;
 
