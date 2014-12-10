@@ -9,7 +9,7 @@ threads wants to executes the same instruction, decreasing the warp efficiency.
 The idea of this optimization is to compute list of available sub-nodes in
 a given node. But since we want to browse the octree in the direction of the
 ray to keep the depth test on octree nodes, that means we need 8 of those list,
-because of the $2^3 = 8$ differents ray's component's sign combinaisons.
+because of the $2^3 = 8$ differences ray's component's sign combinations.
 
 \begin{figure}[H]
     \centering
@@ -72,7 +72,7 @@ uint32_t const subnodeId =
 \end{figure}
 
 But octree nodes are now taking nearly twice more memory size, and so is going
-to clobber the memory cache even more because accessing a bigger amout of
+to clobber the memory cache even more because accessing a bigger amount of
 memory pages. The performance are easily proven on very simple scenes, but when it comes
 to ones with more detailed meshes like shown one Figure~\ref{fig:stanford_dragon}, the cache
 clobber can actually drop rendering performances (Figure~\ref{table:subnode_access_list}).
@@ -87,11 +87,11 @@ clobber can actually drop rendering performances (Figure~\ref{table:subnode_acce
 This is where the second stage of this optimization come in. Instead of storing
 all access lists in a node, we just store the node's sub-node mask into the
 node struct. Because there an octree node can only have 8 sub-nodes, that
-means the octree mask can actually have $2^8 = 256$ distincts possible values.
+means the octree mask can actually have $2^8 = 256$ distinct possible values.
 So we just have to precompute a constant array at compile-time that for a given sub-node mask
 and a ray direction. Meaning this 32~bits integer array has $256 \times 8 = 2048$
 cells. Then we can see with Figure~\ref{table:subnode_access_list} that this
-improved optimization scales perfectly when it comes to more detailes meshes.
+improved optimization scales perfectly when it comes to more details meshes.
 
 \begin{figure}[H]
     \centering
