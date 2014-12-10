@@ -41,10 +41,12 @@ struct octree_node_t
 Some optimisations proposed below might modifies the structures.
 
 \subsection{Tile and passes based rendering}
+\label{subsec:tile_passes_rendering}
 OpenCL commands must all have an constant upperbound running time, otherwise
 you might trigger an GPU timeout that will kill your command. But computation
 load is directly linked to the image size. In order to scale, we had to launch
-our dispatch command per tile to guarentee that the image size doesn't affect
+our dispatch command per tile (that we will call rendering tile) to guarentee
+that the image size doesn't affect
 this timeout. Also, we wanted to changes our parameter for every pixel (MSA,
 ray launched per pixel samples, recursions per rays...), so we also had to
 render a tile with severals passes so it also doesn't affect the distpatch
