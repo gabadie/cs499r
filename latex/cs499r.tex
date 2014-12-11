@@ -48,10 +48,11 @@ algorithm: The rays we are shooting have chances - depending one the scene
 being rendered - to not find any light source. One of main problem of this
 technic is that it requires a hudge
 amout of rays to be traced for a single pixel ray, so that the image's final
-colors can converge thanks the low of large numbers. This memoire is the result
-of a Path Tracer implementation
-specifically designed to run on a GPU, in order to analyses differents
-optimisations.
+colors can converge thanks the low of large numbers. Thankfully, GPUs have a
+massive parrallel computing power. This memoire is the result
+of a Path Tracer implementation studying different optimizations to
+improve running efficiency on a GPU, in the hope of having real-time
+path tracers sometime in the up coming futur.
 
 \end{abstract}
 
@@ -94,6 +95,11 @@ optimisations.
 
 \subsection{Octree consecutives sub-nodes}
 \input{cs499r_05_octree_consecutive_subnodes.tex}
+
+
+% ------------------------------------------------------------------------------ Conclusion
+\section{Conclusion}
+\input{cs499r_06_conclusion.tex}
 
 
 % ------------------------------------------------------------------------------ Appendix

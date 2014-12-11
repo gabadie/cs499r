@@ -56,7 +56,8 @@ sheduler where the applications yield its execution to another. But on modern GP
 the sechduler is hardware based. You can not pause a GPU thread with an explicit
 software call like pause().
 But they are automatically paused and resumed by the hardware. Mostly on memory
-operations, or a work group synchronisation barrier.
+operations, or a work group synchronisation barrier. Therefore many warps can
+actually hide the memory access latency.
 
 \subsection{Memory coherency}
 As the CPUs, the GPUs also have memory caches. The memory is splitted into pages,

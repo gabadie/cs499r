@@ -1,0 +1,32 @@
+Now with all of these optimization, it is time to actually compare a dummy
+path tracer algorithm implementation versus an optimized one. On Figure~\ref{table:final_perfs}
+actually compares the rendering time performance per rays. For the optimizations,
+we have chosen to activate the following optimizations:
+
+\begin{itemize}
+    \item Octree sub-node access lists with the node's sub-nodes mask implementation;
+    \item Octree tiny nodes pruning;
+    \item Coherent Interleaved Path Tracing;
+    \item Octree one loop browsing;
+    \item Octree consecutives sub-nodes.
+\end{itemize}
+
+\begin{figure}[H]
+    \tiny
+    \centering
+    \begin{tabular}{ | l | c | c | }
+        \hline
+        Scenes & No optimizations & With optimizations \\
+        \hline
+        Stanford Dragon & ~ & ~ \\
+        Stanford Bunny & ~ & ~ \\
+        Simple spheres & ~ & ~ \\
+        Displaced spheres & ~ & ~ \\
+        \hline
+    \end{tabular}
+    \caption{
+        Rendering performances per ray comparaison with and without
+        optimizations.
+    }
+    \label{table:final_perfs}
+\end{figure}

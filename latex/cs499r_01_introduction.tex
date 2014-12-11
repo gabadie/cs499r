@@ -4,14 +4,17 @@ The path tracing is shoting a lot of rays with a given random seed
 for every pixel. Therefore the convenient thing is you can actually
 compute two neighbouring pixels' color completly in parallel for instance.
 Nowdays GPUs can run up to thousands threads in parrallel. And even GPU has
-its own dedicated thread sheduling system that cam pause threads that are
-waiting for a memory fetch for instance, giving the ALUs' compute power to
+its own dedicated thread sheduling system that can pause threads that are
+waiting for a memory fetch (for instance), giving the ALUs' compute power to
 other thread waiting for available room to continue their execution. But also
 this has some slight problems... Video memory is often around 2Gb. Not much if
 we want to render a scene as detail as we would see in a movie today. But with
 the GPU computing power increasing, considering a real-time path tracing with
-simpler scene could very much make sense. This paper is then based in this
-very last purpose.
+simpler scene could very much make sense. But since the path tracing is still
+very expensive, the first real-rime would have to be simpler. This paper has
+been written in the purpose of studying how would could improve a path tracer
+algorithm in order to get closer of the day we will have ones running in
+real-time.
 
 \subsection{A paper dedicated for a GPU implementation}
 Why a dedicated paper for Path Tracer implementations for GPU? This question is
@@ -25,7 +28,7 @@ in an orchestre. Therefore, it needs to be able to do a lot of
 different things, from managing the hardware interuptions to the wide range of
 instruction set. On the otherhand, the GPU's cores are crowded on the die, thanks
 to the fact that
-they occupy a smaller size on the die. And since they occupy less space, they
+they occupy a smaller size. And since they occupy less space, they
 can't do everything a CPU can. For instance, the instruction set of a GPU core
 is basically restraint to memory
 operations, arithmetic operations and few for logic/branching operations. Nothing else.
