@@ -19,6 +19,7 @@
 
 // ----------------------------------------------------------------------------- OCTREE TEMPLATE
 
+#if !CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 #define octree_tmplt_intersection(sampleCx, rootNode) \
     mesh_octree_intersection( \
         sampleCx, \
@@ -40,6 +41,8 @@
     primitive_intersection(sampleCx, meshPrimitives + (primId))
 
 #include "cs499rProgramOctree.tmplt.h"
+
+#endif //!CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 
 
 // ----------------------------------------------------------------------------- FUNCTIONS
@@ -79,6 +82,9 @@ mesh_instance_prepare_frame(
 
     sampleCx->rayMeshDirectionInverted = 1.0f / sampleCx->rayMeshDirection;
 }
+
+
+#if !CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 
 inline
 void
@@ -128,6 +134,8 @@ mesh_instance_intersection(
 
 #endif // CS499R_CONFIG_ENABLE_MESH_OCTREE
 }
+
+#endif //!CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 
 
 #endif // _CLH_CS499R_PROGRAM_MESH

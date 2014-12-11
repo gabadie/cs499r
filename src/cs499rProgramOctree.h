@@ -44,8 +44,25 @@ typedef
 struct octree_stack_s
 {
     float32x4_t nodeGeometry;
+
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+# if !CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
+#  error "CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING requires CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP"
+# endif
+
+    uint32_t subnodeOffsets[8];
+    uint32_t primFirst;
+    uint32_t primCount;
+    uint8_t subnodeCount;
+    uint8_t subnodeMask;
+
+#else
     uint32_t nodeGlobalId;
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+
     uint32_t subnodeAccessId;
+
 } octree_stack_t;
 
 
@@ -398,5 +415,25 @@ __constant uint32_t const kOctreeSubnodeMaskAccessLists[256 * 8] = {
 
 #endif //CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING || CS499R_CONFIG_OCTREE_ACCESS_LISTS
 
+// ----------------------------------------------------------------------------- NODE CACHING
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+
+inline
+void
+octree_node_cache(__private octree_stack_t * node_stack, __global common_octree_node_t const * node)
+{
+    for (uint32_t i = 0; i < 8; i++)
+    {
+        node_stack->subnodeOffsets[i] = node->subnodeOffsets[i];
+    }
+
+    node_stack->primFirst = node->primFirst;
+    node_stack->primCount = node->primCount;
+    node_stack->subnodeCount = node->subnodeCount;
+    node_stack->subnodeMask = node->subnodeMask;
+}
+
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
 
 #endif // _CLH_CS499R_PROGRAM_OCTREE

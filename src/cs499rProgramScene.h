@@ -52,10 +52,6 @@
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 
-# if CS499R_CONFIG_OCTREE_ACCESS_LISTS != CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
-#  error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_OCTREE_ACCESS_LISTS"
-# endif
-
 # if !CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
 #  error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING"
 # endif
@@ -86,10 +82,16 @@ scene_octree_one_loop_intersection(
     octree_stack_t stack[2 * kOctreeNodeStackSize];
 
     { // init Octrees' node stack
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+        octree_node_cache(stack, rootNode);
+
+#else CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+        stack[0].nodeGlobalId = 0;
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+        stack[0].subnodeAccessId = 0;
         stack[0].nodeGeometry.xyz = -(scene_octree_ray_origin(sampleCx, renderContext));
         stack[0].nodeGeometry.w = (scene_octree_root_half_size(renderContext));
-        stack[0].nodeGlobalId = 0;
-        stack[0].subnodeAccessId = 0;
     }
 
     // the scene's direction id
@@ -115,13 +117,47 @@ scene_octree_one_loop_intersection(
 
         octree_stack_t * const stackRaw = stack + nodeSceneStackSize + nodeMeshStackSize - 1;
         uint32_t const subnodeAccessId = stackRaw->subnodeAccessId;
+
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+        if (subnodeAccessId != stackRaw->subnodeCount)
+
+#else
         __global common_octree_node_t const * const node = rootNode + stackRaw->nodeGlobalId;
 
         if (subnodeAccessId != node->subnodeCount)
+
+#endif
+
         {
             stackRaw->subnodeAccessId = subnodeAccessId + 1;
 
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
+# if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+#  error "CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS incompatible with CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING"
+# endif
+
             uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
+
+#elif CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS
+# if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+            uint32_t const subnodeAccessOrder = octree_subnode_mask_access_list(
+                directionId,
+                stackRaw->subnodeMask
+            );
+
+# else //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+            uint32_t const subnodeAccessOrder = octree_subnode_mask_access_list(
+                directionId,
+                node->subnodeMask
+            );
+
+# endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+
+#else //CS499R_CONFIG_OCTREE_ACCESS_LISTS
+# error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_OCTREE_{NODE,MASK}_ACCESS_LISTS"
+
+#endif //CS499R_CONFIG_OCTREE_ACCESS_LISTS
+
             uint32_t const subnodeId = octree_subnode_access(subnodeAccessOrder, subnodeAccessId);
             float32x4_t const subnodeGeometry = octree_subnode_geometry(stackRaw->nodeGeometry, subnodeId);
 
@@ -141,8 +177,15 @@ scene_octree_one_loop_intersection(
 
             // going down
             nextStackRaw->nodeGeometry = subnodeGeometry;
-            nextStackRaw->nodeGlobalId = octreeRootOffset + node->subnodeOffsets[subnodeId];
             nextStackRaw->subnodeAccessId = 0;
+
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+            octree_node_cache(nextStackRaw, rootNode + octreeRootOffset + stackRaw->subnodeOffsets[subnodeId]);
+
+#else
+            nextStackRaw->nodeGlobalId = octreeRootOffset + node->subnodeOffsets[subnodeId];
+
+#endif
 
             sample_stats_name(sampleCx,OCTREE_NODE_BROWSING,++);
 
@@ -164,8 +207,15 @@ scene_octree_one_loop_intersection(
         if (nodeMeshStackSize != 0)
         { // we are browsing in a mesh octree
             // processing mesh triangles
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+            uint32_t const primStart = octreePrimitiveOffset + stackRaw->primFirst;
+            uint32_t const primEnd = primStart + stackRaw->primCount;
+
+#else //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
             uint32_t const primStart = octreePrimitiveOffset + node->primFirst;
             uint32_t const primEnd = primStart + node->primCount;
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
 
             for (uint32_t primId = primStart; primId < primEnd; primId++)
             {
@@ -193,8 +243,15 @@ scene_octree_one_loop_intersection(
              * We are about to go up in the scene octree, but this node has
              * mesh instances, so we start the iteration over them
              */
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+            meshInstance = meshInstances + stackRaw->primFirst;
+            meshInstanceEnd = meshInstance + stackRaw->primCount;
+
+#else //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
             meshInstance = meshInstances + node->primFirst;
             meshInstanceEnd = meshInstance + node->primCount;
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
         }
 
         // assert(nodeMeshStackSize == 0)
@@ -238,7 +295,14 @@ scene_octree_one_loop_intersection(
                 // set up octree stack
                 octree_stack_t * const nextStackRaw = stack + nodeSceneStackSize;
 
+#if CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+                octree_node_cache(nextStackRaw, rootNode + octreeRootOffset);
+
+#else CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
                 nextStackRaw->nodeGlobalId = octreeRootOffset;
+
+#endif //CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+
                 nextStackRaw->subnodeAccessId = 0;
                 nextStackRaw->nodeGeometry.xyz = -(mesh_octree_ray_origin(sampleCx));
                 nextStackRaw->nodeGeometry.w = (mesh_octree_root_half_size());

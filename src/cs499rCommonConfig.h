@@ -70,6 +70,17 @@
 #endif
 
  /*
+  * Caches the octree's node into the thread's stack
+  *
+  *  This optimisation stacks the octrees' nodes each thread is accessing into
+  *  the thread's stack in order to access octree nodes' buffer exactly once per
+  *  browsed nodes.
+  */
+#ifndef CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING
+# define CS499R_CONFIG_ENABLE_OCTREE_NODE_CACHING 0
+#endif
+
+ /*
   * Merge the scene octree and mesh octree intersection computation in one loop
   *
   *  This optimisation has the hability to de-synchronise the warp threads when
@@ -77,7 +88,7 @@
   *  caused by warp threads' execution mask set by conditions.
   */
 #ifndef CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
-# define CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP 0
+# define CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP 1
 #endif
 
 /*
