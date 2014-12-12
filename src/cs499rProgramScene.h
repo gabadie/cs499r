@@ -52,10 +52,6 @@
 
 #if CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP
 
-# if CS499R_CONFIG_OCTREE_ACCESS_LISTS != CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
-#  error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_OCTREE_ACCESS_LISTS"
-# endif
-
 # if !CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING
 #  error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_ENABLE_OCTREE_SUBNODE_REORDERING"
 # endif
@@ -121,7 +117,20 @@ scene_octree_one_loop_intersection(
         {
             stackRaw->subnodeAccessId = subnodeAccessId + 1;
 
+#if CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_NODE_ACCESS_LISTS
             uint32_t const subnodeAccessOrder = node->subnodeAccessLists[directionId];
+
+#elif CS499R_CONFIG_OCTREE_ACCESS_LISTS == CS499R_CONFIG_OCTREE_MASK_ACCESS_LISTS
+            uint32_t const subnodeAccessOrder = octree_subnode_mask_access_list(
+                directionId,
+                node->subnodeMask
+            );
+
+#else
+# error "CS499R_CONFIG_ENABLE_OCTREE_ONE_LOOP requires CS499R_CONFIG_OCTREE_ACCESS_LISTS"
+
+#endif
+
             uint32_t const subnodeId = octree_subnode_access(subnodeAccessOrder, subnodeAccessId);
             float32x4_t const subnodeGeometry = octree_subnode_geometry(stackRaw->nodeGeometry, subnodeId);
 
