@@ -1,0 +1,44 @@
+Since primitives (either a mesh in the scene octree or a triangle in a mesh
+octree) are referenced in only on octree node, they are assigned to one,
+depending its space location, and its dimension. That means small primitives
+might fell lonely in one octree node. But browsing octree's node has time cost.
+So this idea of this optimization is only to recursively prunes octree's leaf
+that have less than $N$ primitives.
+
+\begin{figure}[H]
+    \tiny
+    \centering
+    \begin{tabular}{ | l | c | }
+        \hline
+        Octree tiny nodes pruning & Stanford Dragon \\
+        \hline
+        Disabled & 695.0ns \\
+        Enabled & 533.8ns \\
+        \hline
+    \end{tabular}
+    \caption{
+        Rendering performances per ray with pruning octrees' leaf nodes that
+        have less than 3 primitives.
+    }
+    \label{table:octree_tiny_node_pruning}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\columnwidth]{stats_octree_nodes.png}
+    \caption{
+        Stanford dragon rendered without the octree tiny nodes pruning optimization
+        showing the linear number of browsed octree nodes.
+    }
+    \label{fig:stanford_dragon_without_node_pruning}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\columnwidth]{stats_octree_nodes_optimized.png}
+    \caption{
+        Stanford dragon rendered with octree tiny nodes pruning optimization
+        showing the linear number of browsed octree nodes.
+    }
+    \label{fig:stanford_dragon_with_node_pruning}
+\end{figure}

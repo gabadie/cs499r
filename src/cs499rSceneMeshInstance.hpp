@@ -2,7 +2,9 @@
 #ifndef _H_CS499R_SCENEMESHINSTANCE
 #define _H_CS499R_SCENEMESHINSTANCE
 
-#include "cs499rSceneObject.hpp"
+#include "cs499rCommonStruct.hpp"
+#include "cs499rCompiledScene.hpp"
+#include "cs499rSceneMesh.hpp"
 
 
 namespace CS499R
@@ -30,6 +32,15 @@ namespace CS499R
         float32x3_t mColorEmit;
 
 
+        // --------------------------------------------------------------------- FUNCTION
+
+        /*
+         * Returns the mesh instance's bounding box
+         */
+        void
+        computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const;
+
+
         // --------------------------------------------------------------------- OPERATORS
 
         SceneMesh &
@@ -48,8 +59,30 @@ namespace CS499R
         ~SceneMeshInstance();
 
 
+        // --------------------------------------------------------------------- METHODS
+
+        /*
+         * Export to common mesh instance
+         */
+        void
+        exportToCommonMeshInstance(
+            CompiledScene::CompilationCtx const & compilationCtx,
+            common_mesh_instance_t * outMeshInstance
+        ) const;
+
+        /*
+         * Export the anonymous mesh instance to a common mesh instance
+         */
+        static
+        void
+        exportAnonymousToCommonMeshInstance(
+            common_mesh_instance_t * outAnonymousMesh
+        );
+
+
         // --------------------------------------------------------------------- FRIENDSHIP
         friend class Scene;
+        friend class CompiledScene;
 
     };
 

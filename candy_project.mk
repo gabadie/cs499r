@@ -47,6 +47,7 @@ endif
 override LD:=$(CXX)
 
 # ------------------------------------------------------------ default parameters
+PROJECT_CLFLAGS := -D__CS499R_OPENCL_PREPROCESSOR
 PROJECT_CCFLAGS := -m64 -std=gnu11
 PROJECT_CXXFLAGS := -Wall -Wextra -m64 -std=c++11
 PROJECT_LDFLAGS := -std=c++11 -lpthread $(call bin_officiallib,opencl)
@@ -86,9 +87,41 @@ LIB_BINARIES_PRODUCT := $(call product_create,BINLIBSTATIC,static_lib)
 LIB_BINARIES_TARGET := $(call product_target,$(LIB_BINARIES_PRODUCT))
 $(call product_public,$(LIB_BINARIES_PRODUCT))
 
-LIB_OBJECT_LOCAL_BINARIES := $(call bin_object_files,$(call filelist,./src/cs499r.flist))
-LIB_OBJECT_EXTERNAL_BINARIES := $(call bin_object_files,$(wildcard libs/*/*.c))
-LIB_OBJECT_BINARIES := $(LIB_OBJECT_LOCAL_BINARIES) $(LIB_OBJECT_EXTERNAL_BINARIES)
+# ------------------------------------------------------------ C/C++ source files
+LIB_OBJECT_LOCAL_SRC := $(call filelist,./src/cs499r.flist)
+LIB_OBJECT_LOCAL_BINARIES := $(call bin_object_files,$(LIB_OBJECT_LOCAL_SRC))
+
+# ------------------------------------------------------------ OpenCL source files
+LIB_OBJECT_LOCAL_OPENCL_SRC := $(call filelist,./src/cs499rProgram.flist)
+
+LIB_OBJECT_LOCAL_OPENCL_I_SRC := $(foreach OPENCL_SRC,$(LIB_OBJECT_LOCAL_OPENCL_SRC), \
+	$(eval $(BUILD_TMP_DIR)$(strip $(notdir $(OPENCL_SRC))).i: $(OPENCL_SRC)) \
+	$(eval $(BUILD_TMP_DIR)$(strip $(notdir $(OPENCL_SRC))).i: _CL_SRC_FILE=$(OPENCL_SRC)) \
+	$(BUILD_TMP_DIR)$(strip $(notdir $(OPENCL_SRC))).i \
+)
+
+LIB_OBJECT_LOCAL_OPENCL_CPP_SRC := $(patsubst %.i,%.cpp, $(LIB_OBJECT_LOCAL_OPENCL_I_SRC))
+
+# rule for OpenCL preprocessing
+$(LIB_OBJECT_LOCAL_OPENCL_I_SRC): $$(MK_DEPENDENCIES)
+	$(call history_rule,preprocessing cl file,$(_CL_SRC_FILE))
+	$(CMD_MKDIR_ALL) $(BUILD_TMP_DIR) $(BUILD_DEPS_DIR)
+	$(CMD_PREFIX)$(CC) -E -x c -o $@ -MMD -MF $(patsubst %.i,%.d, $(BUILD_DEPS_DIR)$(notdir $@)) $(PROJECT_CLFLAGS) $(_CL_SRC_FILE)
+
+# rule for OpenCL C++ generation
+$(LIB_OBJECT_LOCAL_OPENCL_CPP_SRC): %.cpp: %.i scripts/cl_to_cpp.py
+	$(call history_rule,generating c++ file,$@)
+	$(CMD_PREFIX)python scripts/cl_to_cpp.py $@ $<
+
+LIB_OBJECT_LOCAL_OPENCL_BINARIES := $(call bin_object_files,$(LIB_OBJECT_LOCAL_OPENCL_CPP_SRC))
+
+
+# ------------------------------------------------------------ external source files
+LIB_OBJECT_EXTERNAL_SRC := $(wildcard libs/*/*.c)
+LIB_OBJECT_EXTERNAL_BINARIES := $(call bin_object_files,$(LIB_OBJECT_EXTERNAL_SRC))
+
+# ------------------------------------------------------------ all binaries
+LIB_OBJECT_BINARIES := $(LIB_OBJECT_LOCAL_BINARIES) $(LIB_OBJECT_LOCAL_OPENCL_BINARIES) $(LIB_OBJECT_EXTERNAL_BINARIES)
 
 # ------------------------------------------------------------ compilation/link configuration
 $(LIB_BINARIES_TARGET): $(LIB_OBJECT_BINARIES)

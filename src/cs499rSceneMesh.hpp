@@ -2,6 +2,7 @@
 #ifndef _H_CS499R_SCENEMESH
 #define _H_CS499R_SCENEMESH
 
+#include "cs499rCompiledScene.hpp"
 #include "cs499rMesh.hpp"
 #include "cs499rCommonStruct.hpp"
 #include "cs499rSceneObject.hpp"
@@ -55,10 +56,18 @@ namespace CS499R
         size_t mOctreeNodeCount;
 
         // the octree's node array
-        common_mesh_octree_node_t * mOctreeNodeArray;
+        common_octree_node_t * mOctreeNodeArray;
 
         // the mesh's center pos within the octree basis
         float32x3_t mCenterPosition;
+
+        // the mesh's vertex upper bound
+        // no need for lower bound since it is known to be 0.0 thanks to
+        // the shifting of mCenterPosition
+        float32x3_t mVertexUpperBound;
+
+        // the mesh's octree root's half size
+        float32_t mOctreeRootHalfSize;
 
 
         // --------------------------------------------------------------------- METHODES
@@ -69,10 +78,20 @@ namespace CS499R
         void
         buildFromMesh(Mesh const & mesh);
 
+        /*
+         * Export to common mesh
+         */
+        void
+        exportToCommonMesh(
+            CompiledScene::CompilationCtx const & compilationCtx,
+            common_mesh_t * outMesh
+        ) const;
+
 
         // --------------------------------------------------------------------- FRIENDSHIPS
+        friend class CompiledScene;
         friend class Scene;
-        friend class SceneBuffer;
+        friend class SceneMeshInstance;
 
     };
 

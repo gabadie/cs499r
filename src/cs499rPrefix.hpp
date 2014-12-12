@@ -10,6 +10,8 @@
 
 // ----------------------------------------------------------------------------- CS499R's utils
 
+#include "cs499rCommonConfig.h"
+#include "cs499rCommonConsts.h"
 #include "cs499rMath.hpp"
 #include "cs499rUtils.hpp"
 #include "cs499rMemory.hpp"
@@ -21,16 +23,18 @@
 namespace CS499R
 {
 
-    struct RenderProfiling;
-
     class Camera;
+    class CompiledScene;
     class Image;
     class Mesh;
     class RayTracer;
+    class RenderAbstractTracker;
+    class RenderShotCtx;
     class RenderState;
     class RenderTarget;
+    class RenderTerminalTracker;
     class Scene;
-    class SceneBuffer;
+    class SceneCamera;
     class SceneMesh;
     class SceneMeshInstance;
     class SceneObject;

@@ -14,58 +14,42 @@ main(int argc, char const * const * argv)
         return 1;
     }
 
+#if 1
     size_t const imageWidth = 512;
-    size_t const imageHeight = 512;
+    size_t const imageHeight = (imageWidth * 9) / 16;
+#else
+    size_t const imageWidth = 1920;
+    size_t const imageHeight = 1200;
+#endif
 
     CS499R::RayTracer rayTracer(device);
     CS499R::RenderState renderState;
     CS499R::Scene scene;
-    CS499R::Camera camera;
-
-    { // sets up the camera
-        camera.mShotPosition = float32x3_t(-10.0f, -15.0f, 9.0f);
-        camera.mShotPosition = float32x3_t(-10.0f, -10.0f, 2.0f);
-        camera.mFocusPosition = float32x3_t(0.0f, 0.0f, 2.0f);
-        camera.mShotDiagonalLength = 0.02f;
-    }
 
     { // sets up the render state
         renderState.mPixelBorderSubdivisions = 4;
         renderState.mSamplesPerSubdivisions = 32;
         renderState.mRayAlgorithm = CS499R::kRayAlgorithmPathTracer;
         //renderState.mRayAlgorithm = CS499R::kRayAlgorithmDebugNormal;
+        //renderState.mRayAlgorithm = CS499R::kRayAlgorithmRayStats;
     }
 
     CS499R::Image image(imageWidth, imageHeight, CS499R::RenderTarget::kChanelCount);
-    CS499R::RenderProfiling renderProfiling;
+    CS499R::RenderTerminalTracker terminalTracker;
 
     App::buildSceneMeshes(scene);
 
     {
         CS499R::RenderTarget renderTarget(&rayTracer, imageWidth, imageHeight);
-        CS499R::SceneBuffer sceneBuffer(&scene, &rayTracer);
+        CS499R::CompiledScene sceneBuffer(&scene, &rayTracer);
 
         renderState.mRenderTarget = &renderTarget;
-        renderState.shotScene(&sceneBuffer, &camera, &renderProfiling);
+        renderState.shotScene(&sceneBuffer, "main", &terminalTracker);
 
         renderTarget.download(&image);
     }
 
     image.saveToFile("render.gitignore.png");
-
-    std::cout << "Input:" << std::endl;
-    std::cout << "    Render width:             " << imageWidth << " px" << std::endl;
-    std::cout << "    Render height:            " << imageHeight << " px" << std::endl;
-    std::cout << "    Sub-pixels:               " << pow(renderState.mPixelBorderSubdivisions, 2) << std::endl;
-    std::cout << "    Sample per sub-pixels:    " << renderState.mSamplesPerSubdivisions << std::endl;
-    std::cout << std::endl;
-
-    std::cout << "Output:" << std::endl;
-    std::cout << "    Total Samples:            " << renderProfiling.mSamples << std::endl;
-    std::cout << "    CPU duration:             " << renderProfiling.mCPUDuration << " us" << std::endl;
-    std::cout << "    CPU duration per samples: " <<
-        double(renderProfiling.mCPUDuration) / double(renderProfiling.mSamples) << " us" << std::endl;
-    std::cout << std::endl;
 
     return 0;
 }

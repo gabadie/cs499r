@@ -16,6 +16,7 @@ namespace CS499R
     {
         kRayAlgorithmPathTracer,
         kRayAlgorithmDebugNormal,
+        kRayAlgorithmRayStats,
 
         kRayAlgorithmCount
     };

@@ -1,0 +1,11 @@
+
+#
+# CS499R project is a library, then linked with different executable. This file
+# lists the library's OpenCL source files
+#
+
+cs499rProgramPathTracer.cl
+cs499rProgramDebugNormal.cl
+cs499rProgramRayStats.cl
+cs499rProgramDownscale.cl
+cs499rProgramTargetMultiply.cl

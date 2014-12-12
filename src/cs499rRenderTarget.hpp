@@ -36,20 +36,31 @@ namespace CS499R
         size_t
         width() const
         {
-            return mWidth;
+            return mResolution.x;
         }
 
         inline
         size_t
         height() const
         {
-            return mHeight;
+            return mResolution.y;
+        }
+
+        inline
+        size2_t const &
+        resolution() const
+        {
+            return mResolution;
         }
 
 
         // --------------------------------------------------------------------- IDLE
 
         RenderTarget(RayTracer const * rayTracer, size_t width, size_t height);
+        RenderTarget(RayTracer const * rayTracer, size_t squareWidth)
+            : RenderTarget(rayTracer, squareWidth, squareWidth)
+        { }
+
         ~RenderTarget();
 
 
@@ -60,8 +71,7 @@ namespace CS499R
         RayTracer const * const mRayTracer;
 
         // render target's dimensions
-        size_t const mWidth;
-        size_t const mHeight;
+        size2_t const mResolution;
 
         // the render target's gpu memory space
         cl_mem mGpuBuffer;

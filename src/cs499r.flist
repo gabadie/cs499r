@@ -6,6 +6,7 @@
 
 cs499rCamera.cpp
 cs499rCLUtils.cpp
+cs499rCompiledScene.cpp
 cs499rImage.cpp
 cs499rImagePNG.cpp
 cs499rMesh.cpp
@@ -13,7 +14,7 @@ cs499rRayTracer.cpp
 cs499rRayTracerProgram.cpp
 cs499rRenderState.cpp
 cs499rRenderTarget.cpp
+cs499rRenderTerminalTracker.cpp
 cs499rScene.cpp
-cs499rSceneBuffer.cpp
 cs499rSceneMesh.cpp
 cs499rSceneMeshInstance.cpp

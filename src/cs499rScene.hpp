@@ -6,6 +6,7 @@
 #include <vector>
 #include <string>
 #include "cs499rCommonStruct.hpp"
+#include "cs499rSceneCamera.hpp"
 #include "cs499rSceneMesh.hpp"
 #include "cs499rSceneMeshInstance.hpp"
 
@@ -24,6 +25,16 @@ namespace CS499R
         /*
          * Adds stuff into the scene
          */
+        SceneCamera *
+        addCamera(std::string const & cameraName)
+        {
+            auto sceneCamera = new SceneCamera(this, cameraName);
+
+            mObjectsMap.cameras.insert({cameraName, sceneCamera});
+
+            return sceneCamera;
+        }
+
         SceneMesh *
         addMesh(std::string const & meshName, Mesh const & mesh)
         {
@@ -49,8 +60,18 @@ namespace CS499R
         /*
          * Finds stuff in the scene
          */
+        SceneCamera *
+        findCamera(std::string const & cameraName) const
+        {
+            auto result = mObjectsMap.cameras.find(cameraName);
+
+            CS499R_ASSERT(result != mObjectsMap.cameras.end());
+
+            return result->second;
+        }
+
         SceneMesh *
-        findMesh(std::string const & meshName)
+        findMesh(std::string const & meshName) const
         {
             auto result = mObjectsMap.meshes.find(meshName);
 
@@ -60,7 +81,7 @@ namespace CS499R
         }
 
         SceneMeshInstance *
-        findMeshInstance(std::string const & meshName)
+        findMeshInstance(std::string const & meshName) const
         {
             auto result = mObjectsMap.meshInstances.find(meshName);
 
@@ -68,6 +89,12 @@ namespace CS499R
 
             return result->second;
         }
+
+        /*
+         * Returns the scene's bounding box
+         */
+        void
+        computeBoundingBox(float32x3_t * outLowerBound, float32x3_t * outUpperBound) const;
 
 
         // --------------------------------------------------------------------- IDLE
@@ -92,6 +119,9 @@ namespace CS499R
          */
         struct
         {
+            // all scene's cameras
+            Map<SceneCamera> cameras;
+
             // all scene's mesh instances
             Map<SceneMeshInstance> meshInstances;
 
@@ -109,7 +139,7 @@ namespace CS499R
 
         // --------------------------------------------------------------------- FRIENDSHIPS
         friend class RenderState;
-        friend class SceneBuffer;
+        friend class CompiledScene;
 
     };
 

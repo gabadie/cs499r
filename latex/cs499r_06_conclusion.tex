@@ -1,0 +1,34 @@
+Now with all of these optimization, it is time to actually compare a dummy
+path tracer algorithm implementation versus a specifically optimized one for GPU.
+On Figure~\ref{table:final_perfs}, we can actually witness the massive overall
+performance improvment, on all scenes. The activated optimizations for this
+performance comparaison are:
+
+\begin{itemize}
+    \item Octree sub-node access lists with the node's sub-nodes mask implementation;
+    \item Octree tiny nodes pruning;
+    \item Coherent Interleaved Path Tracing;
+    \item Octree one loop browsing only for the spheres, since the other scenes
+        don't have many meshes;
+    \item Octree consecutives sub-nodes.
+\end{itemize}
+
+\begin{figure}[H]
+    \tiny
+    \centering
+    \begin{tabular}{ | l | c | c | }
+        \hline
+        Scenes & No optimizations & With optimizations \\
+        \hline
+        Stanford Dragon & 1045.7ns & 527.9ns \\
+        Stanford Bunny & 380.7ns & 114.7ns \\
+        Simple spheres & 876.7ns & 341.8ns \\
+        Displaced spheres & 2123.6ns & 1290.5ns \\
+        \hline
+    \end{tabular}
+    \caption{
+        Rendering performances per ray comparaison with and without
+        optimizations.
+    }
+    \label{table:final_perfs}
+\end{figure}

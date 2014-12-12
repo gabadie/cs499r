@@ -28,6 +28,12 @@
     }
 
 /*
+ * Crashes the program compilation if doesn't verify the given condition
+ */
+#define CS499R_STATIC_ASSERT(condition) \
+    static_assert(condition, #condition)
+
+/*
  * Crashes the program doesn't verify the given condition
  */
 #define CS499R_ASSERT(condition) \

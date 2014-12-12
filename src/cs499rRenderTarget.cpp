@@ -11,12 +11,12 @@ namespace CS499R
     RenderTarget::download(Image * outImage, float colorFactor) const
     {
         CS499R_ASSERT(outImage);
-        CS499R_ASSERT(outImage->width() == mWidth);
-        CS499R_ASSERT(outImage->height() == mHeight);
+        CS499R_ASSERT(outImage->width() == mResolution.x);
+        CS499R_ASSERT(outImage->height() == mResolution.y);
         CS499R_ASSERT(outImage->chanels() == kChanelCount);
         CS499R_ASSERT(outImage->depth() == 8 || outImage->depth() == 16);
 
-        size_t const texelComponents = mWidth * mHeight * kChanelCount;
+        size_t const texelComponents = mResolution.x * mResolution.y * kChanelCount;
         float * rawTexels = (float *) malloc(texelComponents * sizeof(float));
 
         cl_int error = clEnqueueReadBuffer(mRayTracer->mCmdQueue,
@@ -87,8 +87,7 @@ namespace CS499R
 
     RenderTarget::RenderTarget(RayTracer const * rayTracer, size_t width, size_t height)
         : mRayTracer(rayTracer)
-        , mWidth(width)
-        , mHeight(height)
+        , mResolution(width, height)
     {
         CS499R_ASSERT(width * height != 0);
 
@@ -97,7 +96,7 @@ namespace CS499R
         mGpuBuffer = clCreateBuffer(
             mRayTracer->mContext,
             CL_MEM_WRITE_ONLY,
-            sizeof(cl_float) * mWidth * mHeight * kChanelCount,
+            sizeof(cl_float) * width * height * kChanelCount,
             NULL,
             &error
         );

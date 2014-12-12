@@ -2,6 +2,11 @@
 #ifndef _H_CS499R_MATH
 #define _H_CS499R_MATH
 
+#ifndef __CS499R_OPENCL_PREPROCESSOR
+/*
+ * We are not preprocessing code for OpenCL...
+ */
+
 #include <math.h>
 #include "cs499rPrefix.hpp"
 
@@ -254,11 +259,12 @@ namespace CS499R
 
     // ------------------------------------------------------------------------- ARITHMETICS
     template <typename T>
+    constexpr
     inline
     bool
     isPow2(T x)
     {
-        return (x - 1 & x) == 0;
+        return (((x - 1) & x) == 0) && (x != 0);
     }
 
 
@@ -427,6 +433,53 @@ namespace CS499R
     }
 
 
+    // ------------------------------------------------------------------------- ABS
+    template <typename T>
+    inline
+    T
+    abs(T const v)
+    {
+        return max(v, -v);
+    }
+
+    template <typename T>
+    inline
+    vec2<T>
+    abs(vec2<T> const & v)
+    {
+        return vec2<T>(
+            abs(v.x),
+            abs(v.y)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec3<T>
+    abs(vec3<T> const & v)
+    {
+        return vec3<T>(
+            abs(v.x),
+            abs(v.y),
+            abs(v.z)
+        );
+    }
+
+    template <typename T>
+    inline
+    vec4<T>
+    abs(vec4<T> const & v)
+    {
+        return vec4<T>(
+            abs(v.x),
+            abs(v.y),
+            abs(v.z),
+            abs(v.w)
+        );
+    }
+
+
+
 
     // ------------------------------------------------------------------------- CROSS PRODUCT
     template <typename T>
@@ -475,6 +528,25 @@ namespace CS499R
     normalize(T const & v)
     {
         return v * (1.0f / length(v));
+    }
+
+
+    // ------------------------------------------------------------------------- NORMALIZE
+    template <typename T>
+    inline
+    T
+    ceilPow2(T x)
+    {
+        return T(1 << size_t(ceil(log2(double(x)))));
+    }
+
+    template <typename T>
+    inline
+    T
+    ceilSquarePow2(T x)
+    {
+        T y = ceilPow2(sqrt(double(x)));
+        return y * y;
     }
 
 }
@@ -581,5 +653,47 @@ namespace CS499R
 
 }
 
+
+#else // __CS499R_OPENCL_PREPROCESSOR
+/*
+ * We are preprocessing code for OpenCL...
+ */
+
+typedef char int8_t;
+typedef char2 int8x2_t;
+typedef char3 int8x3_t;
+typedef char4 int8x4_t;
+
+typedef uchar uint8_t;
+typedef uchar2 uint8x2_t;
+typedef uchar3 uint8x3_t;
+typedef uchar4 uint8x4_t;
+
+typedef short int16_t;
+typedef short2 int16x2_t;
+typedef short3 int16x3_t;
+typedef short4 int16x4_t;
+
+typedef ushort uint16_t;
+typedef ushort2 uint16x2_t;
+typedef ushort3 uint16x3_t;
+typedef ushort4 uint16x4_t;
+
+typedef int int32_t;
+typedef int2 int32x2_t;
+typedef int3 int32x3_t;
+typedef int4 int32x4_t;
+
+typedef uint uint32_t;
+typedef uint2 uint32x2_t;
+typedef uint3 uint32x3_t;
+typedef uint4 uint32x4_t;
+
+typedef float float32_t;
+typedef float2 float32x2_t;
+typedef float3 float32x3_t;
+typedef float4 float32x4_t;
+
+#endif // __CS499R_OPENCL_PREPROCESSOR
 
 #endif // _H_CS499R_MATH

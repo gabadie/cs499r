@@ -1,0 +1,53 @@
+The original source code's \textit{Git} repository of this project is publicly
+available on \href{http://github.com/gabadie/cs499r}{github.com/gabadie/cs499r}.
+
+\subsection{Octrees}
+The testing implementation is using two octree layers. One for browsing the meshes
+into the scene, and one for browsing triangles into the meshes. Both octree layers
+uses sub-nodes reordering: access a node's sub-nodes in the order depending on
+the direction of the ray, so that we can use the depth-test on nodes once we
+have found a triangle intersection. We also enable back-face culling. Each octree
+layer uses an iterative top to bottom browsing.
+
+\subsection{Memory structure}
+The common way to store data on GPU, is with array stored into buffers.
+Our implementation uses 3 buffers:
+\begin{description}
+    \item[Octrees nodes' buffer] is the buffer that contain all octree nodes,
+        from the scene's octree or the meshes' octree. A primitives (either a
+        mesh or an instance) is only referenced into one octree node, to avoid
+        primitive duplication or an index table.
+        \begin{figure}[H]
+            \centering
+            \begin{lstlisting}
+struct octree_node_t
+{
+    // the sub-nodes' offset from the octree root
+    uint32_t subnodeOffsets[8];
+    // the first primitive (mesh or triangle) id
+    uint32_t primFirst;
+    // the number of primitives
+    uint32_t primCount;
+};
+            \end{lstlisting}
+            \caption{Octree node's structure}
+            \label{code:octree_node_struct}
+        \end{figure}
+    \item[Meshes instances' buffer] is the buffer containing all meshes intances.
+        Each mesh instances contains information about the mesh to avoid an
+        indirection into a mesh buffer.
+    \item[Triangles' buffer] is the buffer containing all mesh's triangles
+\end{description}
+Some optimisations proposed below might modifies the structures.
+
+\subsection{Tile and passes based rendering}
+\label{subsec:tile_passes_rendering}
+OpenCL commands must all have an constant upperbound running time, otherwise
+you might trigger an GPU timeout that will kill your command. But computation
+load is directly linked to the image size. In order to scale, we had to launch
+our dispatch command per tile (that we will call rendering tile) to guarentee
+that the image size doesn't affect
+this timeout. Also, we wanted to changes our parameter for every pixel (MSA,
+ray launched per pixel samples, recursions per rays...), so we also had to
+render a tile with severals passes so it also doesn't affect the distpatch
+command's execution time.

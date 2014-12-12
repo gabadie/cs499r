@@ -1,0 +1,125 @@
+\documentclass[10pt,twocolumn,a4paper]{article}
+
+% ------------------------------------------------------------------------------ Packages
+\usepackage{amsmath}
+\usepackage{color}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{lipsum}
+\usepackage{listings}
+
+% ------------------------------------------------------------------------------ Listing config
+\definecolor{darkgreen}{rgb}{0,0.6,0}
+
+\lstset{
+    commentstyle=\color{darkgreen},
+    keywordstyle=\color{blue},
+    frame=single,
+    language=C,
+    breaklines=true,
+    basicstyle=\tiny
+}
+
+
+% ------------------------------------------------------------------------------ Document begin
+\begin{document}
+
+% ------------------------------------------------------------------------------ Title
+\title{CS499R: GPU Path Tracing}
+\author{
+    Student: Guillaume Abadie\\
+    Professor: Stephen Mann
+}
+\date{\today}
+\maketitle
+
+% ------------------------------------------------------------------------------ Abstract
+\begin{abstract}
+
+Path tracing is a ray tracing based Monte Carlo rendering technic of images from
+three-dimensional scenes, directly inspired from the modelisation of the light's
+photons as rays going throught the scene. But instead of shooting the rays in the
+same directection the photons would go, the Path Tracing is going the oposite
+direction: From the camera to - hopefully - a light source. At every bounce, a new
+ray is randomly regenerated to recursively continue the scene browsing for a
+light source. Here is the reason why this technic stands as a Monte Carlo
+algorithm: The rays we are shooting have chances - depending one the scene
+being rendered - to not find any light source. One of main problem of this
+technic is that it requires a hudge
+amout of rays to be traced for a single pixel ray, so that the image's final
+colors can converge thanks the low of large numbers. Thankfully, GPUs have a
+massive parrallel computing power. This memoire is the result
+of a Path Tracer implementation studying different optimizations to
+improve running efficiency on a GPU, in the hope of having real-time
+path tracers sometime in the up coming futur.
+
+\end{abstract}
+
+% ------------------------------------------------------------------------------ Introduction
+\section{Introduction}
+\input{cs499r_01_introduction.tex}
+
+% ------------------------------------------------------------------------------ GPU background
+\section{GPU background}
+\input{cs499r_02_gpu_background.tex}
+
+% ------------------------------------------------------------------------------ Native implementation
+\section{Implementation}
+\input{cs499r_03_implementation.tex}
+
+% ------------------------------------------------------------------------------ Warp efficiency optimizations
+\section{Warp efficiency optimizations}
+
+\subsection{Octree sub-nodes access lists}
+\input{cs499r_04_octree_subnode_access_lists.tex}
+
+\subsection{Octree tiny nodes pruning}
+\input{cs499r_04_octree_tiny_nodes_pruning.tex}
+
+\subsection{Coherent Path Tracing}
+\input{cs499r_04_cpt.tex}
+
+\subsection{Coherent Interleaved Path Tracing}
+\input{cs499r_04_cipt.tex}
+
+\subsection{Coherent Path Tracing Supersampling}
+\input{cs499r_04_cpt_supersampling.tex}
+
+\subsection{Octree one loop browsing}
+\input{cs499r_04_octree_one_loop_browsing.tex}
+
+
+% ------------------------------------------------------------------------------ Memory coherency optimizations
+\section{Memory coherency optimizations}
+
+\subsection{Octree consecutives sub-nodes}
+\input{cs499r_05_octree_consecutive_subnodes.tex}
+
+
+% ------------------------------------------------------------------------------ Conclusion
+\section{Conclusion}
+\input{cs499r_06_conclusion.tex}
+
+
+% ------------------------------------------------------------------------------ Appendix
+%\appendix
+
+% ------------------------------------------------------------------------------ Bibliography
+\begin{thebibliography}{9}
+
+\bibitem{cpt}
+    Iman Sadeghi, Bin Chen, and Henrik Wann Jensen,
+    \emph{Coherent Path Tracing}.
+    University of California, San Diego,
+    September, 2009.
+
+\bibitem{nvidia_opencl}
+    NVIDIA Corporation,
+    \emph{NVIDIA OpenCL Best Practices Guide}.
+    Santa Clara, California,
+    July, 2009.
+
+\end{thebibliography}
+
+\end{document}
